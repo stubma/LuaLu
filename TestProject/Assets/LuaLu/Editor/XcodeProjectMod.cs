@@ -5,7 +5,7 @@ using UnityEditor.iOS.Xcode;
 using System.Collections;
 using System.IO;
 
-public class XcodeProjectMod : MonoBehaviour {
+public class XcodeProjectMod {
 	[PostProcessBuild]
 	public static void OnPostprocessBuild(BuildTarget buildTarget, string path) {
 		if(buildTarget == BuildTarget.StandaloneOSXIntel64) {
