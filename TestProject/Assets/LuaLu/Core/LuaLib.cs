@@ -6,6 +6,12 @@
 	using System.Text;
 	using System.Security;
 
+	[AttributeUsage(AttributeTargets.Method)]
+	public sealed class MonoPInvokeCallbackAttribute : Attribute {
+		public MonoPInvokeCallbackAttribute(Type t) {
+		}
+	}
+
 	public enum LuaTypes {
 		LUA_TNONE = -1,
 		LUA_TNIL = 0,
@@ -43,6 +49,9 @@
 	public delegate int LuaCSFunction(IntPtr L);
 
 	// lua native lib wrapper
+	#if !UNITY_IPHONE
+	[SuppressUnmanagedCodeSecurity]
+	#endif
 	public class LuaLib {
 		// lua lib name
 		#if UNITY_IPHONE
@@ -50,6 +59,11 @@
 		#else
 		const string LUALIB = "lualu";
 		#endif
+
+		// get lib name
+		public static string getLibName() {
+			return LUALIB;
+		}
 
 		/////////////////////////////////////////////
 		// lua.h
@@ -149,6 +163,13 @@
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int luaL_loadstring(IntPtr L, string chunk);
+
+		/////////////////////////////////////////////
+		// log support
+		/////////////////////////////////////////////
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void set_unity_log_func(IntPtr fp);
 
 		/////////////////////////////////////////////
 		// macros from lua.h

@@ -19,9 +19,31 @@
 		private IntPtr L;
 		private int m_callFromLua;
 
+		// for log support
+		#if !UNITY_IPHONE
+		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+		#endif
+		public delegate void LogDelegate(string str);
+
 		public LuaStack() {
+			// set log function
+			LogDelegate logd = new LogDelegate(LogCallback);
+			IntPtr logPtr = Marshal.GetFunctionPointerForDelegate(logd);
+			LuaLib.set_unity_log_func(logPtr);
+
+			// create lua state
+			Debug.Log("before new state");
 			L = LuaLib.luaL_newstate();
-			LuaLib.luaL_openlibs(L);
+			if(L == IntPtr.Zero) {
+				Debug.Log("after new state: L is null");
+			} else {
+				Debug.Log("state created!!!! " + L);
+			}
+//			LuaLib.luaL_openlibs(L);
+		}
+
+		static void LogCallback(string str) {
+			Debug.Log("[" + LuaLib.getLibName() + "]: " + str);
 		}
 
 		public void Close() {
