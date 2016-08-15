@@ -28,6 +28,9 @@ public class LuaInspector : Editor {
 
 				// refresh folder
 				AssetDatabase.ImportAsset(path);
+
+				// select file
+				Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(path);
 			} else {
 				DestroyImmediate (target);
 			}
