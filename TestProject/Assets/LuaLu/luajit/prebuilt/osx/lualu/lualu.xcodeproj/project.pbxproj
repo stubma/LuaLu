@@ -1,0 +1,309 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		9225F99A1D61A392005A33A0 /* libluajit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9225F9991D61A392005A33A0 /* libluajit.a */; };
+		9225F99C1D61A39B005A33A0 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9225F99B1D61A39B005A33A0 /* CoreFoundation.framework */; };
+		9225F9A51D61A42E005A33A0 /* tolua_event.c in Sources */ = {isa = PBXBuildFile; fileRef = 9225F99F1D61A42E005A33A0 /* tolua_event.c */; };
+		9225F9A61D61A42E005A33A0 /* tolua_is.c in Sources */ = {isa = PBXBuildFile; fileRef = 9225F9A11D61A42E005A33A0 /* tolua_is.c */; };
+		9225F9A71D61A42E005A33A0 /* tolua_map.c in Sources */ = {isa = PBXBuildFile; fileRef = 9225F9A21D61A42E005A33A0 /* tolua_map.c */; };
+		9225F9A81D61A42E005A33A0 /* tolua_push.c in Sources */ = {isa = PBXBuildFile; fileRef = 9225F9A31D61A42E005A33A0 /* tolua_push.c */; };
+		9225F9A91D61A42E005A33A0 /* tolua_to.c in Sources */ = {isa = PBXBuildFile; fileRef = 9225F9A41D61A42E005A33A0 /* tolua_to.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		9225F98F1D61A371005A33A0 /* lualu.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = lualu.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		9225F9921D61A371005A33A0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9225F9991D61A392005A33A0 /* libluajit.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libluajit.a; path = ../libluajit.a; sourceTree = "<group>"; };
+		9225F99B1D61A39B005A33A0 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		9225F99E1D61A42E005A33A0 /* tolua++.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "tolua++.h"; sourceTree = "<group>"; };
+		9225F99F1D61A42E005A33A0 /* tolua_event.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tolua_event.c; sourceTree = "<group>"; };
+		9225F9A01D61A42E005A33A0 /* tolua_event.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tolua_event.h; sourceTree = "<group>"; };
+		9225F9A11D61A42E005A33A0 /* tolua_is.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tolua_is.c; sourceTree = "<group>"; };
+		9225F9A21D61A42E005A33A0 /* tolua_map.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tolua_map.c; sourceTree = "<group>"; };
+		9225F9A31D61A42E005A33A0 /* tolua_push.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tolua_push.c; sourceTree = "<group>"; };
+		9225F9A41D61A42E005A33A0 /* tolua_to.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tolua_to.c; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		9225F98C1D61A371005A33A0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9225F99C1D61A39B005A33A0 /* CoreFoundation.framework in Frameworks */,
+				9225F99A1D61A392005A33A0 /* libluajit.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		9225F9861D61A371005A33A0 = {
+			isa = PBXGroup;
+			children = (
+				9225F99D1D61A42E005A33A0 /* tolua */,
+				9225F9981D61A389005A33A0 /* Frameworks */,
+				9225F9911D61A371005A33A0 /* lualu */,
+				9225F9901D61A371005A33A0 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9225F9901D61A371005A33A0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9225F98F1D61A371005A33A0 /* lualu.bundle */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9225F9911D61A371005A33A0 /* lualu */ = {
+			isa = PBXGroup;
+			children = (
+				9225F9921D61A371005A33A0 /* Info.plist */,
+			);
+			path = lualu;
+			sourceTree = "<group>";
+		};
+		9225F9981D61A389005A33A0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				9225F99B1D61A39B005A33A0 /* CoreFoundation.framework */,
+				9225F9991D61A392005A33A0 /* libluajit.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		9225F99D1D61A42E005A33A0 /* tolua */ = {
+			isa = PBXGroup;
+			children = (
+				9225F99E1D61A42E005A33A0 /* tolua++.h */,
+				9225F99F1D61A42E005A33A0 /* tolua_event.c */,
+				9225F9A01D61A42E005A33A0 /* tolua_event.h */,
+				9225F9A11D61A42E005A33A0 /* tolua_is.c */,
+				9225F9A21D61A42E005A33A0 /* tolua_map.c */,
+				9225F9A31D61A42E005A33A0 /* tolua_push.c */,
+				9225F9A41D61A42E005A33A0 /* tolua_to.c */,
+			);
+			name = tolua;
+			path = ../../../../tolua;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9225F98E1D61A371005A33A0 /* lualu */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9225F9951D61A371005A33A0 /* Build configuration list for PBXNativeTarget "lualu" */;
+			buildPhases = (
+				9225F98B1D61A371005A33A0 /* Sources */,
+				9225F98C1D61A371005A33A0 /* Frameworks */,
+				9225F98D1D61A371005A33A0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = lualu;
+			productName = lualu;
+			productReference = 9225F98F1D61A371005A33A0 /* lualu.bundle */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9225F9871D61A371005A33A0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0730;
+				ORGANIZATIONNAME = thu;
+				TargetAttributes = {
+					9225F98E1D61A371005A33A0 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+				};
+			};
+			buildConfigurationList = 9225F98A1D61A371005A33A0 /* Build configuration list for PBXProject "lualu" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 9225F9861D61A371005A33A0;
+			productRefGroup = 9225F9901D61A371005A33A0 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9225F98E1D61A371005A33A0 /* lualu */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9225F98D1D61A371005A33A0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9225F98B1D61A371005A33A0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9225F9A91D61A42E005A33A0 /* tolua_to.c in Sources */,
+				9225F9A51D61A42E005A33A0 /* tolua_event.c in Sources */,
+				9225F9A81D61A42E005A33A0 /* tolua_push.c in Sources */,
+				9225F9A61D61A42E005A33A0 /* tolua_is.c in Sources */,
+				9225F9A71D61A42E005A33A0 /* tolua_map.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		9225F9931D61A371005A33A0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		9225F9941D61A371005A33A0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		9225F9961D61A371005A33A0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../../../src/src";
+				INFOPLIST_FILE = lualu/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/..";
+				OTHER_LDFLAGS = "-all_load";
+				PRODUCT_BUNDLE_IDENTIFIER = com.luma.lualu;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Debug;
+		};
+		9225F9971D61A371005A33A0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../../../src/src";
+				INFOPLIST_FILE = lualu/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/..";
+				OTHER_LDFLAGS = "-all_load";
+				PRODUCT_BUNDLE_IDENTIFIER = com.luma.lualu;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9225F98A1D61A371005A33A0 /* Build configuration list for PBXProject "lualu" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9225F9931D61A371005A33A0 /* Debug */,
+				9225F9941D61A371005A33A0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9225F9951D61A371005A33A0 /* Build configuration list for PBXNativeTarget "lualu" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9225F9961D61A371005A33A0 /* Debug */,
+				9225F9971D61A371005A33A0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9225F9871D61A371005A33A0 /* Project object */;
+}
