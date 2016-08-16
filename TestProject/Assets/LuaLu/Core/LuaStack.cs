@@ -63,7 +63,7 @@
 		/// </summary>
 		/// <param name="str">log string</param>
 		static void LogCallback(string str) {
-			Debug.Log("[" + LuaLib.getLibName() + "]: " + str);
+			Debug.Log("[" + LuaLib.GetLibName() + "]: " + str);
 		}
 
 		/// <summary>
@@ -137,7 +137,7 @@
 		/// Add a path to find lua files in
 		/// </summary>
 		/// <param name="path">to be added to the Lua path.</param>
-		public void addSearchPath(string path) {
+		public void AddSearchPath(string path) {
 			LuaLib.lua_getglobal(L, "package"); /* L: package */
 			LuaLib.lua_getfield(L, -1, "path"); /* get package.path, L: package path */
 			string cur_path = LuaLib.lua_tostring(L, -1);
@@ -151,9 +151,9 @@
 		/// </summary>
 		/// <returns>0 if the string is excuted correctly. other value if the string is executed wrongly</returns>
 		/// <param name="codes">holding the valid script code that should be executed.</param>
-		public int executeString(string codes) {
+		public int ExecuteString(string codes) {
 			LuaLib.luaL_loadstring(L, codes);
-			return executeFunction(0, null);
+			return ExecuteFunction(0, null);
 		}
 
 		/// <summary>
@@ -162,7 +162,7 @@
 		/// <returns>value if the function returns a number, or zero if the function returns other type value</returns>
 		/// <param name="numArgs">number of parameters</param>
 		/// <param name="collector">if the function returns non-number type, can set a collector to convert returned value</param>
-		public int executeFunction(int numArgs, IScriptReturnedValueCollector collector) {
+		public int ExecuteFunction(int numArgs, IScriptReturnedValueCollector collector) {
 			int functionIndex = -(numArgs + 1);
 			if(!LuaLib.lua_isfunction(L, functionIndex)) {
 				Debug.Log(string.Format("value at stack [{0}] is not function", functionIndex));

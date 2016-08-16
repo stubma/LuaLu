@@ -8,13 +8,13 @@ public class LuaComponent : MonoBehaviour {
 	private static int m_fileIndex = 1;
 
 	// default file name
-	public string m_luaFile = defaultFileName();
+	public string m_luaFile = DefaultFileName();
 
 	// file name is set or not
 	public bool m_fileBound = false;
 
 	// generate default file name
-	static string defaultFileName() {
+	static string DefaultFileName() {
 		string fn = "Untitled" + m_fileIndex + ".lua";
 		m_fileIndex++;
 		return fn;
@@ -22,6 +22,6 @@ public class LuaComponent : MonoBehaviour {
 
 	void Start() {
 		LuaStack L = new LuaStack();
-		L.executeString("print(\"hello, it works!!!\")");
+		L.ExecuteString("print(\"hello, it works!!!\")");
 	}
 }

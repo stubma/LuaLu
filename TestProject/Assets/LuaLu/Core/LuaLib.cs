@@ -103,7 +103,7 @@
 		#endif
 
 		// get lib name
-		public static string getLibName() {
+		public static string GetLibName() {
 			return LUALIB;
 		}
 
