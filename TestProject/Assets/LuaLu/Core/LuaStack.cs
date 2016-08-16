@@ -11,10 +11,16 @@
 	using System.Text;
 	using UnityEngine;
 
+	/// <summary>
+	/// a custom converter for lua returned value
+	/// </summary>
 	public interface IScriptReturnedValueCollector {
-		void collectReturnedValue();
+		void collectReturnedValue(IntPtr L);
 	}
 
+	/// <summary>
+	/// it manages one lua state machine, and provides helper method to ease lua api usage
+	/// </summary>
 	public class LuaStack : IDisposable {
 		private IntPtr L;
 		private int m_callFromLua;
@@ -43,7 +49,7 @@
 				// Register our version of the global "print" function
 				luaL_Reg[] global_functions = {
 					new luaL_Reg("print", new LuaFunction(LuaPrint)),
-					new luaL_Reg(null, null )
+					new luaL_Reg(null, null)
 				};
 				LuaLib.luaL_register(L, "_G", global_functions);
 			} else {
@@ -51,10 +57,21 @@
 			}
 		}
 
+		/// <summary>
+		/// log callback for native plugin, it is set before lua state is created. By this callabck,
+		/// native plugin can output log to unity console
+		/// </summary>
+		/// <param name="str">log string</param>
 		static void LogCallback(string str) {
 			Debug.Log("[" + LuaLib.getLibName() + "]: " + str);
 		}
 
+		/// <summary>
+		/// custom lua print global function, it bridges lua print function to unity
+		/// console log
+		/// </summary>
+		/// <returns>useless, just ignored</returns>
+		/// <param name="L">lua state</param>
 		static int LuaPrint(IntPtr L) {
 			int nargs = LuaLib.lua_gettop(L);
 
@@ -147,7 +164,7 @@
 			// get return value
 			int ret = 0;
 			if(collector != null) {
-				collector.collectReturnedValue();
+				collector.collectReturnedValue(L);
 			} else if(LuaLib.lua_isnumber(L, -1)) {
 				ret = (int)LuaLib.lua_tointeger(L, -1);
 			} else if(LuaLib.lua_isboolean(L, -1)) {
