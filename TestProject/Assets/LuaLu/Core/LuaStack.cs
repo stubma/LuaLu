@@ -32,14 +32,12 @@
 			LuaLib.set_unity_log_func(logPtr);
 
 			// create lua state
-			Debug.Log("before new state");
 			L = LuaLib.luaL_newstate();
-			if(L == IntPtr.Zero) {
-				Debug.Log("after new state: L is null");
+			if(L != IntPtr.Zero) {
+				LuaLib.luaL_openlibs(L);
 			} else {
-				Debug.Log("state created!!!! " + L);
+				Debug.Log("Fatal error: Failed to create lua state!");
 			}
-//			LuaLib.luaL_openlibs(L);
 		}
 
 		static void LogCallback(string str) {

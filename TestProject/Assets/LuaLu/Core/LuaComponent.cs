@@ -22,6 +22,6 @@ public class LuaComponent : MonoBehaviour {
 
 	void Start() {
 		LuaStack L = new LuaStack();
-//		L.executeString("print(\"hello, it works!!!\")");
+		L.executeString("print(\"hello, it works!!!\")");
 	}
 }

@@ -22,8 +22,6 @@
 #include "lj_trace.h"
 #include "lj_lib.h"
 
-#include "unity_log.h"
-
 #if LJ_TARGET_POSIX
 #include <sys/wait.h>
 #endif
@@ -322,11 +320,8 @@ static void *mem_alloc(void *ud, void *ptr, size_t osize, size_t nsize)
 
 LUALIB_API lua_State *luaL_newstate(void)
 {
-  unity_log("luaL_newstate 1, LUAJIT_USE_SYSMALLOC");
   lua_State *L = lua_newstate(mem_alloc, NULL);
-  unity_log("luaL_newstate 2, LUAJIT_USE_SYSMALLOC");
   if (L) G(L)->panic = panic;
-  unity_log("luaL_newstate 3, LUAJIT_USE_SYSMALLOC");
   return L;
 }
 
@@ -336,20 +331,15 @@ LUALIB_API lua_State *luaL_newstate(void)
 
 LUALIB_API lua_State *luaL_newstate(void)
 {
-    unity_log("luaL_newstate 1");
   lua_State *L;
   void *ud = lj_alloc_create();
   if (ud == NULL) return NULL;
 #if LJ_64
-    unity_log("luaL_newstate 2, LJ_64");
   L = lj_state_newstate(lj_alloc_f, ud);
 #else
-    unity_log("luaL_newstate 2, not LJ_64");
   L = lua_newstate(lj_alloc_f, ud);
 #endif
-    unity_log("luaL_newstate 3");
   if (L) G(L)->panic = panic;
-    unity_log("luaL_newstate 4");
   return L;
 }
 

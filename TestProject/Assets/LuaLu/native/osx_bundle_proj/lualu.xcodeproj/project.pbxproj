@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		9225F99C1D61A39B005A33A0 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9225F99B1D61A39B005A33A0 /* CoreFoundation.framework */; };
-		927F7A491D62E2040020D721 /* libluajit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 927F7A481D62E2040020D721 /* libluajit.a */; };
 		927F7A591D62E2090020D721 /* tolua++.h.meta in Resources */ = {isa = PBXBuildFile; fileRef = 927F7A4C1D62E2090020D721 /* tolua++.h.meta */; };
 		927F7A5A1D62E2090020D721 /* tolua_event.c in Sources */ = {isa = PBXBuildFile; fileRef = 927F7A4D1D62E2090020D721 /* tolua_event.c */; };
 		927F7A5B1D62E2090020D721 /* tolua_event.c.meta in Resources */ = {isa = PBXBuildFile; fileRef = 927F7A4E1D62E2090020D721 /* tolua_event.c.meta */; };
@@ -21,13 +20,13 @@
 		927F7A621D62E2090020D721 /* tolua_push.c.meta in Resources */ = {isa = PBXBuildFile; fileRef = 927F7A561D62E2090020D721 /* tolua_push.c.meta */; };
 		927F7A631D62E2090020D721 /* tolua_to.c in Sources */ = {isa = PBXBuildFile; fileRef = 927F7A571D62E2090020D721 /* tolua_to.c */; };
 		927F7A641D62E2090020D721 /* tolua_to.c.meta in Resources */ = {isa = PBXBuildFile; fileRef = 927F7A581D62E2090020D721 /* tolua_to.c.meta */; };
+		927F7A661D62E4DF0020D721 /* liblua.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 927F7A651D62E4DF0020D721 /* liblua.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		9225F98F1D61A371005A33A0 /* lualu.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = lualu.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		9225F9921D61A371005A33A0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9225F99B1D61A39B005A33A0 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		927F7A481D62E2040020D721 /* libluajit.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libluajit.a; sourceTree = "<group>"; };
 		927F7A4B1D62E2090020D721 /* tolua++.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "tolua++.h"; sourceTree = "<group>"; };
 		927F7A4C1D62E2090020D721 /* tolua++.h.meta */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "tolua++.h.meta"; sourceTree = "<group>"; };
 		927F7A4D1D62E2090020D721 /* tolua_event.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tolua_event.c; sourceTree = "<group>"; };
@@ -42,6 +41,7 @@
 		927F7A561D62E2090020D721 /* tolua_push.c.meta */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tolua_push.c.meta; sourceTree = "<group>"; };
 		927F7A571D62E2090020D721 /* tolua_to.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tolua_to.c; sourceTree = "<group>"; };
 		927F7A581D62E2090020D721 /* tolua_to.c.meta */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tolua_to.c.meta; sourceTree = "<group>"; };
+		927F7A651D62E4DF0020D721 /* liblua.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = liblua.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,7 +49,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				927F7A491D62E2040020D721 /* libluajit.a in Frameworks */,
+				927F7A661D62E4DF0020D721 /* liblua.a in Frameworks */,
 				9225F99C1D61A39B005A33A0 /* CoreFoundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -94,7 +94,7 @@
 		9225F9981D61A389005A33A0 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				927F7A481D62E2040020D721 /* libluajit.a */,
+				927F7A651D62E4DF0020D721 /* liblua.a */,
 				9225F99B1D61A39B005A33A0 /* CoreFoundation.framework */,
 			);
 			name = Frameworks;
@@ -292,7 +292,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				COMBINE_HIDPI_IMAGES = YES;
-				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../luajit/src";
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../lua/src";
 				INFOPLIST_FILE = lualu/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)";
@@ -308,7 +308,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				COMBINE_HIDPI_IMAGES = YES;
-				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../luajit/src";
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../lua/src";
 				INFOPLIST_FILE = lualu/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)";
