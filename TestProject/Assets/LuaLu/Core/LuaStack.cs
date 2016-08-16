@@ -125,11 +125,43 @@
 			GC.WaitForPendingFinalizers();
 		}
 
+		/// <summary>
+		/// Method used to get a pointer to the lua_State that the script module is attached to.
+		/// </summary>
+		/// <returns>A pointer to the lua_State that the script module is attached to.</returns>
+		public IntPtr getLuaState() {
+			return L;
+		}
+
+		/// <summary>
+		/// Add a path to find lua files in
+		/// </summary>
+		/// <param name="path">to be added to the Lua path.</param>
+		public void addSearchPath(string path) {
+			LuaLib.lua_getglobal(L, "package"); /* L: package */
+			LuaLib.lua_getfield(L, -1, "path"); /* get package.path, L: package path */
+			string cur_path = LuaLib.lua_tostring(L, -1);
+			LuaLib.lua_pushstring(L, string.Format("{0};{1}/?.lua", cur_path, path));  /* L: package path newpath */
+			LuaLib.lua_setfield(L, -3, "path"); /* package.path = newpath, L: package path */
+			LuaLib.lua_pop(L, 2); /* L: - */
+		}
+
+		/// <summary>
+		/// Execute script code contained in the given string
+		/// </summary>
+		/// <returns>0 if the string is excuted correctly. other value if the string is executed wrongly</returns>
+		/// <param name="codes">holding the valid script code that should be executed.</param>
 		public int executeString(string codes) {
 			LuaLib.luaL_loadstring(L, codes);
 			return executeFunction(0, null);
 		}
 
+		/// <summary>
+		/// invoke a lua function
+		/// </summary>
+		/// <returns>value if the function returns a number, or zero if the function returns other type value</returns>
+		/// <param name="numArgs">number of parameters</param>
+		/// <param name="collector">if the function returns non-number type, can set a collector to convert returned value</param>
 		public int executeFunction(int numArgs, IScriptReturnedValueCollector collector) {
 			int functionIndex = -(numArgs + 1);
 			if(!LuaLib.lua_isfunction(L, functionIndex)) {
