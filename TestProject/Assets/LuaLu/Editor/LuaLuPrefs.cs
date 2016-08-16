@@ -12,10 +12,10 @@
 
 	public class LuaLuPrefs {
 		// pref key
-		private static string PREF_LUA_EDITOR = "lua_editor";
-		private static string PREF_LUA_EDITOR_EXECUTABLE = "lua_editor_exec";
-		private static string PREF_LUA_EDITOR_ARGUMENTS = "lua_editor_args";
-		private static string PREF_ZERO_BRANE_STUDIO_FOLDER = "lua_zbs_folder";
+		private static string PREF_LUA_EDITOR = "com.luma.lualu.editor";
+		private static string PREF_LUA_EDITOR_EXECUTABLE = "com.luma.lualu.editor.executable";
+		private static string PREF_LUA_EDITOR_ARGUMENTS = "com.luma.lualu.editor.args";
+		private static string PREF_ZERO_BRANE_STUDIO_FOLDER = "com.luma.lualu.zbs.folder";
 
 		// Have we loaded the prefs yet
 		private static bool s_prefsLoaded = false;
