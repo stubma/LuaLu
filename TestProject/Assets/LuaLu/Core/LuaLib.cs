@@ -12,6 +12,9 @@
 		}
 	}
 
+	/// <summary>
+	/// lua value type constant
+	/// </summary>
 	public enum LuaTypes {
 		LUA_TNONE = -1,
 		LUA_TNIL = 0,
@@ -25,6 +28,9 @@
 		LUA_TTHREAD = 8
 	}
 
+	/// <summary>
+	/// lua garbage collection option
+	/// </summary>
 	public enum LuaGCOptions {
 		LUA_GCSTOP = 0,
 		LUA_GCRESTART = 1,
@@ -36,6 +42,9 @@
 		LUA_GCSETSTEPMUL = 7,
 	}
 
+	/// <summary>
+	/// lua thread status
+	/// </summary>
 	public enum LuaThreadStatus {
 		LUA_YIELD = 1,
 		LUA_ERRRUN = 2,
@@ -44,6 +53,9 @@
 		LUA_ERRERR = 5
 	}
 
+	/// <summary>
+	/// special lua index
+	/// </summary>
 	public enum LuaIndex {
 		LUA_REGISTRYINDEX = -10000,
 		LUA_ENVIRONINDEX = -10001,
@@ -56,6 +68,9 @@
 	#endif
 	public delegate int LuaFunction(IntPtr L);
 
+	/// <summary>
+	/// struct for lua side registeration
+	/// </summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct luaL_Reg {
 		[MarshalAs(UnmanagedType.LPStr)]
@@ -70,12 +85,14 @@
 		}
 	}
 
-	// lua native lib wrapper
+	/// <summary>
+	/// lua native lib wrapper
+	/// </summary>
 	#if !UNITY_IPHONE
 	[SuppressUnmanagedCodeSecurity]
 	#endif
 	public class LuaLib {
-		/* option for multiple returns in `lua_pcall' and `lua_call' */
+		// option for multiple returns in `lua_pcall' and `lua_call'
 		public static int LUA_MULTRET = -1;
 
 		// lua lib name
@@ -90,7 +107,12 @@
 			return LUALIB;
 		}
 
-		// helper
+		/// <summary>
+		/// get a utf-8 string
+		/// </summary>
+		/// <returns>utf-8 string</returns>
+		/// <param name="source">source bytes</param>
+		/// <param name="strlen">byte length of this string</param>
 		static string AnsiToUnicode(IntPtr source, int strlen) {
 			byte[] buffer = new byte[strlen];
 			Marshal.Copy(source, buffer, 0, strlen);            
