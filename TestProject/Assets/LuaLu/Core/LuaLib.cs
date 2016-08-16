@@ -54,7 +54,21 @@
 	#if !UNITY_IPHONE
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	#endif
-	public delegate int LuaCSFunction(IntPtr L);
+	public delegate int LuaFunction(IntPtr L);
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct luaL_Reg {
+		[MarshalAs(UnmanagedType.LPStr)]
+		public string name;
+
+		[MarshalAs(UnmanagedType.FunctionPtr)]
+		LuaFunction func;
+
+		public luaL_Reg(string n, LuaFunction f) {
+			name = n;
+			func = f;
+		}
+	}
 
 	// lua native lib wrapper
 	#if !UNITY_IPHONE
@@ -74,6 +88,13 @@
 		// get lib name
 		public static string getLibName() {
 			return LUALIB;
+		}
+
+		// helper
+		static string AnsiToUnicode(IntPtr source, int strlen) {
+			byte[] buffer = new byte[strlen];
+			Marshal.Copy(source, buffer, 0, strlen);            
+			return Encoding.UTF8.GetString(buffer);
 		}
 
 		/////////////////////////////////////////////
@@ -164,7 +185,7 @@
 		public static extern int lua_toboolean(IntPtr L, int idx);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern string lua_tolstring(IntPtr L, int idx, out int len);
+		public static extern IntPtr lua_tolstring(IntPtr L, int idx, out int len);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int lua_objlen(IntPtr L, int idx);
@@ -344,7 +365,19 @@
 
 		public static string lua_tostring(IntPtr L, int idx) {
 			int len;
-			return lua_tolstring(L, idx, out len);
+			IntPtr str = lua_tolstring(L, idx, out len);
+			if(str != IntPtr.Zero) {
+				string ss = Marshal.PtrToStringAnsi(str, len);
+
+				// when lua return non-ansi string, conversion fails
+				if(ss == null) {
+					return AnsiToUnicode(str, len);
+				}
+
+				return ss;
+			} else {
+				return null;
+			}
 		}
 
 		public static IntPtr lua_open() {
@@ -393,8 +426,10 @@
 //		LUALIB_API void (luaL_addvalue) (luaL_Buffer *B);
 //		LUALIB_API void (luaL_pushresult) (luaL_Buffer *B);
 //		LUALIB_API void (luaI_openlib) (lua_State *L, const char *libname, const luaL_Reg *l, int nup);
-//		LUALIB_API void (luaL_register) (lua_State *L, const char *libname, const luaL_Reg *l);
 //		LUALIB_API int (luaL_checkoption) (lua_State *L, int narg, const char *def, const char *const lst[]);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void luaL_register(IntPtr L, string libname, luaL_Reg[] l);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int luaL_getmetafield(IntPtr L, int obj, string e);
@@ -409,10 +444,10 @@
 		public static extern int luaL_argerror(IntPtr L, int numarg, string extramsg);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern string luaL_checklstring(IntPtr L, int numArg, out int l);
+		public static extern IntPtr luaL_checklstring(IntPtr L, int numArg, out int l);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern string luaL_optlstring(IntPtr L, int numArg, string def, out int l);
+		public static extern IntPtr luaL_optlstring(IntPtr L, int numArg, byte[] def, out int l);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern double luaL_checknumber(IntPtr L, int numArg);
@@ -473,12 +508,36 @@
 		
 		public static string luaL_checkstring(IntPtr L, int n) {
 			int len;
-			return luaL_checklstring(L, n, out len);
+			IntPtr str = luaL_checklstring(L, n, out len);
+			if(str != IntPtr.Zero) {
+				string ss = Marshal.PtrToStringAnsi(str, len);
+
+				// when lua return non-ansi string, conversion fails
+				if(ss == null) {
+					return AnsiToUnicode(str, len);
+				}
+
+				return ss;
+			} else {
+				return null;
+			}
 		}
 
 		public static string luaL_optstring(IntPtr L, int n, string d) {
 			int len;
-			return luaL_optlstring(L, n, d, out len);
+			IntPtr str = luaL_optlstring(L, n, Encoding.UTF8.GetBytes(d), out len);
+			if(str != IntPtr.Zero) {
+				string ss = Marshal.PtrToStringAnsi(str, len);
+
+				// when lua return non-ansi string, conversion fails
+				if(ss == null) {
+					return AnsiToUnicode(str, len);
+				}
+
+				return ss;
+			} else {
+				return null;
+			}
 		}
 
 		public static int luaL_checkint(IntPtr L, int n) {
@@ -538,6 +597,19 @@
 		public static void lua_getref(IntPtr L, int _ref) {
 			lua_rawgeti(L, (int)LuaIndex.LUA_REGISTRYINDEX, _ref);
 		}
+
+		/////////////////////////////////////////////
+		// other module
+		/////////////////////////////////////////////
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void luaopen_lfs(IntPtr L);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void luaopen_cjson(IntPtr L);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void luaopen_socket_core(IntPtr L);
 
 		/////////////////////////////////////////////
 		// log support

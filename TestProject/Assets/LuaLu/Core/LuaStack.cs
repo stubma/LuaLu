@@ -34,7 +34,18 @@
 			// create lua state
 			L = LuaLib.luaL_newstate();
 			if(L != IntPtr.Zero) {
+				// register standard and thiry-party libs
 				LuaLib.luaL_openlibs(L);
+				LuaLib.luaopen_lfs(L);
+				LuaLib.luaopen_cjson(L);
+				LuaLib.luaopen_socket_core(L);
+
+				// Register our version of the global "print" function
+				luaL_Reg[] global_functions = {
+					new luaL_Reg("print", new LuaFunction(LuaPrint)),
+					new luaL_Reg(null, null )
+				};
+				LuaLib.luaL_register(L, "_G", global_functions);
 			} else {
 				Debug.Log("Fatal error: Failed to create lua state!");
 			}
@@ -42,6 +53,45 @@
 
 		static void LogCallback(string str) {
 			Debug.Log("[" + LuaLib.getLibName() + "]: " + str);
+		}
+
+		static int LuaPrint(IntPtr L) {
+			int nargs = LuaLib.lua_gettop(L);
+
+			string t = "";
+			for(int i = 1; i <= nargs; i++) {
+				if(LuaLib.lua_istable(L, i)) {
+					t += "table";
+				} else if(LuaLib.lua_isnone(L, i)) {
+					t += "none";
+				} else if(LuaLib.lua_isnil(L, i)) {
+					t += "nil";
+				} else if(LuaLib.lua_isboolean(L, i)) {
+					if(LuaLib.lua_toboolean(L, i) != 0) {
+						t += "true";
+					} else {
+						t += "false";
+					}
+				} else if(LuaLib.lua_isfunction(L, i)) {
+					t += "function";
+				} else if(LuaLib.lua_islightuserdata(L, i)) {
+					t += "lightuserdata";
+				} else if(LuaLib.lua_isthread(L, i)) {
+					t += "thread";
+				} else {
+					if(LuaLib.lua_isstring(L, i)) {
+						t += LuaLib.lua_tostring(L, i);
+					} else {
+						t += LuaLib.lua_typename(L, LuaLib.lua_type(L, i));
+					}
+				}
+				if(i != nargs) {
+					t += "\t";
+				}
+			}
+			Debug.Log(string.Format("[LUA-print] {0}", t));
+
+			return 0;
 		}
 
 		public void Close() {
