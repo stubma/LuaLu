@@ -32,6 +32,14 @@
 		<data>
 		PaA9YAhKRJEYqo1eboEJpXeVPkw=
 		</data>
+		<key>Resources/unity_log.c.meta</key>
+		<data>
+		MolJ4NuvVAIj1nlW6+UTVjIZKbw=
+		</data>
+		<key>Resources/unity_log.h.meta</key>
+		<data>
+		o4w+kWPiVV6zLJ8Ax6mhMhbnCTE=
+		</data>
 	</dict>
 	<key>files2</key>
 	<dict>
@@ -110,6 +118,28 @@
 			<key>hash2</key>
 			<data>
 			D5pqEM/ZEqDW+QOJRcQA4WXGJ0hEpTFKYvxDD7UlDwA=
+			</data>
+		</dict>
+		<key>Resources/unity_log.c.meta</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			MolJ4NuvVAIj1nlW6+UTVjIZKbw=
+			</data>
+			<key>hash2</key>
+			<data>
+			O9pGsbew9qXtWUG+1gbp+E9RXrwJhFCcPd96n1Jb8PA=
+			</data>
+		</dict>
+		<key>Resources/unity_log.h.meta</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			o4w+kWPiVV6zLJ8Ax6mhMhbnCTE=
+			</data>
+			<key>hash2</key>
+			<data>
+			VL5go4GSxEHMbgl7mh5WOpXIDqxzWJ1JFBrAiC4AHCc=
 			</data>
 		</dict>
 	</dict>

@@ -55,8 +55,12 @@
 				if (GUILayout.Button ("Rebound")) {
 					string path = EditorUtility.OpenFilePanel ("Locate Lua Script", "", "lua");
 					if (path.Length != 0) {
-						if (path.StartsWith (Application.dataPath)) {
-							path = "Assets" + path.Substring (Application.dataPath.Length);
+						string appPath = Directory.GetParent(Application.dataPath).FullName;
+						if (path.StartsWith (appPath)) {
+							path = path.Substring (appPath.Length);
+							if(path.StartsWith("/")) {
+								path = path.Substring(1);
+							}
 						}
 						m_luaFileProp.stringValue = path;
 					}
