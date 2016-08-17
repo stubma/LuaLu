@@ -112,10 +112,17 @@
 				GUILayout.Label("Executable:");
 				EditorGUILayout.BeginVertical();
 				GUILayout.FlexibleSpace();
-				s_customEditorExecutable = EditorGUILayout.TextField(s_customEditorExecutable, GUILayout.ExpandWidth(true));
-				EditorGUILayout.Space();
+				EditorGUILayout.SelectableLabel(s_customEditorExecutable, readonlyTextFieldStyle, GUILayout.Height(EditorGUIUtility.singleLineHeight), GUILayout.ExpandWidth(true));
 				GUILayout.FlexibleSpace();
 				EditorGUILayout.EndVertical();
+				if(GUILayout.Button("Browse")) {
+					string path = EditorUtility.OpenFilePanel("Select Custom Editor Executable", "", "");
+					if(path.Length != 0) {
+						s_customEditorExecutable = path;
+						OnPreferenceGUI();
+					}
+				}
+				EditorGUILayout.Space();
 				EditorGUILayout.EndHorizontal();
 				EditorGUILayout.BeginHorizontal(GUILayout.Height(26));
 				EditorGUILayout.Space();
@@ -123,9 +130,9 @@
 				EditorGUILayout.BeginVertical();
 				GUILayout.FlexibleSpace();
 				s_customEditorArguments = EditorGUILayout.TextField(s_customEditorArguments, GUILayout.ExpandWidth(true));
-				EditorGUILayout.Space();
 				GUILayout.FlexibleSpace();
 				EditorGUILayout.EndVertical();
+				EditorGUILayout.Space();
 				EditorGUILayout.EndHorizontal();
 				EditorGUILayout.BeginHorizontal();
 				GUILayout.FlexibleSpace();
