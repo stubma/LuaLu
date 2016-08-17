@@ -46,7 +46,7 @@
 			}
 
 			// run lua
-			LuaStack L = new LuaStack();
+			LuaStack L = LuaStack.SharedInstance();
 			string finalPath = m_luaFile.Substring("Assets/Resources/".Length);
 			TextAsset t = (TextAsset)Resources.Load(finalPath, typeof(TextAsset));
 			if(t != null) {

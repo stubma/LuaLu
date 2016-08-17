@@ -22,11 +22,35 @@
 	/// it manages one lua state machine, and provides helper method to ease lua api usage
 	/// </summary>
 	public class LuaStack : IDisposable {
+		// lua state
 		private IntPtr L;
+
+		// flag indicating calling in lua
 		private int m_callFromLua;
 
 		// for log support
 		public delegate void LogDelegate(string str);
+
+		// shared lua stack instance
+		private volatile static LuaStack s_sharedInstance;
+
+		// lock
+		private static object s_lockRoot = new System.Object();
+
+		/// <summary>
+		/// shared lua stack, a.k.a. global lua state
+		/// </summary>
+		/// <value>The shared instance</value>
+		public static LuaStack SharedInstance() {
+			if(s_sharedInstance == null) {
+				lock(s_lockRoot) {
+					if(s_sharedInstance == null) {
+						s_sharedInstance = new LuaStack();
+					}
+				}
+			}
+			return s_sharedInstance;
+		}
 
 		public LuaStack() {
 			// set log function

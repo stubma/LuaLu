@@ -1,0 +1,1 @@
+print("haha, this is second lua script")
