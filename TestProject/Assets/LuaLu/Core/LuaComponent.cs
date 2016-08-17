@@ -2,7 +2,6 @@
 	using UnityEngine;
 	using System.Collections;
 	using LuaInterface;
-	using UnityEditor;
 
 	/// <summary>
 	/// a lua component which indirect c# calling to lua side. Every component
