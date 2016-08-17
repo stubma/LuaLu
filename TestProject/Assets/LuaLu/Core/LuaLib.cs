@@ -77,7 +77,7 @@
 		public string name;
 
 		[MarshalAs(UnmanagedType.FunctionPtr)]
-		LuaFunction func;
+		public LuaFunction func;
 
 		public luaL_Reg(string n, LuaFunction f) {
 			name = n;

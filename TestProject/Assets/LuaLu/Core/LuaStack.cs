@@ -26,9 +26,6 @@
 		private int m_callFromLua;
 
 		// for log support
-		#if !UNITY_IPHONE
-		[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-		#endif
 		public delegate void LogDelegate(string str);
 
 		public LuaStack() {
@@ -129,7 +126,7 @@
 		/// Method used to get a pointer to the lua_State that the script module is attached to.
 		/// </summary>
 		/// <returns>A pointer to the lua_State that the script module is attached to.</returns>
-		public IntPtr getLuaState() {
+		public IntPtr GetLuaState() {
 			return L;
 		}
 
