@@ -59,6 +59,7 @@
 		/// native plugin can output log to unity console
 		/// </summary>
 		/// <param name="str">log string</param>
+		[MonoPInvokeCallback(typeof(LogDelegate))]
 		static void LogCallback(string str) {
 			Debug.Log("[" + LuaLib.GetLibName() + "]: " + str);
 		}
@@ -69,6 +70,7 @@
 		/// </summary>
 		/// <returns>useless, just ignored</returns>
 		/// <param name="L">lua state</param>
+		[MonoPInvokeCallback(typeof(LuaFunction))]
 		static int LuaPrint(IntPtr L) {
 			int nargs = LuaLib.lua_gettop(L);
 

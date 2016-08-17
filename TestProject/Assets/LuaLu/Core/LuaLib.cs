@@ -76,12 +76,11 @@
 		[MarshalAs(UnmanagedType.LPStr)]
 		public string name;
 
-		[MarshalAs(UnmanagedType.FunctionPtr)]
-		public LuaFunction func;
+		public IntPtr func;
 
 		public luaL_Reg(string n, LuaFunction f) {
 			name = n;
-			func = f;
+			func = f == null ? IntPtr.Zero : Marshal.GetFunctionPointerForDelegate(f);
 		}
 	}
 
@@ -413,9 +412,6 @@
 		public static int lua_getgccount(IntPtr L) {
 			return lua_gc(L, (int)LuaGCOptions.LUA_GCCOUNT, 0);
 		}
-
-		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void lua_setlevel(IntPtr from, IntPtr to);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern string lua_getupvalue(IntPtr L, int funcindex, int n);
