@@ -2,6 +2,7 @@
 	using UnityEngine;
 	using System.Collections;
 	using LuaInterface;
+	using System.IO;
 
 	/// <summary>
 	/// a lua component which indirect c# calling to lua side. Every component
@@ -19,6 +20,9 @@
 		// is lua file path valid?
 		private bool m_valid = false;
 
+		// is lua file loaded?
+		private bool m_loaded = false;
+
 		// file name is set or not
 		public bool m_fileBound = false;
 
@@ -31,7 +35,7 @@
 
 		void OnValidate() {
 			// check lua file path, it must be saved in Assets/Resources
-			if(!m_luaFile.StartsWith("Assets/Resources/")) {
+			if(!m_luaFile.StartsWith(LuaConst.USER_LUA_PREFIX)) {
 				Debug.Log("Currently LuaLu requires you save lua file in Assets/Resources folder");
 				m_valid = false;
 			} else {
@@ -42,6 +46,17 @@
 		void Awake() {
 			// init global lua state
 			LuaStack.InitGlobalState();
+
+			// load script
+			if(m_valid && !m_loaded) {
+				string resPath = m_luaFile.Substring(LuaConst.USER_LUA_PREFIX.Length);
+				string resDir = Path.GetDirectoryName(resPath);
+				string resName = Path.GetFileNameWithoutExtension(resPath);
+				string finalPath = Path.Combine(resDir, resName);
+				LuaStack L = LuaStack.SharedInstance();
+				L.ExecuteString("require(\"" + finalPath + "\")");
+				m_loaded = true;
+			}
 		}
 
 		void Start() {
@@ -52,13 +67,7 @@
 
 			// run lua
 			LuaStack L = LuaStack.SharedInstance();
-			string finalPath = m_luaFile.Substring("Assets/Resources/".Length);
-			TextAsset t = (TextAsset)Resources.Load(finalPath, typeof(TextAsset));
-			if(t != null) {
-				L.ExecuteString(t.text);
-			} else {
-				Debug.Log("t is null");
-			}
+			L.ExecuteString("FirstLua.staticMethod()");
 		}
 
 		void Update() {

@@ -4,5 +4,6 @@ function FirstLua:testMethod()
   print("from test method")
 end
 
-local f = FirstLua.new()
-f:testMethod()
+function FirstLua.staticMethod()
+  print("from firstlua static method")
+end
