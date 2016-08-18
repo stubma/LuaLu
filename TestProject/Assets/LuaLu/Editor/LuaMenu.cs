@@ -8,6 +8,7 @@
 	public class LuaMenu : ScriptableObject {
 		[MenuItem("Lua/Generate Unity Lua Binding", false, 1)]  
 		static void MenuGenerateUnityLuaBinding() {
+			LuaBindingGenerator.GenerateUnityLuaBinding();
 		}
 
 		[MenuItem("Lua/Build All Lua AssetBundles - OSX")]
