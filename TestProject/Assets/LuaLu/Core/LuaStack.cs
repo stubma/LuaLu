@@ -212,8 +212,11 @@
 		/// <param name="L">lua state</param>
 		[MonoPInvokeCallback(typeof(LuaFunction))]
 		static int LuaLoader(IntPtr L) {
-			// original filepath
+			// original filepath, remove extension
 			string requirePath = LuaLib.luaL_checkstring(L, 1);
+			if(requirePath.EndsWith(".lua")) {
+				requirePath = requirePath.Substring(0, requirePath.Length - 4);
+			}
 
 			// text asset of lua
 			TextAsset luaAsset = null;
