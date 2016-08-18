@@ -68,7 +68,7 @@
 				foreach(string asset in assets) {
 					// get copy path
 					bool coreLua = asset.StartsWith(LuaConst.CORE_LUA_PREFIX);
-					string originalFolder = Path.GetDirectoryName(asset);
+					string originalFolder = Path.GetDirectoryName(asset) + "/";
 					string folder = LuaConst.GENERATED_LUA_PREFIX + originalFolder.Substring(coreLua ? LuaConst.CORE_LUA_PREFIX.Length : LuaConst.USER_LUA_PREFIX.Length);
 					string filename = Path.GetFileName(asset) + ".bytes";
 					string peerPath = Path.Combine(folder, filename);

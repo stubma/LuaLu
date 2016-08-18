@@ -1,4 +1,4 @@
-cc = cc or {}
+u3d = u3d or {}
 
 local function create()
     local arg_table = {}
@@ -49,10 +49,10 @@ local function register(desc, name)
     assert(type(func) == "function")
     table.remove(desc)
     
-    -- decide package name, if not specified, put it in cc
+    -- decide package name, if not specified, put it in u3d
     local env = desc[#desc]
     if type(env) ~= "table" then
-        env = cc
+        env = u3d
     else
         table.remove(desc)
     end
@@ -79,13 +79,13 @@ local function register(desc, name)
 end
 
 --[[ 
-    define overload function in cc module
+    define overload function in u3d module
     example usage:
     overload.testFunction {
         "string",
         "table", -- for lua table
         "class", -- for userdata or table
-        package_name, -- optional, if not set, the test function is put in cc namespace by default
+        package_name, -- optional, if not set, the test function is put in u3d namespace by default
         function(s, t, c)
             -- put your code
         end
@@ -95,7 +95,7 @@ end
     function should be placed in the end, and put every argument type string
     before it. argument type string can be "number", "string", "table", "userdata", "...",
     and one more type "class" which means "userdata" or "table", mainly used for builtin and
-    inherited CCObject subclass
+    inherited Object subclass
 --]]
 overload = setmetatable({}, {
                         __index = function (t,k)

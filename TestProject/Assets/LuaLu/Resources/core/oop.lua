@@ -19,8 +19,8 @@ end
 
 -- declare a class, the super can be a function which returns a user type or
 -- a table. it will return class itself, which actually is a table too
-local CC_INHERITED_FROM_NATIVE_CLASS = 1
-local CC_INHERITED_FROM_LUA = 2
+local U3D_INHERITED_FROM_C_SHARP_CLASS = 1
+local U3D_INHERITED_FROM_LUA = 2
 function class(classname, super)
     local superType = type(super)
     local cls = {}
@@ -42,7 +42,7 @@ function class(classname, super)
         end
     end
 
-    if superType == "function" or (super and super.__ctype == CC_INHERITED_FROM_NATIVE_CLASS) then
+    if superType == "function" or (super and super.__ctype == U3D_INHERITED_FROM_C_SHARP_CLASS) then
         if superType == "table" then
             -- copy fields from super
             for k,v in pairs(super) do cls[k] = v end
@@ -55,7 +55,7 @@ function class(classname, super)
         cls.ctor = function() end
         cls.dtor = function() end
         cls.__cname = classname
-        cls.__ctype = CC_INHERITED_FROM_NATIVE_CLASS
+        cls.__ctype = U3D_INHERITED_FROM_C_SHARP_CLASS
 
         function cls.new(...)
             local instance = cls.__create(...)
@@ -83,7 +83,7 @@ function class(classname, super)
         cls.ctor = function() end
         cls.dtor = function() end
         cls.__cname = classname
-        cls.__ctype = CC_INHERITED_FROM_LUA
+        cls.__ctype = U3D_INHERITED_FROM_LUA
         cls.__index = cls
 
         function cls.new(...)

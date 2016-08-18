@@ -39,6 +39,11 @@
 			}
 		}
 
+		void Awake() {
+			// init global lua state
+			LuaStack.InitGlobalState();
+		}
+
 		void Start() {
 			// if not valid, return
 			if(!m_valid) {

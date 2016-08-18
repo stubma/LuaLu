@@ -11,7 +11,7 @@
 				bool userLua = asset.StartsWith(LuaConst.USER_LUA_PREFIX);
 				if(coreLua || userLua) {
 					// get copy path
-					string originalFolder = Path.GetDirectoryName(asset);
+					string originalFolder = Path.GetDirectoryName(asset) + "/";
 					string folder = LuaConst.GENERATED_LUA_PREFIX + originalFolder.Substring(coreLua ? LuaConst.CORE_LUA_PREFIX.Length : LuaConst.USER_LUA_PREFIX.Length);
 					string filename = Path.GetFileName(asset) + ".bytes";
 					string finalPath = Path.Combine(folder, filename);
@@ -27,11 +27,7 @@
 					reader.Close();
 
 					// write to copy
-					FileStream fs = new FileStream(finalPath, FileMode.OpenOrCreate, FileAccess.Write);
-					StreamWriter writer = new StreamWriter(fs);
-					writer.Write(fileData);
-					writer.Close();
-					fs.Close();
+					File.WriteAllText(finalPath, fileData);
 
 					// return
 					return true;
@@ -47,7 +43,7 @@
 				bool userLua = asset.StartsWith(LuaConst.USER_LUA_PREFIX);
 				if(coreLua || userLua) {
 					// get copy path
-					string originalFolder = Path.GetDirectoryName(asset);
+					string originalFolder = Path.GetDirectoryName(asset) + "/";
 					string folder = LuaConst.GENERATED_LUA_PREFIX + originalFolder.Substring(coreLua ? LuaConst.CORE_LUA_PREFIX.Length : LuaConst.USER_LUA_PREFIX.Length);
 					string filename = Path.GetFileName(asset) + ".bytes";
 					string finalPath = Path.Combine(folder, filename);

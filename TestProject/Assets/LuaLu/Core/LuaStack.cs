@@ -10,6 +10,7 @@
 	using System.Threading;
 	using System.Text;
 	using UnityEngine;
+	using LuaLu;
 
 	/// <summary>
 	/// a custom converter for lua returned value
@@ -37,6 +38,9 @@
 		// lock
 		private static object s_lockRoot = new System.Object();
 
+		// global init flag
+		private static volatile bool s_globalInited = false;
+
 		/// <summary>
 		/// shared lua stack, a.k.a. global lua state
 		/// </summary>
@@ -50,6 +54,19 @@
 				}
 			}
 			return s_sharedInstance;
+		}
+
+		/// <summary>
+		/// initialize global lua state, and load core lua scripts
+		/// </summary>
+		public static void InitGlobalState() {
+			if(!s_globalInited) {
+				lock(s_lockRoot) {
+					LuaStack L = SharedInstance();
+					L.ExecuteString("require(\"core/__init__\")");
+					s_globalInited = true;
+				}
+			}
 		}
 
 		public LuaStack() {
@@ -76,6 +93,9 @@
 			} else {
 				Debug.Log("Fatal error: Failed to create lua state!");
 			}
+
+			// add lua loader
+			AddLuaLoader(new LuaFunction(LuaLoader));
 		}
 
 		/// <summary>
@@ -142,7 +162,19 @@
 		[MonoPInvokeCallback(typeof(LuaFunction))]
 		static int LuaLoader(IntPtr L) {
 			// original filepath
-			string originalPath = LuaLib.luaL_checkstring(L, 1);
+			string pathWithoutExt = LuaLib.luaL_checkstring(L, 1);
+			string path = pathWithoutExt + ".lua";
+
+			// load it from resource
+			TextAsset t = Resources.Load<TextAsset>(path);
+			if(t != null) {
+				if(LuaLib.luaL_loadbuffer(L, t.bytes, t.bytes.Length, path) != 0) {
+					Debug.Log(string.Format("error loading module {0} from file{1} :\n\t{2}",
+						LuaLib.lua_tostring(L, 1), path, LuaLib.lua_tostring(L, -1)));
+				}
+			} else {
+				Debug.Log(string.Format("Can't get lua file data from {0}", path));
+			}
 
 			return 1;
 		}
@@ -186,7 +218,7 @@
 		/// add custom lua file loader
 		/// </summary>
 		/// <param name="func">lua loader function</param>
-		public void addLuaLoader(LuaFunction func) {
+		public void AddLuaLoader(LuaFunction func) {
 			if(func == null) {
 				return;
 			}
