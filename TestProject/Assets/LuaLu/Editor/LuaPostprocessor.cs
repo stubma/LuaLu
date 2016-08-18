@@ -77,6 +77,14 @@
 			for(int i = 0; i < movedAssets.Length; i++) {
 				changed = DeleteLuaTextAsset(movedFromPath[i]);
 				changed = GenerateLuaTextAsset(movedAssets[i]);
+
+				// auto change lua component file path
+				LuaComponent[] luaComps = Object.FindObjectsOfType<LuaComponent>();
+				foreach(LuaComponent lua in luaComps) {
+					if(lua.m_luaFile == movedFromPath[i]) {
+						lua.m_luaFile = movedAssets[i];
+					}
+				}
 			}
 
 			// refresh
