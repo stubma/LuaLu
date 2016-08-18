@@ -99,7 +99,7 @@
 			}
 
 			// write a csv to save bundle names
-			string abnCSVFile = LuaConst.GENERATED_LUA_PREFIX + "lua_asset_bundles.txt";
+			string abnCSVFile = LuaConst.GENERATED_LUA_PREFIX + LuaConst.LUA_ASSET_BUNDLE_LIST_FILE + ".txt";
 			string csvData = string.Join("\n", assetBundleNames.ToArray());
 			File.WriteAllText(abnCSVFile, csvData);
 

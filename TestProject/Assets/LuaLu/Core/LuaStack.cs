@@ -29,6 +29,12 @@
 		// flag indicating calling in lua
 		private int m_callFromLua;
 
+		// lua asset bundle list
+		private static List<string> s_luaAssetBundleNames;
+
+		// lua files in asset bundle
+		private static Dictionary<string, List<string>> s_bundledLuaFiles;
+
 		// for log support
 		public delegate void LogDelegate(string str);
 
@@ -40,6 +46,42 @@
 
 		// global init flag
 		private static volatile bool s_globalInited = false;
+
+		static LuaStack() {
+			// init static
+			s_luaAssetBundleNames = new List<string>();
+			s_bundledLuaFiles = new Dictionary<string, List<string>>();
+
+			// load lua asset bundle names and load lua file list in bundles
+			TextAsset t = Resources.Load<TextAsset>(LuaConst.LUA_ASSET_BUNDLE_LIST_FILE);
+			if(t != null) {
+				StringReader r = new StringReader(t.text);
+				string line = r.ReadLine();
+				while(line != null) {
+					if(line != "") {
+						s_luaAssetBundleNames.Add(line);
+
+						// load file list
+						List<string> files = new List<string>();
+						AssetBundle ab = LoadAssetBundle(line);
+						if(ab != null) {
+							string[] fileArray = ab.GetAllAssetNames();
+							foreach(string f in fileArray) {
+								string resPath = f.Substring(LuaConst.GENERATED_LUA_PREFIX.Length);
+								string resDir = Path.GetDirectoryName(resPath);
+								string resName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(resPath));
+								string requirePath = Path.Combine(resDir, resName);
+								files.Add(requirePath);
+							}
+							s_bundledLuaFiles[line] = files;
+							ab.Unload(false);
+						}
+					}
+					line = r.ReadLine();
+				}
+				r.Close();
+			}
+		}
 
 		/// <summary>
 		/// shared lua stack, a.k.a. global lua state
@@ -96,6 +138,15 @@
 
 			// add lua loader
 			AddLuaLoader(new LuaFunction(LuaLoader));
+		}
+
+		private static AssetBundle LoadAssetBundle(string abName) {
+			string abPath = Application.persistentDataPath + "/../assetbundles/" + abName;
+			if(File.Exists(abPath)) { 
+				return AssetBundle.LoadFromFile(abPath);
+			} else {
+				return null;
+			}
 		}
 
 		/// <summary>
@@ -162,13 +213,41 @@
 		[MonoPInvokeCallback(typeof(LuaFunction))]
 		static int LuaLoader(IntPtr L) {
 			// original filepath
-			string pathWithoutExt = LuaLib.luaL_checkstring(L, 1);
-			string path = pathWithoutExt + ".lua";
+			string requirePath = LuaLib.luaL_checkstring(L, 1);
 
-			// load it from resource
-			TextAsset t = Resources.Load<TextAsset>(path);
-			if(t != null) {
-				if(LuaLib.luaL_loadbuffer(L, t.bytes, t.bytes.Length, path) != 0) {
+			// text asset of lua
+			TextAsset luaAsset = null;
+
+			// first check asset bundles, asset bundle use lowercase 
+			// so we have to convert path to lowercase
+			string lowerRequirePath = requirePath.ToLower();
+			foreach(string bn in s_luaAssetBundleNames) {
+				if(s_bundledLuaFiles.ContainsKey(bn)) {
+					List<string> files = s_bundledLuaFiles[bn];
+					if(files.Contains(lowerRequirePath)) {
+						// try to get asset from asset bundle
+						AssetBundle ab = LoadAssetBundle(bn);
+						if(ab != null) {
+							string abPath = LuaConst.GENERATED_LUA_PREFIX.ToLower() + lowerRequirePath + ".lua.bytes";
+							luaAsset = ab.LoadAsset<TextAsset>(abPath);
+							ab.Unload(false);
+						}
+
+						// end search if matched
+						break;
+					}
+				}
+			}
+
+			// try to get asset from resource
+			string path = requirePath + ".lua";
+			if(luaAsset == null) {
+				luaAsset = Resources.Load<TextAsset>(path);
+			}
+
+			// load lua
+			if(luaAsset != null) {
+				if(LuaLib.luaL_loadbuffer(L, luaAsset.bytes, luaAsset.bytes.Length, path) != 0) {
 					Debug.Log(string.Format("error loading module {0} from file{1} :\n\t{2}",
 						LuaLib.lua_tostring(L, 1), path, LuaLib.lua_tostring(L, -1)));
 				}
