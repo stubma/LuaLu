@@ -43,21 +43,26 @@
 			serializedObject.Update ();
 
 			// text field for lua file path
-			EditorGUILayout.DelayedTextField (m_luaFileProp);
+			EditorGUILayout.BeginHorizontal();
+			GUILayout.Label("Lua File:");
+			EditorGUILayout.LabelField(Path.GetFileNameWithoutExtension(m_luaFileProp.stringValue), EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight), GUILayout.ExpandWidth(true));
+			Rect filenameRect = GUILayoutUtility.GetLastRect();
+			EditorGUILayout.EndHorizontal();
 
 			// if file not exist, show error and re-bound button
-			if (!File.Exists (m_luaFileProp.stringValue)) {
+			// if file exists, check file name click, single click to select, double click to open
+			if(!File.Exists(m_luaFileProp.stringValue)) {
 				// create rebound ui
-				EditorGUILayout.BeginHorizontal ();
-				GUIStyle style = new GUIStyle (EditorStyles.label);
+				EditorGUILayout.BeginHorizontal();
+				GUIStyle style = new GUIStyle(EditorStyles.label);
 				style.normal.textColor = Color.red;
-				EditorGUILayout.LabelField ("The lua file can not be resolved.", style);
-				if (GUILayout.Button ("Rebound")) {
-					string path = EditorUtility.OpenFilePanel ("Locate Lua Script", "", "lua");
-					if (path.Length != 0) {
+				EditorGUILayout.LabelField("The lua file can not be located.", style);
+				if(GUILayout.Button("Browse")) {
+					string path = EditorUtility.OpenFilePanel("Locate Lua Script", "", "lua");
+					if(path.Length != 0) {
 						string appPath = Directory.GetParent(Application.dataPath).FullName;
-						if (path.StartsWith (appPath)) {
-							path = path.Substring (appPath.Length);
+						if(path.StartsWith(appPath)) {
+							path = path.Substring(appPath.Length);
 							if(path.StartsWith("/")) {
 								path = path.Substring(1);
 							}
@@ -66,6 +71,28 @@
 					}
 				}
 				EditorGUILayout.EndHorizontal();
+			} else {
+				// check file name click, single click to select, double click to open
+				Event e = Event.current;
+				if(e.type == EventType.MouseDown && e.button == 0 && filenameRect.Contains(e.mousePosition)) {
+					if(e.clickCount == 1) {
+						UnityEngine.Object asset = AssetDatabase.LoadMainAssetAtPath(m_luaFileProp.stringValue);
+						EditorGUIUtility.PingObject(asset);
+						e.Use();
+					} else if(e.clickCount == 2) {
+						UnityEngine.Object asset = AssetDatabase.LoadMainAssetAtPath(m_luaFileProp.stringValue);
+						AssetDatabase.OpenAsset(asset);
+						e.Use();
+					}
+				}
+
+				// check lua folder, must in Assets/Resources
+				if(!m_luaFileProp.stringValue.StartsWith("Assets/Resources/")) {
+					GUIStyle style = new GUIStyle(EditorStyles.label);
+					style.normal.textColor = Color.red;
+					style.wordWrap = true;
+					EditorGUILayout.LabelField("Currently you must place lua script in Assets/Resources folder, otherwise it won't run", style);
+				}
 			}
 				
 			// Apply changes to the serializedProperty - always do this in the end of OnInspectorGUI.
