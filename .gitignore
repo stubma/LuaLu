@@ -20,7 +20,6 @@
 *.booproj
 *.svd
 
-
 # Unity3D generated meta files
 *.pidb.meta
 
@@ -30,3 +29,6 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+
+# OSX
+.DS_Store
