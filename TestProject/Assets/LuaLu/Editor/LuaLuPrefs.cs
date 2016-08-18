@@ -17,11 +17,8 @@
 		private const string PREF_LUA_EDITOR_ARGUMENTS = "com.luma.lualu.editor.args";
 		private const string PREF_ZERO_BRANE_STUDIO_FOLDER = "com.luma.lualu.zbs.folder";
 
-		// Have we loaded the prefs yet
-		private static bool s_prefsLoaded = false;
-
 		// editor choosed
-		private static LuaEditor s_activeEditor = LuaEditor.SYSTEM_DEFAULT;
+		private static LuaEditor s_activeEditor;
 
 		// custom editor executable
 		private static string s_customEditorExecutable = "";
@@ -48,17 +45,15 @@
 			return s_customEditorArguments;
 		}
 
+		static LuaLuPrefs() {
+			s_activeEditor = (LuaEditor)EditorPrefs.GetInt(PREF_LUA_EDITOR, (int)LuaEditor.SYSTEM_DEFAULT);
+			s_customEditorExecutable = EditorPrefs.GetString(PREF_LUA_EDITOR_EXECUTABLE, "");
+			s_customEditorArguments = EditorPrefs.GetString(PREF_LUA_EDITOR_ARGUMENTS, "");
+			s_zbsFolder = EditorPrefs.GetString(PREF_ZERO_BRANE_STUDIO_FOLDER, "");
+		}
+
 		[PreferenceItem("LuaLu")]
 		public static void OnPreferenceGUI() {
-			// load prefs
-			if(!s_prefsLoaded) {
-				s_activeEditor = (LuaEditor)EditorPrefs.GetInt(PREF_LUA_EDITOR, (int)LuaEditor.SYSTEM_DEFAULT);
-				s_customEditorExecutable = EditorPrefs.GetString(PREF_LUA_EDITOR_EXECUTABLE, "");
-				s_customEditorArguments = EditorPrefs.GetString(PREF_LUA_EDITOR_ARGUMENTS, "");
-				s_zbsFolder = EditorPrefs.GetString(PREF_ZERO_BRANE_STUDIO_FOLDER, "");
-				s_prefsLoaded = true;
-			}
-
 			// load ui
 			{
 				// style
