@@ -7,8 +7,6 @@
 	using System;
 
 	public class LuaMenu : ScriptableObject {
-		private const string ASSET_BUNDLE_OUTPUT_FOLDER = "Assets/AssetBundles";
-
 		[MenuItem("Lua/Re-Generate Unity Lua Binding", false, 1)]  
 		static void MenuGenerateBinding() {  
 			Transform[] transforms = Selection.GetTransforms(SelectionMode.TopLevel | SelectionMode.OnlyUserModifiable);  
@@ -69,9 +67,9 @@
 				// iterate assets in this bundle, assign same bundle name to peer
 				foreach(string asset in assets) {
 					// get copy path
-					bool coreLua = asset.StartsWith(LuaPostprocessor.CORE_LUA_PREFIX);
+					bool coreLua = asset.StartsWith(LuaConst.CORE_LUA_PREFIX);
 					string originalFolder = Path.GetDirectoryName(asset);
-					string folder = LuaPostprocessor.GENERATED_LUA_PREFIX + originalFolder.Substring(coreLua ? LuaPostprocessor.CORE_LUA_PREFIX.Length : LuaPostprocessor.USER_LUA_PREFIX.Length);
+					string folder = LuaConst.GENERATED_LUA_PREFIX + originalFolder.Substring(coreLua ? LuaConst.CORE_LUA_PREFIX.Length : LuaConst.USER_LUA_PREFIX.Length);
 					string filename = Path.GetFileName(asset) + ".bytes";
 					string peerPath = Path.Combine(folder, filename);
 
@@ -96,18 +94,18 @@
 			bundleAssetMap.Remove(".");
 
 			// ensure generated folder exists
-			if(!Directory.Exists(LuaPostprocessor.GENERATED_LUA_PREFIX)) {
-				Directory.CreateDirectory(LuaPostprocessor.GENERATED_LUA_PREFIX);
+			if(!Directory.Exists(LuaConst.GENERATED_LUA_PREFIX)) {
+				Directory.CreateDirectory(LuaConst.GENERATED_LUA_PREFIX);
 			}
 
 			// write a csv to save bundle names
-			string abnCSVFile = LuaPostprocessor.GENERATED_LUA_PREFIX + "lua_asset_bundles.txt";
+			string abnCSVFile = LuaConst.GENERATED_LUA_PREFIX + "lua_asset_bundles.txt";
 			string csvData = string.Join("\n", assetBundleNames.ToArray());
 			File.WriteAllText(abnCSVFile, csvData);
 
 			// ensure folder exists
-			if(!Directory.Exists(ASSET_BUNDLE_OUTPUT_FOLDER)) {
-				Directory.CreateDirectory(ASSET_BUNDLE_OUTPUT_FOLDER);
+			if(!Directory.Exists(LuaConst.ASSET_BUNDLE_OUTPUT_FOLDER)) {
+				Directory.CreateDirectory(LuaConst.ASSET_BUNDLE_OUTPUT_FOLDER);
 			}
 
 			// build bundles
@@ -120,7 +118,7 @@
 				buildMap[i].assetBundleVariant = ai.assetBundleVariant;
 				buildMap[i].assetNames = assets.ToArray();
 			}
-			BuildPipeline.BuildAssetBundles(ASSET_BUNDLE_OUTPUT_FOLDER, buildMap, BuildAssetBundleOptions.None, targetPlatform);
+			BuildPipeline.BuildAssetBundles(LuaConst.ASSET_BUNDLE_OUTPUT_FOLDER, buildMap, BuildAssetBundleOptions.None, targetPlatform);
 
 			// refresh
 			AssetDatabase.Refresh();

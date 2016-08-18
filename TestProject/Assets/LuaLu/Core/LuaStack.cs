@@ -134,6 +134,19 @@
 			return 0;
 		}
 
+		/// <summary>
+		/// custom lua loader for unity
+		/// </summary>
+		/// <returns>useless, just ignored</returns>
+		/// <param name="L">lua state</param>
+		[MonoPInvokeCallback(typeof(LuaFunction))]
+		static int LuaLoader(IntPtr L) {
+			// original filepath
+			string originalPath = LuaLib.luaL_checkstring(L, 1);
+
+			return 1;
+		}
+
 		public void Close() {
 			Dispose();
 		}
@@ -167,6 +180,35 @@
 			LuaLib.lua_pushstring(L, string.Format("{0};{1}/?.lua", cur_path, path));  /* L: package path newpath */
 			LuaLib.lua_setfield(L, -3, "path"); /* package.path = newpath, L: package path */
 			LuaLib.lua_pop(L, 2); /* L: - */
+		}
+
+		/// <summary>
+		/// add custom lua file loader
+		/// </summary>
+		/// <param name="func">lua loader function</param>
+		public void addLuaLoader(LuaFunction func) {
+			if(func == null) {
+				return;
+			}
+
+			// stack content after the invoking of the function
+			// get loader table
+			LuaLib.lua_getglobal(L, "package");                                  /* L: package */
+			LuaLib.lua_getfield(L, -1, "loaders");                               /* L: package, loaders */
+
+			// insert loader into index 2
+			LuaLib.lua_pushcfunction(L, Marshal.GetFunctionPointerForDelegate(func));                                   /* L: package, loaders, func */
+			for(int i = LuaLib.lua_objlen(L, -2) + 1; i > 2; --i) {
+				LuaLib.lua_rawgeti(L, -2, i - 1);                                /* L: package, loaders, func, function */
+				// we call lua_rawgeti, so the loader table now is at -3
+				LuaLib.lua_rawseti(L, -3, i);                                    /* L: package, loaders, func */
+			}
+			LuaLib.lua_rawseti(L, -2, 2);                                        /* L: package, loaders */
+
+			// set loaders into package
+			LuaLib.lua_setfield(L, -2, "loaders");                               /* L: package */
+
+			LuaLib.lua_pop(L, 1);
 		}
 
 		/// <summary>

@@ -5,18 +5,14 @@
 	using System.IO;
 
 	public class LuaPostprocessor : AssetPostprocessor {
-		public const string CORE_LUA_PREFIX = "Assets/LuaLu/Resources/";
-		public const string USER_LUA_PREFIX = "Assets/Resources/";
-		public const string GENERATED_LUA_PREFIX = "Assets/Generated/Resources/";
-
 		private static bool GenerateLuaTextAsset(string asset) {
 			if(asset.EndsWith(".lua")) {
-				bool coreLua = asset.StartsWith(CORE_LUA_PREFIX);
-				bool userLua = asset.StartsWith(USER_LUA_PREFIX);
+				bool coreLua = asset.StartsWith(LuaConst.CORE_LUA_PREFIX);
+				bool userLua = asset.StartsWith(LuaConst.USER_LUA_PREFIX);
 				if(coreLua || userLua) {
 					// get copy path
 					string originalFolder = Path.GetDirectoryName(asset);
-					string folder = GENERATED_LUA_PREFIX + originalFolder.Substring(coreLua ? CORE_LUA_PREFIX.Length : USER_LUA_PREFIX.Length);
+					string folder = LuaConst.GENERATED_LUA_PREFIX + originalFolder.Substring(coreLua ? LuaConst.CORE_LUA_PREFIX.Length : LuaConst.USER_LUA_PREFIX.Length);
 					string filename = Path.GetFileName(asset) + ".bytes";
 					string finalPath = Path.Combine(folder, filename);
 
@@ -47,12 +43,12 @@
 
 		private static bool DeleteLuaTextAsset(string asset) {
 			if(asset.EndsWith(".lua")) {
-				bool coreLua = asset.StartsWith(CORE_LUA_PREFIX);
-				bool userLua = asset.StartsWith(USER_LUA_PREFIX);
+				bool coreLua = asset.StartsWith(LuaConst.CORE_LUA_PREFIX);
+				bool userLua = asset.StartsWith(LuaConst.USER_LUA_PREFIX);
 				if(coreLua || userLua) {
 					// get copy path
 					string originalFolder = Path.GetDirectoryName(asset);
-					string folder = GENERATED_LUA_PREFIX + originalFolder.Substring(coreLua ? CORE_LUA_PREFIX.Length : USER_LUA_PREFIX.Length);
+					string folder = LuaConst.GENERATED_LUA_PREFIX + originalFolder.Substring(coreLua ? LuaConst.CORE_LUA_PREFIX.Length : LuaConst.USER_LUA_PREFIX.Length);
 					string filename = Path.GetFileName(asset) + ".bytes";
 					string finalPath = Path.Combine(folder, filename);
 
