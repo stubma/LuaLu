@@ -13,7 +13,7 @@
 		static LuaBindingGenerator() {
 			INCLUDE_ASSEMBLIES = new string[] {
 				"UnityScript.Lang"
-			}
+			};
 		}
 
 		public static void GenerateUnityLuaBinding() {
