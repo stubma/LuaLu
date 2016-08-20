@@ -15,7 +15,7 @@
 		private static int m_fileIndex = 1;
 
 		// default file name
-		public string m_luaFile = DefaultFileName();
+		public string m_luaFile;
 
 		// is lua file path valid?
 		private bool m_valid = false;
@@ -33,6 +33,12 @@
 			return fn;
 		}
 
+		public LuaComponent() {
+			#if UNITY_EDITOR
+			m_luaFile = DefaultFileName();
+			#endif
+		}
+
 		void OnValidate() {
 			// check lua file path, it must be saved in Assets/Resources
 			if(!m_luaFile.StartsWith(LuaConst.USER_LUA_PREFIX)) {
@@ -46,6 +52,11 @@
 		void Awake() {
 			// init global lua state
 			LuaStack.InitGlobalState();
+
+			// validate
+			#if !UNITY_EDITOR
+			OnValidate();
+			#endif
 
 			// load script
 			if(m_valid && !m_loaded) {
