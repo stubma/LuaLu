@@ -76,12 +76,22 @@
 		[MarshalAs(UnmanagedType.LPStr)]
 		public string name;
 
+		// in il2cpp enabled platform, here is a marshalling bug for reference type,
+		// so we have to use IntPtr directly
+		// issue tracker: https://issuetracker.unity3d.com/issues/il2cpp-marshaldirectiveexception-marshaling-of-delegates-as-fields-of-a-struct-is-not-working
 		public IntPtr func;
 
 		public luaL_Reg(string n, LuaFunction f) {
 			name = n;
 			func = f == null ? IntPtr.Zero : Marshal.GetFunctionPointerForDelegate(f);
 		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct tolua_Error {
+		public int index;
+		public int array;
+		public IntPtr type;
 	}
 
 	/// <summary>
@@ -93,6 +103,9 @@
 	public class LuaLib {
 		// option for multiple returns in `lua_pcall' and `lua_call'
 		public static int LUA_MULTRET = -1;
+
+		// tolua no peer
+		public const int tolua_NOPEER = (int)LuaIndex.LUA_REGISTRYINDEX;
 
 		// lua lib name
 		#if UNITY_IPHONE
@@ -124,10 +137,8 @@
 
 		// pending api
 //		LUA_API IntPtr (lua_newstate) (lua_Alloc f, void *ud);
-//		LUA_API lua_CFunction (lua_atpanic) (IntPtr L, lua_CFunction panicf);
 //		LUA_API const char *(lua_pushvfstring) (IntPtr L, const char *fmt, va_list argp);
 //		LUA_API const char *(lua_pushfstring) (IntPtr L, const char *fmt, ...);
-//		LUA_API int   (lua_cpcall) (lua_State *L, lua_CFunction func, void *ud);
 //		LUA_API int   (lua_load) (lua_State *L, lua_Reader reader, void *dt, const char *chunkname);
 //		LUA_API int (lua_dump) (lua_State *L, lua_Writer writer, void *data);
 //		LUA_API lua_Alloc (lua_getallocf) (lua_State *L, void **ud);
@@ -144,6 +155,9 @@
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern IntPtr lua_newthread(IntPtr L);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern IntPtr lua_atpanic(IntPtr L, LuaFunction panicf);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern bool lua_isnumber(IntPtr L, int idx);
@@ -297,6 +311,9 @@
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int lua_pcall(IntPtr L, int nArgs, int nResults, int errfunc);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int lua_cpcall(IntPtr L, LuaFunction func, IntPtr ud);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int lua_yield(IntPtr L, int nresults);
@@ -635,5 +652,219 @@
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void set_unity_log_func(IntPtr fp);
+
+		/////////////////////////////////////////////
+		// tolua
+		/////////////////////////////////////////////
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_stack_dump(IntPtr L, string label);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int lua_isusertype(IntPtr L, int lo, string type);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern string tolua_typename(IntPtr L, int lo);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_error(IntPtr L, string msg, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isnoobj(IntPtr L, int lo, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isfunction(IntPtr L, int lo, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isvalue(IntPtr L, int lo, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isvaluenil(IntPtr L, int lo, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isboolean(IntPtr L, int lo, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isnumber(IntPtr L, int lo, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isstring(IntPtr L, int lo, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_istable(IntPtr L, int lo, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isusertable(IntPtr L, int lo, string type, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isuserdata(IntPtr L, int lo, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isusertype(IntPtr L, int lo, string type, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isvaluearray(IntPtr L, int lo, int dim, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isbooleanarray(IntPtr L, int lo, int dim, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isnumberarray(IntPtr L, int lo, int dim, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isstringarray(IntPtr L, int lo, int dim, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_istablearray(IntPtr L, int lo, int dim, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isuserdataarray(IntPtr L, int lo, int dim, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_isusertypearray(IntPtr L, int lo, string type, int dim, int def, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_open(IntPtr L);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern IntPtr tolua_copy(IntPtr L, IntPtr value, uint size);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_register_gc(IntPtr L, int lo);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_default_collect(IntPtr L);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_usertype(IntPtr L, string type);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_beginmodule(IntPtr L, string name);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_endmodule(IntPtr L);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_module(IntPtr L, string name, int hasvar);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_class(IntPtr L, string name, string _base, LuaFunction col);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_function(IntPtr L, string name, LuaFunction func);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_constant(IntPtr L, string name, double value);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_variable(IntPtr L, string name, LuaFunction get, LuaFunction set);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_array(IntPtr L, string name, LuaFunction get, LuaFunction set);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_addbase(IntPtr L, string name, string _base);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushvalue(IntPtr L, int lo);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushboolean(IntPtr L, int value);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushnumber(IntPtr L, double value);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushstring(IntPtr L, string value);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushuserdata(IntPtr L, IntPtr value);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushusertype(IntPtr L, IntPtr value, string type);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushusertype_and_takeownership(IntPtr L, IntPtr value, string type);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushfieldvalue(IntPtr L, int lo, int index, int v);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushfieldboolean(IntPtr L, int lo, int index, int v);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushfieldnumber(IntPtr L, int lo, int index, double v);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushfieldstring(IntPtr L, int lo, int index, string v);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushfielduserdata(IntPtr L, int lo, int index, IntPtr v);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushfieldusertype(IntPtr L, int lo, int index, IntPtr v, string type);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushfieldusertype_and_takeownership(IntPtr L, int lo, int index, IntPtr v, string type);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_pushusertype_and_addtoroot(IntPtr L, IntPtr value, string type);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_add_value_to_root(IntPtr L, IntPtr value);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_remove_value_from_root(IntPtr L, IntPtr value);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern double tolua_tonumber(IntPtr L, int narg, double def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern string tolua_tostring(IntPtr L, int narg, string def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern IntPtr tolua_touserdata(IntPtr L, int narg, IntPtr def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern IntPtr tolua_tousertype(IntPtr L, int narg, IntPtr def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_tovalue(IntPtr L, int narg, int def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_toboolean(IntPtr L, int narg, int def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern double tolua_tofieldnumber(IntPtr L, int lo, int index, double def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern string tolua_tofieldstring(IntPtr L, int lo, int index, string def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern IntPtr tolua_tofielduserdata(IntPtr L, int lo, int index, IntPtr def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern IntPtr tolua_tofieldusertype(IntPtr L, int lo, int index, IntPtr def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_tofieldvalue(IntPtr L, int lo, int index, int def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_getfieldboolean(IntPtr L, int lo, int index, int def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_dobuffer(IntPtr L, byte[] B, uint size, string name);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int class_gc_event(IntPtr L);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern string tolua_tocppstring(IntPtr L, int narg, string def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern string tolua_tofieldcppstring(IntPtr L, int lo, int index, string def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_fast_isa(IntPtr L, int mt_indexa, int mt_indexb, int super_index);
 	}
 }
