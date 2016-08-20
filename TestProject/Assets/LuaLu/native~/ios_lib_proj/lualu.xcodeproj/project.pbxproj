@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		922921E61D687B21000B2705 /* tolua_fix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 922921E41D687B21000B2705 /* tolua_fix.cpp */; };
 		9262AAA51D641B5100F4972D /* libluajit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9262AAA41D641B5100F4972D /* libluajit.a */; };
 		9262AAA71D641B5A00F4972D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9262AAA61D641B5A00F4972D /* CoreFoundation.framework */; };
 		9262AB101D641B8F00F4972D /* unity_log.c in Sources */ = {isa = PBXBuildFile; fileRef = 9262AAAA1D641B8F00F4972D /* unity_log.c */; };
@@ -49,6 +50,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		922921E41D687B21000B2705 /* tolua_fix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tolua_fix.cpp; sourceTree = "<group>"; };
+		922921E51D687B21000B2705 /* tolua_fix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tolua_fix.h; sourceTree = "<group>"; };
 		9262AA971D641A9600F4972D /* liblualu.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liblualu.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		9262AAA41D641B5100F4972D /* libluajit.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libluajit.a; sourceTree = "<group>"; };
 		9262AAA61D641B5A00F4972D /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
@@ -164,10 +167,12 @@
 		9262AAAE1D641B8F00F4972D /* lua_support */ = {
 			isa = PBXGroup;
 			children = (
+				9262AAC11D641B8F00F4972D /* luasocket */,
 				9262AAAF1D641B8F00F4972D /* cjson */,
 				9262AABD1D641B8F00F4972D /* lfs.c */,
 				9262AABF1D641B8F00F4972D /* lfs.h */,
-				9262AAC11D641B8F00F4972D /* luasocket */,
+				922921E41D687B21000B2705 /* tolua_fix.cpp */,
+				922921E51D687B21000B2705 /* tolua_fix.h */,
 			);
 			name = lua_support;
 			path = ../lua_support;
@@ -300,6 +305,7 @@
 				9262AB1C1D641B8F00F4972D /* options.c in Sources */,
 				9262AB211D641B8F00F4972D /* udp.c in Sources */,
 				9262AB221D641B8F00F4972D /* unix.c in Sources */,
+				922921E61D687B21000B2705 /* tolua_fix.cpp in Sources */,
 				9262AB1D1D641B8F00F4972D /* select.c in Sources */,
 				9262AB171D641B8F00F4972D /* except.c in Sources */,
 				9262AB251D641B8F00F4972D /* tolua_is.c in Sources */,

@@ -16,7 +16,7 @@
 	/// a custom converter for lua returned value
 	/// </summary>
 	public interface IScriptReturnedValueCollector {
-		void collectReturnedValue(IntPtr L);
+		void CollectReturnedValue(IntPtr L);
 	}
 
 	/// <summary>
@@ -28,6 +28,9 @@
 
 		// flag indicating calling in lua
 		private int m_callFromLua;
+
+		// object lua id map
+		private Dictionary<object, int> m_objLuaIdMap = new Dictionary<object, int>();
 
 		// lua asset bundle list
 		private static List<string> s_luaAssetBundleNames;
@@ -125,6 +128,17 @@
 				LuaLib.luaopen_lfs(L);
 				LuaLib.luaopen_cjson(L);
 				LuaLib.luaopen_socket_core(L);
+				LuaLib.toluafix_open(L);
+
+				// register unity classes if lua bindings are generated
+				// use reflect in case bindings are not generate
+				Type t = Type.GetType("LuaLu.lua_register_unity", false);
+				if(t != null) {
+					MethodInfo mi = t.GetMethod("RegisterAll", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(IntPtr) }, null);
+					if(mi != null) {
+						mi.Invoke(null, new object[] { L });
+					}
+				}
 
 				// Register our version of the global "print" function
 				luaL_Reg[] global_functions = {
@@ -206,14 +220,13 @@
 		}
 
 		/// <summary>
-		/// custom lua loader for unity
+		/// Find lua asset from file path relative to Resources, it try asset bundle first, then
+		/// fallback to app Resources if not found
 		/// </summary>
-		/// <returns>useless, just ignored</returns>
-		/// <param name="L">lua state</param>
-		[MonoPInvokeCallback(typeof(LuaFunction))]
-		static int LuaLoader(IntPtr L) {
-			// original filepath, remove extension
-			string requirePath = LuaLib.luaL_checkstring(L, 1);
+		/// <returns>The lua text asset object</returns>
+		/// <param name="requirePath">path in lua require directive</param>
+		static TextAsset FindLuaAsset(string requirePath) {
+			// remove extension
 			if(requirePath.EndsWith(".lua")) {
 				requirePath = requirePath.Substring(0, requirePath.Length - 4);
 			}
@@ -248,14 +261,31 @@
 				luaAsset = Resources.Load<TextAsset>(path);
 			}
 
+			// return
+			return luaAsset;
+		}
+
+		/// <summary>
+		/// custom lua loader for unity
+		/// </summary>
+		/// <returns>useless, just ignored</returns>
+		/// <param name="L">lua state</param>
+		[MonoPInvokeCallback(typeof(LuaFunction))]
+		static int LuaLoader(IntPtr L) {
+			// original filepath, remove extension
+			string requirePath = LuaLib.luaL_checkstring(L, 1);
+
+			// try to find lua asset
+			TextAsset luaAsset = FindLuaAsset(requirePath);
+
 			// load lua
 			if(luaAsset != null) {
-				if(LuaLib.luaL_loadbuffer(L, luaAsset.bytes, luaAsset.bytes.Length, path) != 0) {
+				if(LuaLib.luaL_loadbuffer(L, luaAsset.bytes, luaAsset.bytes.Length, requirePath) != 0) {
 					Debug.Log(string.Format("error loading module {0} from file{1} :\n\t{2}",
-						LuaLib.lua_tostring(L, 1), path, LuaLib.lua_tostring(L, -1)));
+						LuaLib.lua_tostring(L, 1), requirePath, LuaLib.lua_tostring(L, -1)));
 				}
 			} else {
-				Debug.Log(string.Format("Can't get lua file data from {0}", path));
+				Debug.Log(string.Format("Can't get lua file data from {0}", requirePath));
 			}
 
 			return 1;
@@ -325,6 +355,56 @@
 			LuaLib.lua_pop(L, 1);
 		}
 
+		private int GetObjLuaId(object obj) {
+			if(m_objLuaIdMap.ContainsKey(obj)) {
+				return m_objLuaIdMap[obj];
+			} else {
+				return 0;
+			}
+		}
+
+		private void SetObjLuaId(object obj, int luaId) {
+			m_objLuaIdMap[obj] = luaId;
+		}
+
+		/// <summary>
+		/// check if two script function handlers point to same function
+		/// </summary>
+		/// <returns><c>true</c>, if script functions are same, <c>false</c> otherwise.</returns>
+		/// <param name="handler1">function lua handler</param>
+		/// <param name="handler2">function lua handler</param>
+		public bool IsScriptFunctionSame(int handler1, int handler2) {
+			LuaLib.toluafix_get_function_by_refid(L, handler1);
+			LuaLib.toluafix_get_function_by_refid(L, handler2);
+			bool ret = LuaLib.lua_rawequal(L, -1, -2);
+			LuaLib.lua_pop(L, 2);
+			return ret;
+		}
+
+		/// <summary>
+		/// Remove CCObject from lua state
+		/// </summary>
+		/// <param name="obj">object</param>
+		public void RemoveScriptObjectByCCObject(object obj) {
+			LuaLib.toluafix_remove_object_by_refid(L, GetObjLuaId(obj));
+		}
+
+		/// <summary>
+		/// Remove script side user data
+		/// </summary>
+		/// <param name="nRefId">reference id</param>
+		public void RemoveScriptUserData(int nRefId) {
+			LuaLib.toluafix_remove_table_by_refid(L, nRefId);
+		}
+
+		/// <summary>
+		/// Remove Lua function reference
+		/// </summary>
+		/// <param name="nHandler">lua function handler</param>
+		public void RemoveScriptHandler(int nHandler) {
+			LuaLib.toluafix_remove_function_by_refid(L, nHandler);
+		}
+
 		/// <summary>
 		/// Execute script code contained in the given string
 		/// </summary>
@@ -333,6 +413,79 @@
 		public int ExecuteString(string codes) {
 			LuaLib.luaL_loadstring(L, codes);
 			return ExecuteFunction(0, null);
+		}
+
+		/// <summary>
+		/// execute a lua script file
+		/// </summary>
+		/// <returns>zero means execution is ok, non-zero means error</returns>
+		/// <param name="path">The script file path, it should be placed in Assets/Resources</param>
+		public int ExecuteScriptFile(string path) {
+			// remove unecessary prefix
+			if(path.StartsWith(LuaConst.USER_LUA_PREFIX)) {
+				path = path.Substring(LuaConst.USER_LUA_PREFIX.Length);
+			}
+
+			// find lua text asset
+			TextAsset luaAsset = FindLuaAsset(path);
+
+			// if text asset is found
+			if(luaAsset != null) {
+				// do string
+				++m_callFromLua;
+				int nRet = LuaLib.luaL_dostring(L, luaAsset.text);
+				--m_callFromLua;
+
+				// check return
+				if(nRet != 0) {
+					Debug.Log(string.Format("[LUA ERROR] {0}", LuaLib.lua_tostring(L, -1)));
+					LuaLib.lua_pop(L, 1);
+					return nRet;
+				}
+			}
+
+			// default return
+			return 0;
+		}
+
+		public void ExecuteObjectDestructor(object obj) {
+			// top
+			int top = LuaLib.lua_gettop(L);
+
+			// push object
+			Type objType = obj.GetType();
+			PushObject(obj, objType.FullName); // obj
+
+			// push super until none
+			while(true) {
+				LuaLib.lua_pushstring(L, "super"); // obj super[n] "super"
+				LuaLib.lua_gettable(L, -2); // obj super[n+1]
+				if(LuaLib.lua_isnil(L, -1)) {
+					LuaLib.lua_pop(L, 1); // obj super[n+1]
+					break;
+				}
+			}
+
+			// count of obj
+			int count = LuaLib.lua_gettop(L) - top;
+
+			// reverse the super order, make obj at the top
+			for(int i = 0; i < count - 1; i++) {
+				LuaLib.lua_insert(L, top + 1);
+			}
+
+			// call dtor from obj to super, but the argument should always be obj
+			while(count-- > 0) {
+				LuaLib.lua_pushstring(L, "dtor"); // super[n] "dtor"
+				LuaLib.lua_gettable(L, -2); // super[n] dtor
+				if(LuaLib.lua_isnil(L, -1) || !LuaLib.lua_isfunction(L, -1)) {
+					LuaLib.lua_pop(L, 2); // super[n-1]
+				} else {
+					PushObject(obj, objType.FullName); // super[n] dtor obj
+					ExecuteFunction(1, null); // after executed, super[n]
+					LuaLib.lua_pop(L, 1); // super[n-1]
+				}
+			}
 		}
 
 		/// <summary>
@@ -375,7 +528,7 @@
 			// get return value
 			int ret = 0;
 			if(collector != null) {
-				collector.collectReturnedValue(L);
+				collector.CollectReturnedValue(L);
 			} else if(LuaLib.lua_isnumber(L, -1)) {
 				ret = (int)LuaLib.lua_tointeger(L, -1);
 			} else if(LuaLib.lua_isboolean(L, -1)) {
@@ -390,6 +543,105 @@
 			}
 
 			return ret;
+		}
+
+		/// <summary>
+		/// Execute a scripted global function. The function should not take any parameters and should return an integer.
+		/// </summary>
+		/// <returns>The integer value returned from the script function.</returns>
+		/// <param name="functionName">String object holding the name of the function, in the global script environment, that is to be executed.</param>
+		public int ExecuteGlobalFunction(string functionName) {
+			LuaLib.lua_getglobal(L, functionName);       /* query function by name, stack: function */
+			if(!LuaLib.lua_isfunction(L, -1)) {
+				Debug.Log(string.Format("[LUA ERROR] name '{0}' does not represent a Lua function", functionName));
+				LuaLib.lua_pop(L, 1);
+				return 0;
+			}
+			return ExecuteFunction(0, null);
+		}
+
+		public void Clean() {
+			LuaLib.lua_settop(L, 0);
+		}
+
+		public void PushInt(int intValue) {
+			LuaLib.lua_pushinteger(L, intValue);
+		}
+
+		public void PushFloat(float floatValue) {
+			LuaLib.lua_pushnumber(L, floatValue);
+		}
+
+		public void PushBoolean(bool boolValue) {
+			LuaLib.lua_pushboolean(L, boolValue);
+		}
+
+		public void PushString(string stringValue) {
+			LuaLib.lua_pushstring(L, stringValue);
+		}
+
+		public void PushString(string stringValue, int length) {
+			LuaLib.lua_pushlstring(L, Encoding.UTF8.GetBytes(stringValue), length);
+		}
+
+		public void PushNil() {
+			LuaLib.lua_pushnil(L);
+		}
+
+		public void PushObject(object obj, string typeName) {
+			int luaId = 0;
+			LuaLib.toluafix_pushusertype_object(L, obj.GetHashCode(), ref luaId, LuaValueBoxer.Obj2Ptr(obj), typeName);
+			SetObjLuaId(obj, luaId);
+		}
+
+		public void PushArray(Array array) {
+			LuaValueBoxer.array_to_luaval(L, array);
+		}
+
+		public void PushDictionary(Dictionary<string, object> dict) {
+			LuaValueBoxer.dictionary_to_luaval(L, dict);
+		}
+
+		public bool PushFunctionByHandler(int nHandler) {
+			LuaLib.toluafix_get_function_by_refid(L, nHandler);
+			if(!LuaLib.lua_isfunction(L, -1)) {
+				Debug.Log(string.Format("[LUA ERROR] function refid '{0}' does not reference a Lua function", nHandler));
+				LuaLib.lua_pop(L, 1);
+				return false;
+			}
+			return true;
+		}
+
+		public void Pop(int count) {
+			LuaLib.lua_pop(L, count);
+		}
+
+		public int ExecuteFunctionByHandler(int nHandler, int numArgs, IScriptReturnedValueCollector collector) {
+			int ret = 0;
+			if(PushFunctionByHandler(nHandler)) {                                /* L: ... arg1 arg2 ... func */
+				if(numArgs > 0) {
+					LuaLib.lua_insert(L, -(numArgs + 1));                        /* L: ... func arg1 arg2 ... */
+				}
+				ret = ExecuteFunction(numArgs, collector);
+			}
+			LuaLib.lua_settop(L, 0);
+			return ret;
+		}
+
+		public bool handleAssert(string msg) {
+			if(m_callFromLua == 0)
+				return false;
+			LuaLib.lua_pushstring(L, string.Format("ASSERT FAILED ON LUA EXECUTE: {0}", msg != null ? msg : "unknown"));
+			LuaLib.lua_error(L);
+			return true;
+		}
+
+		public int ReallocateScriptHandler(int nHandler) {
+			int nNewHandle = -1;
+			if(PushFunctionByHandler(nHandler)) {
+				nNewHandle = LuaLib.toluafix_ref_function(L, LuaLib.lua_gettop(L), 0);
+			}
+			return nNewHandle;
 		}
 	}
 }

@@ -139,16 +139,16 @@
 //		LUA_API IntPtr (lua_newstate) (lua_Alloc f, void *ud);
 //		LUA_API const char *(lua_pushvfstring) (IntPtr L, const char *fmt, va_list argp);
 //		LUA_API const char *(lua_pushfstring) (IntPtr L, const char *fmt, ...);
-//		LUA_API int   (lua_load) (lua_State *L, lua_Reader reader, void *dt, const char *chunkname);
-//		LUA_API int (lua_dump) (lua_State *L, lua_Writer writer, void *data);
-//		LUA_API lua_Alloc (lua_getallocf) (lua_State *L, void **ud);
-//		LUA_API void lua_setallocf (lua_State *L, lua_Alloc f, void *ud);
-//		LUA_API int lua_getstack (lua_State *L, int level, lua_Debug *ar);
-//		LUA_API int lua_getinfo (lua_State *L, const char *what, lua_Debug *ar);
-//		LUA_API const char *lua_getlocal (lua_State *L, const lua_Debug *ar, int n);
-//		LUA_API const char *lua_setlocal (lua_State *L, const lua_Debug *ar, int n);
-//		LUA_API int lua_sethook (lua_State *L, lua_Hook func, int mask, int count);
-//		LUA_API lua_Hook lua_gethook (lua_State *L);
+//		LUA_API int   (lua_load) (IntPtr L, lua_Reader reader, void *dt, const char *chunkname);
+//		LUA_API int (lua_dump) (IntPtr L, lua_Writer writer, void *data);
+//		LUA_API lua_Alloc (lua_getallocf) (IntPtr L, void **ud);
+//		LUA_API void lua_setallocf (IntPtr L, lua_Alloc f, void *ud);
+//		LUA_API int lua_getstack (IntPtr L, int level, lua_Debug *ar);
+//		LUA_API int lua_getinfo (IntPtr L, const char *what, lua_Debug *ar);
+//		LUA_API const char *lua_getlocal (IntPtr L, const lua_Debug *ar, int n);
+//		LUA_API const char *lua_setlocal (IntPtr L, const lua_Debug *ar, int n);
+//		LUA_API int lua_sethook (IntPtr L, lua_Hook func, int mask, int count);
+//		LUA_API lua_Hook lua_gethook (IntPtr L);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void lua_close(IntPtr L);
@@ -178,13 +178,13 @@
 		public static extern string lua_typename(IntPtr L, int tp);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int lua_equal(IntPtr L, int idx1, int idx2);
+		public static extern bool lua_equal(IntPtr L, int idx1, int idx2);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int lua_rawequal(IntPtr L, int idx1, int idx2);
+		public static extern bool lua_rawequal(IntPtr L, int idx1, int idx2);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int lua_lessthan(IntPtr L, int idx1, int idx2);
+		public static extern bool lua_lessthan(IntPtr L, int idx1, int idx2);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int lua_gettop(IntPtr L);
@@ -256,7 +256,7 @@
 		public static extern void lua_pushcclosure(IntPtr L, IntPtr fn, int n);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void lua_pushboolean(IntPtr L, int b);
+		public static extern void lua_pushboolean(IntPtr L, bool b);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void lua_pushlightuserdata(IntPtr L, IntPtr p);
@@ -454,14 +454,14 @@
 		/////////////////////////////////////////////
 
 		// pending api
-//		LUALIB_API void (luaL_buffinit) (lua_State *L, luaL_Buffer *B);
+//		LUALIB_API void (luaL_buffinit) (IntPtr L, luaL_Buffer *B);
 //		LUALIB_API char *(luaL_prepbuffer) (luaL_Buffer *B);
 //		LUALIB_API void (luaL_addlstring) (luaL_Buffer *B, const char *s, size_t l);
 //		LUALIB_API void (luaL_addstring) (luaL_Buffer *B, const char *s);
 //		LUALIB_API void (luaL_addvalue) (luaL_Buffer *B);
 //		LUALIB_API void (luaL_pushresult) (luaL_Buffer *B);
-//		LUALIB_API void (luaI_openlib) (lua_State *L, const char *libname, const luaL_Reg *l, int nup);
-//		LUALIB_API int (luaL_checkoption) (lua_State *L, int narg, const char *def, const char *const lst[]);
+//		LUALIB_API void (luaI_openlib) (IntPtr L, const char *libname, const luaL_Reg *l, int nup);
+//		LUALIB_API int (luaL_checkoption) (IntPtr L, int narg, const char *def, const char *const lst[]);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void luaL_register(IntPtr L, string libname, luaL_Reg[] l);
@@ -866,5 +866,36 @@
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int tolua_fast_isa(IntPtr L, int mt_indexa, int mt_indexb, int super_index);
+
+		////////////////////////////////////////////
+		// tolua fix
+		////////////////////////////////////////////
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void toluafix_open(IntPtr L);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int toluafix_pushusertype_object(IntPtr L, int refid, ref int p_refid, IntPtr vptr, string vtype);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int toluafix_remove_object_by_refid(IntPtr L, int refid);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int toluafix_ref_function(IntPtr L, int lo, int def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void toluafix_get_function_by_refid(IntPtr L, int refid);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void toluafix_remove_function_by_refid(IntPtr L, int refid);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int toluafix_ref_table(IntPtr L, int lo, int def);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void toluafix_get_table_by_refid(IntPtr L, int refid);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void toluafix_remove_table_by_refid(IntPtr L, int refid);
 	}
 }

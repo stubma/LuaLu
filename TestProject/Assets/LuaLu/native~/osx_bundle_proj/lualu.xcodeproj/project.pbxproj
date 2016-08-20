@@ -8,21 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		9225F99C1D61A39B005A33A0 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9225F99B1D61A39B005A33A0 /* CoreFoundation.framework */; };
+		922921E31D68751E000B2705 /* tolua_fix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 922921E11D68751E000B2705 /* tolua_fix.cpp */; };
 		9262AA8B1D640C0900F4972D /* unity_log.c in Sources */ = {isa = PBXBuildFile; fileRef = 9262AA871D640C0900F4972D /* unity_log.c */; };
-		9262AA8C1D640C0900F4972D /* unity_log.c.meta in Resources */ = {isa = PBXBuildFile; fileRef = 9262AA881D640C0900F4972D /* unity_log.c.meta */; };
-		9262AA8D1D640C0900F4972D /* unity_log.h.meta in Resources */ = {isa = PBXBuildFile; fileRef = 9262AA8A1D640C0900F4972D /* unity_log.h.meta */; };
-		927F7A591D62E2090020D721 /* tolua++.h.meta in Resources */ = {isa = PBXBuildFile; fileRef = 927F7A4C1D62E2090020D721 /* tolua++.h.meta */; };
 		927F7A5A1D62E2090020D721 /* tolua_event.c in Sources */ = {isa = PBXBuildFile; fileRef = 927F7A4D1D62E2090020D721 /* tolua_event.c */; };
-		927F7A5B1D62E2090020D721 /* tolua_event.c.meta in Resources */ = {isa = PBXBuildFile; fileRef = 927F7A4E1D62E2090020D721 /* tolua_event.c.meta */; };
-		927F7A5C1D62E2090020D721 /* tolua_event.h.meta in Resources */ = {isa = PBXBuildFile; fileRef = 927F7A501D62E2090020D721 /* tolua_event.h.meta */; };
 		927F7A5D1D62E2090020D721 /* tolua_is.c in Sources */ = {isa = PBXBuildFile; fileRef = 927F7A511D62E2090020D721 /* tolua_is.c */; };
-		927F7A5E1D62E2090020D721 /* tolua_is.c.meta in Resources */ = {isa = PBXBuildFile; fileRef = 927F7A521D62E2090020D721 /* tolua_is.c.meta */; };
 		927F7A5F1D62E2090020D721 /* tolua_map.c in Sources */ = {isa = PBXBuildFile; fileRef = 927F7A531D62E2090020D721 /* tolua_map.c */; };
-		927F7A601D62E2090020D721 /* tolua_map.c.meta in Resources */ = {isa = PBXBuildFile; fileRef = 927F7A541D62E2090020D721 /* tolua_map.c.meta */; };
 		927F7A611D62E2090020D721 /* tolua_push.c in Sources */ = {isa = PBXBuildFile; fileRef = 927F7A551D62E2090020D721 /* tolua_push.c */; };
-		927F7A621D62E2090020D721 /* tolua_push.c.meta in Resources */ = {isa = PBXBuildFile; fileRef = 927F7A561D62E2090020D721 /* tolua_push.c.meta */; };
 		927F7A631D62E2090020D721 /* tolua_to.c in Sources */ = {isa = PBXBuildFile; fileRef = 927F7A571D62E2090020D721 /* tolua_to.c */; };
-		927F7A641D62E2090020D721 /* tolua_to.c.meta in Resources */ = {isa = PBXBuildFile; fileRef = 927F7A581D62E2090020D721 /* tolua_to.c.meta */; };
 		927F7A661D62E4DF0020D721 /* liblua.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 927F7A651D62E4DF0020D721 /* liblua.a */; };
 		927F7A911D62F90B0020D721 /* fpconv.c in Sources */ = {isa = PBXBuildFile; fileRef = 927F7A691D62F90B0020D721 /* fpconv.c */; };
 		927F7A921D62F90B0020D721 /* lua_cjson.c in Sources */ = {isa = PBXBuildFile; fileRef = 927F7A6B1D62F90B0020D721 /* lua_cjson.c */; };
@@ -49,24 +41,17 @@
 		9225F98F1D61A371005A33A0 /* lualu.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = lualu.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		9225F9921D61A371005A33A0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9225F99B1D61A39B005A33A0 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		922921E11D68751E000B2705 /* tolua_fix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tolua_fix.cpp; sourceTree = "<group>"; };
+		922921E21D68751E000B2705 /* tolua_fix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tolua_fix.h; sourceTree = "<group>"; };
 		9262AA871D640C0900F4972D /* unity_log.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = unity_log.c; sourceTree = "<group>"; };
-		9262AA881D640C0900F4972D /* unity_log.c.meta */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = unity_log.c.meta; sourceTree = "<group>"; };
 		9262AA891D640C0900F4972D /* unity_log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = unity_log.h; sourceTree = "<group>"; };
-		9262AA8A1D640C0900F4972D /* unity_log.h.meta */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = unity_log.h.meta; sourceTree = "<group>"; };
 		927F7A4B1D62E2090020D721 /* tolua++.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "tolua++.h"; sourceTree = "<group>"; };
-		927F7A4C1D62E2090020D721 /* tolua++.h.meta */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "tolua++.h.meta"; sourceTree = "<group>"; };
 		927F7A4D1D62E2090020D721 /* tolua_event.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tolua_event.c; sourceTree = "<group>"; };
-		927F7A4E1D62E2090020D721 /* tolua_event.c.meta */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tolua_event.c.meta; sourceTree = "<group>"; };
 		927F7A4F1D62E2090020D721 /* tolua_event.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tolua_event.h; sourceTree = "<group>"; };
-		927F7A501D62E2090020D721 /* tolua_event.h.meta */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tolua_event.h.meta; sourceTree = "<group>"; };
 		927F7A511D62E2090020D721 /* tolua_is.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tolua_is.c; sourceTree = "<group>"; };
-		927F7A521D62E2090020D721 /* tolua_is.c.meta */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tolua_is.c.meta; sourceTree = "<group>"; };
 		927F7A531D62E2090020D721 /* tolua_map.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tolua_map.c; sourceTree = "<group>"; };
-		927F7A541D62E2090020D721 /* tolua_map.c.meta */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tolua_map.c.meta; sourceTree = "<group>"; };
 		927F7A551D62E2090020D721 /* tolua_push.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tolua_push.c; sourceTree = "<group>"; };
-		927F7A561D62E2090020D721 /* tolua_push.c.meta */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tolua_push.c.meta; sourceTree = "<group>"; };
 		927F7A571D62E2090020D721 /* tolua_to.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tolua_to.c; sourceTree = "<group>"; };
-		927F7A581D62E2090020D721 /* tolua_to.c.meta */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tolua_to.c.meta; sourceTree = "<group>"; };
 		927F7A651D62E4DF0020D721 /* liblua.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = liblua.a; sourceTree = "<group>"; };
 		927F7A691D62F90B0020D721 /* fpconv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = fpconv.c; sourceTree = "<group>"; };
 		927F7A6A1D62F90B0020D721 /* fpconv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fpconv.h; sourceTree = "<group>"; };
@@ -171,9 +156,7 @@
 			isa = PBXGroup;
 			children = (
 				9262AA871D640C0900F4972D /* unity_log.c */,
-				9262AA881D640C0900F4972D /* unity_log.c.meta */,
 				9262AA891D640C0900F4972D /* unity_log.h */,
-				9262AA8A1D640C0900F4972D /* unity_log.h.meta */,
 			);
 			name = log_support;
 			path = ../log_support;
@@ -183,19 +166,12 @@
 			isa = PBXGroup;
 			children = (
 				927F7A4B1D62E2090020D721 /* tolua++.h */,
-				927F7A4C1D62E2090020D721 /* tolua++.h.meta */,
 				927F7A4D1D62E2090020D721 /* tolua_event.c */,
-				927F7A4E1D62E2090020D721 /* tolua_event.c.meta */,
 				927F7A4F1D62E2090020D721 /* tolua_event.h */,
-				927F7A501D62E2090020D721 /* tolua_event.h.meta */,
 				927F7A511D62E2090020D721 /* tolua_is.c */,
-				927F7A521D62E2090020D721 /* tolua_is.c.meta */,
 				927F7A531D62E2090020D721 /* tolua_map.c */,
-				927F7A541D62E2090020D721 /* tolua_map.c.meta */,
 				927F7A551D62E2090020D721 /* tolua_push.c */,
-				927F7A561D62E2090020D721 /* tolua_push.c.meta */,
 				927F7A571D62E2090020D721 /* tolua_to.c */,
-				927F7A581D62E2090020D721 /* tolua_to.c.meta */,
 			);
 			name = tolua;
 			path = ../tolua;
@@ -204,10 +180,12 @@
 		927F7A671D62F90B0020D721 /* lua_support */ = {
 			isa = PBXGroup;
 			children = (
+				927F7A711D62F90B0020D721 /* luasocket */,
 				927F7A681D62F90B0020D721 /* cjson */,
 				927F7A6F1D62F90B0020D721 /* lfs.c */,
 				927F7A701D62F90B0020D721 /* lfs.h */,
-				927F7A711D62F90B0020D721 /* luasocket */,
+				922921E11D68751E000B2705 /* tolua_fix.cpp */,
+				922921E21D68751E000B2705 /* tolua_fix.h */,
 			);
 			name = lua_support;
 			path = ../lua_support;
@@ -320,15 +298,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9262AA8C1D640C0900F4972D /* unity_log.c.meta in Resources */,
-				927F7A601D62E2090020D721 /* tolua_map.c.meta in Resources */,
-				927F7A5C1D62E2090020D721 /* tolua_event.h.meta in Resources */,
-				927F7A5E1D62E2090020D721 /* tolua_is.c.meta in Resources */,
-				927F7A621D62E2090020D721 /* tolua_push.c.meta in Resources */,
-				9262AA8D1D640C0900F4972D /* unity_log.h.meta in Resources */,
-				927F7A5B1D62E2090020D721 /* tolua_event.c.meta in Resources */,
-				927F7A641D62E2090020D721 /* tolua_to.c.meta in Resources */,
-				927F7A591D62E2090020D721 /* tolua++.h.meta in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -344,6 +313,7 @@
 				927F7A9F1D62F90B0020D721 /* tcp.c in Sources */,
 				927F7A941D62F90B0020D721 /* lfs.c in Sources */,
 				927F7A631D62E2090020D721 /* tolua_to.c in Sources */,
+				922921E31D68751E000B2705 /* tolua_fix.cpp in Sources */,
 				927F7A9D1D62F90B0020D721 /* select.c in Sources */,
 				927F7AA01D62F90B0020D721 /* timeout.c in Sources */,
 				927F7A5A1D62E2090020D721 /* tolua_event.c in Sources */,
