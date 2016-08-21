@@ -769,7 +769,7 @@
 		public static extern void tolua_pushvalue(IntPtr L, int lo);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void tolua_pushboolean(IntPtr L, int value);
+		public static extern void tolua_pushboolean(IntPtr L, bool value);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void tolua_pushnumber(IntPtr L, double value);
