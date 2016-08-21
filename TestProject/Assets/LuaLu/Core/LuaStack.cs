@@ -363,7 +363,7 @@
 			}
 		}
 
-		private void SetObjLuaId(object obj, int luaId) {
+		public void SetObjLuaId(object obj, int luaId) {
 			m_objLuaIdMap[obj] = luaId;
 		}
 
