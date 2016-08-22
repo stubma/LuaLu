@@ -13,13 +13,6 @@
 	using LuaLu;
 
 	/// <summary>
-	/// a custom converter for lua returned value
-	/// </summary>
-	public interface IScriptReturnedValueCollector {
-		void CollectReturnedValue(IntPtr L);
-	}
-
-	/// <summary>
 	/// it manages one lua state machine, and provides helper method to ease lua api usage
 	/// </summary>
 	public class LuaStack : IDisposable {
@@ -397,7 +390,7 @@
 		/// <param name="codes">holding the valid script code that should be executed.</param>
 		public int ExecuteString(string codes) {
 			LuaLib.luaL_loadstring(L, codes);
-			return ExecuteFunction(0, null);
+			return ExecuteFunction(0);
 		}
 
 		/// <summary>
@@ -467,7 +460,7 @@
 					LuaLib.lua_pop(L, 2); // super[n-1]
 				} else {
 					PushObject(obj, objType.FullName); // super[n] dtor obj
-					ExecuteFunction(1, null); // after executed, super[n]
+					ExecuteFunction(1); // after executed, super[n]
 					LuaLib.lua_pop(L, 1); // super[n-1]
 				}
 			}
@@ -479,7 +472,7 @@
 		/// <returns>value if the function returns a number, or zero if the function returns other type value</returns>
 		/// <param name="numArgs">number of parameters</param>
 		/// <param name="collector">if the function returns non-number type, can set a collector to convert returned value</param>
-		public int ExecuteFunction(int numArgs, IScriptReturnedValueCollector collector) {
+		public int ExecuteFunction(int numArgs, Action<IntPtr> collector = null) {
 			int functionIndex = -(numArgs + 1);
 			if(!LuaLib.lua_isfunction(L, functionIndex)) {
 				Debug.Log(string.Format("value at stack [{0}] is not function", functionIndex));
@@ -513,7 +506,7 @@
 			// get return value
 			int ret = 0;
 			if(collector != null) {
-				collector.CollectReturnedValue(L);
+				collector(L);
 			} else if(LuaLib.lua_isnumber(L, -1)) {
 				ret = (int)LuaLib.lua_tointeger(L, -1);
 			} else if(LuaLib.lua_isboolean(L, -1)) {
@@ -542,7 +535,7 @@
 				LuaLib.lua_pop(L, 1);
 				return 0;
 			}
-			return ExecuteFunction(0, null);
+			return ExecuteFunction(0);
 		}
 
 		public void Clean() {
@@ -603,7 +596,7 @@
 			LuaLib.lua_pop(L, count);
 		}
 
-		public int ExecuteFunctionByHandler(int nHandler, int numArgs, IScriptReturnedValueCollector collector) {
+		public int ExecuteFunctionByHandler(int nHandler, int numArgs, Action<IntPtr> collector = null) {
 			int ret = 0;
 			if(PushFunctionByHandler(nHandler)) {                                /* L: ... arg1 arg2 ... func */
 				if(numArgs > 0) {
