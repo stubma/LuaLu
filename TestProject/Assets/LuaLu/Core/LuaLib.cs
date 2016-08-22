@@ -119,18 +119,6 @@
 			return LUALIB;
 		}
 
-		/// <summary>
-		/// get a utf-8 string
-		/// </summary>
-		/// <returns>utf-8 string</returns>
-		/// <param name="source">source bytes</param>
-		/// <param name="strlen">byte length of this string</param>
-		static string AnsiToUnicode(IntPtr source, int strlen) {
-			byte[] buffer = new byte[strlen];
-			Marshal.Copy(source, buffer, 0, strlen);            
-			return Encoding.UTF8.GetString(buffer);
-		}
-
 		/////////////////////////////////////////////
 		// lua.h
 		/////////////////////////////////////////////
@@ -409,7 +397,7 @@
 
 				// when lua return non-ansi string, conversion fails
 				if(ss == null) {
-					return AnsiToUnicode(str, len);
+					return Marshal.PtrToStringUni(str, len);
 				}
 
 				return ss;
@@ -549,7 +537,7 @@
 
 				// when lua return non-ansi string, conversion fails
 				if(ss == null) {
-					return AnsiToUnicode(str, len);
+					return Marshal.PtrToStringUni(str, len);
 				}
 
 				return ss;
@@ -566,7 +554,7 @@
 
 				// when lua return non-ansi string, conversion fails
 				if(ss == null) {
-					return AnsiToUnicode(str, len);
+					return Marshal.PtrToStringUni(str, len);
 				}
 
 				return ss;
