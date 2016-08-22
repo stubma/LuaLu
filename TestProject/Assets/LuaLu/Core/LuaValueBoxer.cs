@@ -1161,7 +1161,7 @@
 			LuaLib.tolua_pushstring(L, v);
 		}
 
-		public static void object_to_luaval<T>(IntPtr L, string type, T t) {
+		public static void object_to_luaval(IntPtr L, string type, object t) {
 			if(t == null) {
 				LuaStack.SharedInstance().PushObject(t, type);
 			} else {
@@ -1411,9 +1411,17 @@
 			int c = inValue.Length;
 			for(int i = 0; i < c; i++) {
 				LuaLib.lua_pushinteger(L, i + 1);
-				object_to_luaval<T>(L, type, inValue[i]);
+				object_to_luaval(L, type, inValue[i]);
 				LuaLib.lua_rawset(L, -3);
 			}
+		}
+
+		public static void array_to_luaval<T>(IntPtr L, T[] inValue) {
+			Array a = Array.CreateInstance(typeof(T), inValue.Length);
+			for(int i = 0; i < inValue.Length; i++) {
+				a.SetValue(inValue[i], i);
+			}
+			array_to_luaval(L, a);
 		}
 
 		public static void array_to_luaval(IntPtr L, Array inValue) {
@@ -1510,7 +1518,7 @@
 					++indexTable;
 				} else {
 					LuaLib.lua_pushnumber(L, indexTable);
-					LuaStack.SharedInstance().PushObject(e.Current, tn);
+					object_to_luaval(L, tn, e.Current);
 					LuaLib.lua_rawset(L, -3);
 					++indexTable;
 				}
@@ -1622,13 +1630,24 @@
 					dictionary_to_luaval(L, (IDictionary)e.Value);
 					LuaLib.lua_rawset(L, -3);
 				} else {
-					LuaStack.SharedInstance().PushObject(e.Value, vtn);
+					object_to_luaval(L, vtn, e.Value);
 					LuaLib.lua_rawset(L, -3);
 				}
 
 				// next
 				e.MoveNext();
 			}
+		}
+
+		public static bool CheckParameterType(IntPtr L, params string[] ptList) {
+			int argc = LuaLib.lua_gettop(L) - 1;
+			if(ptList != null && ptList.Length >= argc) {
+				for(int i = 0; i < argc; i++) {
+					
+				}
+			}
+
+			return false;
 		}
 	}
 }
