@@ -173,12 +173,20 @@
 
 			// methods
 			MethodInfo[] methods = t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance);
+			MethodInfo[] staticMethods = t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
 
-			// filter generic methods and property setter/getter
+			// filter generic methods, property setter/getter, operator
 			List<MethodInfo> publicMethods = new List<MethodInfo>();
 			Array.ForEach<MethodInfo>(methods, m => {
 				if(!m.IsGenericMethod) {
-					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_")) {
+					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_") && !m.Name.StartsWith("op_")) {
+						publicMethods.Add(m);
+					}
+				}
+			});
+			Array.ForEach<MethodInfo>(staticMethods, m => {
+				if(!m.IsGenericMethod) {
+					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_") && !m.Name.StartsWith("op_")) {
 						publicMethods.Add(m);
 					}
 				}
@@ -289,20 +297,6 @@
 			buffer += "\t\t\ttolua_Error err = new tolua_Error();\n";
 			buffer += "\t\t#endif\n";
 			buffer += "\n";
-			buffer += "\t\t#if DEBUG\n";
-			buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tfn);
-			buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
-			buffer += "\t\t\t}\n";
-			buffer += "\t\t#endif\n";
-			buffer += "\t\t\tIntPtr handler = LuaLib.tolua_tousertype(L, 1, IntPtr.Zero);\n";
-			buffer += "\t\t\tint hash = handler.ToInt32();\n";
-			buffer += string.Format("\t\t\tobj = ({0})NativeObjectMap.FindObject(hash);\n", tfn);
-			buffer += "\t\t#if DEBUG\n";
-			buffer += "\t\t\tif(obj == null) {\n";
-			buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);
-			buffer += "\t\t\t}\n";
-			buffer += "\t\t#endif\n";
-			buffer += "\n";
 			buffer += "\t\t\t// get argument count\n";
 			buffer += "\t\t\targc = LuaLib.lua_gettop(L) - 1;\n";
 			buffer += "\n";
@@ -351,16 +345,46 @@
 					buffer += "\t\t\t\t}\n";
 				}
 
-				// call function
+				// get info of method to be called
 				Type rt = callM.ReturnType;
 				string rtn = GetTypeName(rt);
+
+				// perform object type checking based on method type, static or not
+				buffer += "\n";
+				buffer += "\t\t\t\t// caller type check\n";
+				buffer += "\t\t\t#if DEBUG\n";
+				if(callM.IsStatic) {
+					buffer += string.Format("\t\t\t\tif(!LuaLib.tolua_isusertable(L, 1, \"{0}\", 0, ref err)) {{\n", tfn);
+				} else {
+					buffer += string.Format("\t\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tfn);
+				}
+				buffer += string.Format("\t\t\t\t\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
+				buffer += "\t\t\t\t\treturn 0;\n";
+				buffer += "\t\t\t\t}\n";
+				buffer += "\t\t\t#endif\n";
+				if(!callM.IsStatic) {
+					buffer += "\t\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
+					buffer += string.Format("\t\t\t\tobj = ({0})NativeObjectMap.FindObject(refId);\n", tfn);
+					buffer += "\t\t\t#if DEBUG\n";
+					buffer += "\t\t\t\tif(obj == null) {\n";
+					buffer += string.Format("\t\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);
+					buffer += "\t\t\t\t\treturn 0;\n";
+					buffer += "\t\t\t\t}\n";
+					buffer += "\t\t\t#endif\n";
+				}
+
+				// call function
 				buffer += "\n";
 				buffer += "\t\t\t\t// call function\n";
 				buffer += "\t\t\t\t";
 				if(rtn != "System.Void") {
 					buffer += string.Format("{0} ret = ", rtn);
 				}
-				buffer += string.Format("obj.{0}(", mn);
+				if(callM.IsStatic) {
+					buffer += string.Format("{0}.{1}(", tfn, mn);
+				} else {
+					buffer += string.Format("obj.{0}(", mn);
+				}
 				for(int i = 0; i < pList.Length; i++) {
 					if(pList[i].IsOut) {
 						buffer += "out ";
@@ -374,10 +398,15 @@
 
 				// push returned value
 				buffer += GenerateBoxReturnValue(callM);
+				buffer += "\t\t\t\treturn 1;\n";
 
 				// close if
 				buffer += "\t\t\t}\n\n";
 			}
+
+			// fallback if argc doesn't match
+			buffer += "\t\t\t// if to here, means argument count is not correct\n";
+			buffer += string.Format("\t\t\tLuaLib.luaL_error(L, \"{0} has wrong number of arguments: \" + argc);\n", fn);
 			buffer += "\t\t\treturn 0;\n";
 			buffer += "\t\t}\n\n";
 

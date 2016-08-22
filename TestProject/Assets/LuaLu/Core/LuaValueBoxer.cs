@@ -380,9 +380,8 @@
 			}
 
 			// to obj
-			IntPtr handle = LuaLib.tolua_tousertype(L, lo, IntPtr.Zero);
-			int hash = handle.ToInt32();
-			ret = (T)NativeObjectMap.FindObject(hash);
+			int refId = LuaLib.tolua_tousertype(L, lo);
+			ret = (T)NativeObjectMap.FindObject(refId);
 
 			// check
 			if(ret == null) {
@@ -1093,9 +1092,8 @@
 					LuaLib.lua_pushnumber(L, i + 1);
 					LuaLib.lua_gettable(L, lo);
 					if(luaval_is_usertype(L, -1, type)) {
-						IntPtr handle = LuaLib.tolua_tousertype(L, -1, IntPtr.Zero);
-						int hash = handle.ToInt32();
-						ret[i] = (T)NativeObjectMap.FindObject(hash);
+						int refId = LuaLib.tolua_tousertype(L, -1);
+						ret[i] = (T)NativeObjectMap.FindObject(refId);
 					} else {
 						Debug.Assert(false, string.Format("{0} type is needed", type));
 					}

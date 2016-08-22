@@ -216,28 +216,16 @@ static int tolua_bnd_isa(lua_State* L) {
 */
 static int tolua_bnd_cast (lua_State* L)
 {
-
-    /* // old code
-            void* v = tolua_tousertype(L,1,NULL);
-            const char* s = tolua_tostring(L,2,NULL);
-            if (v && s)
-             tolua_pushusertype(L,v,s);
-            else
-             lua_pushnil(L);
-            return 1;
-    */
-
-    void* v;
+    int refid;
     const char* s;
     if (lua_islightuserdata(L, 1)) {
-        v = tolua_touserdata(L, 1, NULL);
+        refid = 0;
     } else {
-        v = tolua_tousertype(L, 1, 0);
+        refid = tolua_tousertype(L, 1);
     };
 
     s = tolua_tostring(L,2,NULL);
-    if (v && s) {
-        int refid = *(int*)v;
+    if (refid && s) {
         tolua_pushusertype(L,refid,s);
     } else {
         lua_pushnil(L);
@@ -403,8 +391,7 @@ TOLUA_API void* tolua_copy (lua_State* L, void* value, unsigned int size)
 */
 TOLUA_API int tolua_default_collect (lua_State* tolua_S)
 {
-    void* self = tolua_tousertype(tolua_S,1,0);
-    free(self);
+    // do nothing for c# object
     return 0;
 }
 

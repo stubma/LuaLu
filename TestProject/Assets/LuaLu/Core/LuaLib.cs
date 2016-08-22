@@ -822,14 +822,12 @@
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int tolua_tointeger(IntPtr L, int narg, int def);
 
-		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern string tolua_tostring(IntPtr L, int narg, string def);
+		public static string tolua_tostring(IntPtr L, int narg, string def) {
+			return lua_gettop(L) < Math.Abs(narg) ? def : lua_tostring(L, narg);
+		}
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr tolua_touserdata(IntPtr L, int narg, IntPtr def);
-
-		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr tolua_tousertype(IntPtr L, int narg, IntPtr def);
+		public static extern int tolua_tousertype(IntPtr L, int narg);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int tolua_tovalue(IntPtr L, int narg, int def);
