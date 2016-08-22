@@ -323,7 +323,7 @@
 					buffer += "\t\t\t\t// arguments declaration\n";
 					for(int i = 0; i < pList.Length; i++) {
 						Type pt = pList[i].ParameterType;
-						string ptn = GetTypeName(pt);
+						string ptn = pt.GetNormalizedName();
 						buffer += string.Format("\t\t\t\t{0} arg{1} = default({0});\n", ptn, i);
 					}
 
@@ -346,7 +346,7 @@
 
 				// get info of method to be called
 				Type rt = callM.ReturnType;
-				string rtn = GetTypeName(rt);
+				string rtn = rt.GetNormalizedName();
 
 				// perform object type checking based on method type, static or not
 				buffer += "\n";
@@ -415,7 +415,7 @@
 
 		private static string GenerateBoxReturnValue(MethodInfo m) {
 			Type rt = m.ReturnType;
-			string rtn = GetTypeName(rt);
+			string rtn = rt.GetNormalizedName();
 			string buffer = "";
 
 			// convert to lua value
@@ -427,7 +427,7 @@
 				buffer += "\t\t\t\tLuaValueBoxer.int_to_luaval(L, (int)ret);\n";
 			} else if(rt.IsArray) {
 				Type et = rt.GetElementType();
-				string etn = GetTypeName(et);
+				string etn = et.GetNormalizedName();
 				if(FUNDMENTAL_TYPES.Contains(etn)) {
 					buffer += string.Format("\t\t\t\tLuaValueBoxer.{0}_array_to_luaval(L, ret);\n", etn);
 				} else if(et.IsEnum) {
@@ -455,7 +455,7 @@
 			// variables
 			string buffer = "";
 			Type pt = pi.ParameterType;
-			string ptn = GetTypeName(pt);
+			string ptn = pt.GetNormalizedName();
 
 			// find conversion by parameter type name
 			if(FUNDMENTAL_TYPES.Contains(ptn)) {
@@ -464,7 +464,7 @@
 				buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_enum<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
 			} else if(pt.IsArray) {
 				Type et = pt.GetElementType();
-				string etn = GetTypeName(et);
+				string etn = et.GetNormalizedName();
 				if(FUNDMENTAL_TYPES.Contains(etn)) {
 					buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_{0}_array(L, {1}, out arg{2}, \"{3}\");\n", etn, argIndex + 2, argIndex, methodName);
 				} else if(et.IsEnum) {
@@ -480,83 +480,6 @@
 
 			// return
 			return buffer;
-		}
-
-		private static string[] GetGenericName(Type[] types) {
-			string[] results = new string[types.Length];
-			for(int i = 0; i < types.Length; i++) {
-				if(types[i].IsGenericType) {
-					results[i] = GetGenericName(types[i]);
-				} else {
-					results[i] = GetTypeName(types[i]);
-				}
-			}
-			return results;
-		}
-
-		private static string GetGenericName(Type t) {
-			if(t.GetGenericArguments().Length == 0) {
-				return t.FullName;
-			}
-			Type[] gArgs = t.GetGenericArguments();
-			string typeName = t.FullName;
-			string pureTypeName = typeName.Substring(0, typeName.IndexOf('`'));
-			return pureTypeName + "<" + string.Join(",", GetGenericName(gArgs)) + ">";
-		}
-
-		private static string GetTypeName(Type t) {
-			if(t.IsArray) {
-				t = t.GetElementType();
-				string str = GetTypeName(t);
-				str += "[]";
-				return str;
-			} else if(t.IsGenericType) {
-				return GetGenericName(t);
-			} else {
-				return NormalizeTypeName(t.FullName);            
-			}
-		}
-
-		private static string NormalizeTypeName(string str) {
-			if(str.Length > 1 && str[str.Length - 1] == '&') {
-				str = str.Remove(str.Length - 1);            
-			}
-
-			if(str == "System.Single" || str == "Single") {            
-				return "float";
-			} else if(str == "System.String" || str == "String") {
-				return "string";
-			} else if(str == "System.Int32" || str == "Int32") {
-				return "int";
-			} else if(str == "System.Int64" || str == "Int64") {
-				return "long";
-			} else if(str == "System.SByte" || str == "SByte") {
-				return "sbyte";
-			} else if(str == "System.Byte" || str == "Byte") {
-				return "byte";
-			} else if(str == "System.Int16" || str == "Int16") {
-				return "short";
-			} else if(str == "System.UInt16" || str == "UInt16") {
-				return "ushort";
-			} else if(str == "System.Char" || str == "Char") {
-				return "char";
-			} else if(str == "System.UInt32" || str == "UInt32") {
-				return "uint";
-			} else if(str == "System.UInt64" || str == "UInt64") {
-				return "ulong";
-			} else if(str == "System.Decimal" || str == "Decimal") {
-				return "decimal";
-			} else if(str == "System.Double" || str == "Double") {
-				return "double";
-			} else if(str == "System.Boolean" || str == "Boolean") {
-				return "bool";
-			}
-
-			if(str.Contains("+")) {
-				return str.Replace('+', '.');
-			}
-
-			return str;
 		}
 	}
 }

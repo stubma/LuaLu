@@ -1417,9 +1417,218 @@
 		}
 
 		public static void array_to_luaval(IntPtr L, Array inValue) {
+			// new table for array value
+			LuaLib.lua_newtable(L);
+
+			// validate
+			if (IntPtr.Zero == L || null == inValue)
+				return;
+
+			// push every element
+			int indexTable = 1;
+			IEnumerator e = inValue.GetEnumerator();
+			while(e.Current != null) {
+				// get type
+				Type t = e.Current.GetType();
+				string tn = t.GetNormalizedName();
+
+				// convert
+				if(tn == "byte") {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushinteger(L, Convert.ToByte(e.Current));
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(tn == "sbyte") {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushinteger(L, Convert.ToSByte(e.Current));
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(tn == "char") {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushinteger(L, Convert.ToChar(e.Current));
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(tn == "short") {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushinteger(L, Convert.ToInt16(e.Current));
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(tn == "ushort") {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushinteger(L, Convert.ToUInt16(e.Current));
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(tn == "bool") {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushboolean(L, Convert.ToBoolean(e.Current));
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(tn == "int" || tn == "decimal") {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushinteger(L, Convert.ToInt32(e.Current));
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(tn == "uint") {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushinteger(L, (int)Convert.ToUInt32(e.Current));
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(tn == "long") {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushinteger(L, (int)Convert.ToInt64(e.Current));
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(tn == "ulong") {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushinteger(L, (int)Convert.ToUInt64(e.Current));
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(tn == "float" || tn == "double") {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushnumber(L, Convert.ToDouble(e.Current));
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(tn == "string") {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushstring(L, (string)e.Current);
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(t.IsEnum) {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaLib.lua_pushinteger(L, (int)e.Current);
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(t.IsArray) {
+					LuaLib.lua_pushnumber(L, indexTable);
+					array_to_luaval(L, (Array)e.Current);
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else if(t.IsDictionary()) {
+					LuaLib.lua_pushnumber(L, indexTable);
+					dictionary_to_luaval(L, (IDictionary)e.Current);
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				} else {
+					LuaLib.lua_pushnumber(L, indexTable);
+					LuaStack.SharedInstance().PushObject(e.Current, tn);
+					LuaLib.lua_rawset(L, -3);
+					++indexTable;
+				}
+
+				// next
+				e.MoveNext();
+			}
 		}
 
-		public static void dictionary_to_luaval(IntPtr L, Dictionary<string, object> dict) {
+		public static void dictionary_to_luaval(IntPtr L, IDictionary dict) {
+			// new table for dictionary value
+			LuaLib.lua_newtable(L);
+
+			// validate
+			if (IntPtr.Zero == L || null == dict)
+				return;
+
+			// push
+			IDictionaryEnumerator e = dict.GetEnumerator();
+			while(e.Current != null) {
+				// get key type
+				Type kt = e.Key.GetType();
+				string ktn = kt.GetNormalizedName();
+				string strKey = null;
+				int intKey = 0;
+
+				// convert key
+				if(ktn == "byte") {
+					intKey = Convert.ToByte(e.Key);
+				} else if(ktn == "sbyte") {
+					intKey = Convert.ToSByte(e.Key);
+				} else if(ktn == "char") {
+					strKey = Convert.ToChar(e.Key).ToString();
+				} else if(ktn == "short") {
+					intKey = Convert.ToInt16(e.Key);
+				} else if(ktn == "ushort") {
+					intKey = Convert.ToUInt16(e.Key);
+				} else if(ktn == "bool") {
+					intKey = Convert.ToBoolean(e.Key) ? 1 : 0;
+				} else if(ktn == "int" || ktn == "decimal") {
+					intKey = Convert.ToInt32(e.Key);
+				} else if(ktn == "uint") {
+					intKey = (int)Convert.ToUInt32(e.Key);
+				} else if(ktn == "long") {
+					intKey = (int)Convert.ToInt64(e.Key);
+				} else if(ktn == "ulong") {
+					intKey = (int)Convert.ToUInt64(e.Key);
+				} else if(ktn == "string") {
+					strKey = (string)e.Key;
+				} else {
+					// not supported key type
+					e.MoveNext();
+					continue;
+				}
+
+				// push key
+				if(strKey != null) {
+					LuaLib.lua_pushstring(L, strKey);
+				} else {
+					LuaLib.lua_pushnumber(L, intKey);
+				}
+
+				// push value
+				Type vt = e.Value.GetType();
+				string vtn = vt.GetNormalizedName();
+				if(vtn == "byte") {
+					LuaLib.lua_pushinteger(L, Convert.ToByte(e.Value));
+					LuaLib.lua_rawset(L, -3);
+				} else if(vtn == "sbyte") {
+					LuaLib.lua_pushinteger(L, Convert.ToSByte(e.Value));
+					LuaLib.lua_rawset(L, -3);
+				} else if(vtn == "char") {
+					LuaLib.lua_pushinteger(L, Convert.ToChar(e.Value));
+					LuaLib.lua_rawset(L, -3);
+				} else if(vtn == "short") {
+					LuaLib.lua_pushinteger(L, Convert.ToInt16(e.Value));
+					LuaLib.lua_rawset(L, -3);
+				} else if(vtn == "ushort") {
+					LuaLib.lua_pushinteger(L, Convert.ToUInt16(e.Value));
+					LuaLib.lua_rawset(L, -3);
+				} else if(vtn == "bool") {
+					LuaLib.lua_pushboolean(L, Convert.ToBoolean(e.Value));
+					LuaLib.lua_rawset(L, -3);
+				} else if(vtn == "int" || vtn == "decimal") {
+					LuaLib.lua_pushinteger(L, Convert.ToInt32(e.Value));
+					LuaLib.lua_rawset(L, -3);
+				} else if(vtn == "uint") {
+					LuaLib.lua_pushinteger(L, (int)Convert.ToUInt32(e.Value));
+					LuaLib.lua_rawset(L, -3);
+				} else if(vtn == "long") {
+					LuaLib.lua_pushinteger(L, (int)Convert.ToInt64(e.Value));
+					LuaLib.lua_rawset(L, -3);
+				} else if(vtn == "ulong") {
+					LuaLib.lua_pushinteger(L, (int)Convert.ToUInt64(e.Value));
+					LuaLib.lua_rawset(L, -3);
+				} else if(vtn == "float" || vtn == "double") {
+					LuaLib.lua_pushnumber(L, Convert.ToDouble(e.Value));
+					LuaLib.lua_rawset(L, -3);
+				} else if(vtn == "string") {
+					LuaLib.lua_pushstring(L, (string)e.Value);
+					LuaLib.lua_rawset(L, -3);
+				} else if(vt.IsEnum) {
+					LuaLib.lua_pushinteger(L, (int)e.Value);
+					LuaLib.lua_rawset(L, -3);
+				} else if(vt.IsArray) {
+					array_to_luaval(L, (Array)e.Value);
+					LuaLib.lua_rawset(L, -3);
+				} else if(vt.IsDictionary()) {
+					dictionary_to_luaval(L, (IDictionary)e.Value);
+					LuaLib.lua_rawset(L, -3);
+				} else {
+					LuaStack.SharedInstance().PushObject(e.Value, vtn);
+					LuaLib.lua_rawset(L, -3);
+				}
+
+				// next
+				e.MoveNext();
+			}
 		}
 	}
 }
