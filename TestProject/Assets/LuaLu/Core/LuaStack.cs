@@ -589,7 +589,7 @@
 		}
 
 		public void PushObject(object obj, string typeName) {
-			int luaId = 0;
+			int luaId = GetObjLuaId(obj);
 			LuaLib.toluafix_pushusertype_object(L, obj.GetHashCode(), ref luaId, LuaValueBoxer.Obj2Ptr(obj), typeName);
 			SetObjLuaId(obj, luaId);
 		}
@@ -642,6 +642,23 @@
 				nNewHandle = LuaLib.toluafix_ref_function(L, LuaLib.lua_gettop(L), 0);
 			}
 			return nNewHandle;
+		}
+
+		public void SaveInstanceInGlobal(object obj, string globalName) {
+			PushObject(obj, obj.GetType().FullName);
+			LuaLib.lua_setglobal(L, globalName);
+		}
+
+		public void BindInstanceToLuaClass(object obj, string luaType) {
+			// push obj to a tmp global
+			PushObject(obj, obj.GetType().FullName);
+			LuaLib.lua_setglobal(L, "__tmp_obj__");
+
+			// build script and run
+			string buffer = "local t = _G[\"__tmp_obj__\"]\n"; // get global to local
+			buffer += "_G[\"__tmp_obj__\"] = nil\n"; // remove global
+			buffer += string.Format("for k,v in pairs({0}) do\nt[k] = v\nend", luaType); // copy fields from class to native object
+			ExecuteString(buffer);
 		}
 	}
 }

@@ -15,7 +15,7 @@
 		}
 
 		public static IntPtr Obj2Ptr(object obj) {
-			if(obj == null) {
+			if(obj != null) {
 				GCHandle h = GCHandle.Alloc(obj);
 				return (IntPtr)h;
 			} else {

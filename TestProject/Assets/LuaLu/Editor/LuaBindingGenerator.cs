@@ -59,6 +59,7 @@
 			s_types = new List<Type>();
 			s_types.Add(typeof(Component));
 			s_types.Add(typeof(Type));
+			s_types.Add(typeof(LuaComponent));
 			GenerateTypesLuaBinding();
 
 			// clean
@@ -399,13 +400,13 @@
 				Type et = rt.GetElementType();
 				string etn = GetTypeName(et);
 				if(FUNDMENTAL_TYPES.Contains(etn)) {
-					buffer += string.Format("\t\t\t\tLuaValueBoxer.{0}_array_to_luaval(L, ret);\n", rtn);
+					buffer += string.Format("\t\t\t\tLuaValueBoxer.{0}_array_to_luaval(L, ret);\n", etn);
 				} else if(et.IsEnum) {
-					buffer += string.Format("\t\t\t\tLuaValueBoxer.enum_array_to_luaval<{0}>(L, ret);\n", rtn);
+					buffer += string.Format("\t\t\t\tLuaValueBoxer.enum_array_to_luaval<{0}>(L, ret);\n", etn);
 				} else if(et.IsArray) {
 					// TODO more than one dimension array? not supported yet
 				} else {
-					buffer += string.Format("\t\t\t\tLuaValueBoxer.object_array_to_luaval<{0}>(L, \"{0}\", ret);\n", rtn);
+					buffer += string.Format("\t\t\t\tLuaValueBoxer.object_array_to_luaval<{0}>(L, \"{0}\", ret);\n", etn);
 				}
 			} else {
 				buffer += string.Format("\t\t\t\tLuaValueBoxer.object_to_luaval<{0}>(L, \"{0}\", ret);\n", rtn);

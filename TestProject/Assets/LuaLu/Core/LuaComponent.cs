@@ -67,6 +67,9 @@
 				LuaStack L = LuaStack.SharedInstance();
 				L.ExecuteString("require(\"" + finalPath + "\")");
 				m_loaded = true;
+
+				// bind this instance to lua class
+				L.BindInstanceToLuaClass(this, "FirstLua");
 			}
 		}
 
@@ -76,9 +79,10 @@
 				return;
 			}
 
-			// run lua
+			// run lua side Start
 			LuaStack L = LuaStack.SharedInstance();
-			L.ExecuteString("FirstLua.staticMethod()");
+			L.SaveInstanceInGlobal(this, "__tmp_obj__");
+			L.ExecuteString("local t = _G[\"__tmp_obj__\"]\n_G[\"__tmp_obj__\"] = nil\nprint(\"before call start\")\nt:Start()");
 		}
 
 		void Update() {
@@ -86,6 +90,11 @@
 			if(!m_valid) {
 				return;
 			}
+
+			// run lua side Update
+//			LuaStack L = LuaStack.SharedInstance();
+//			L.SaveInstanceInGlobal(this, "__tmp_obj__");
+//			L.ExecuteString("local t = _G[__tmp_obj__]\n_G[__tmp_obj__] = nil\nt:Update()");
 		}
 	}
 }
