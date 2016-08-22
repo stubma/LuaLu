@@ -649,7 +649,8 @@
 			// build script and run
 			string buffer = "local t = _G[\"__tmp_obj__\"]\n"; // get global to local
 			buffer += "_G[\"__tmp_obj__\"] = nil\n"; // remove global
-			buffer += string.Format("for k,v in pairs({0}) do\nt[k] = v\nend", luaType); // copy fields from class to native object
+			buffer += string.Format("for k,v in pairs({0}) do\nt[k] = v\nend\n", luaType); // copy fields from class to native object
+			buffer += string.Format("t.class = {0}\n", luaType); // assign class to instance
 			ExecuteString(buffer);
 		}
 	}
