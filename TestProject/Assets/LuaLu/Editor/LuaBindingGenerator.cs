@@ -199,7 +199,7 @@
 
 			// generate for public methods
 			foreach(List<MethodInfo> mList in publicMethodMap.Values) {
-				buffer += GenerateInstanceMethod(t, mList);
+				buffer += GeneratePublicMethod(t, mList);
 			}
 
 			// register method
@@ -246,7 +246,7 @@
 			return buffer;
 		}
 
-		private static string GenerateInstanceMethod(Type t, List<MethodInfo> mList) {
+		private static string GeneratePublicMethod(Type t, List<MethodInfo> mList) {
 			string mn = mList[0].Name;
 			string tn = t.Name;
 			string tfn = t.FullName;
