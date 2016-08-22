@@ -181,7 +181,7 @@ static int tolua_bnd_releaseownership (lua_State* L)
     int done = 0;
     if (lua_isuserdata(L,1)) // ud
     {
-        void* u = *((void**)lua_touserdata(L,1));
+        int refid = *(int*)lua_touserdata(L,1);
         /* force garbage collection to avoid releasing a to-be-collected address */
 #ifdef LUA_VERSION_NUM
         lua_gc(L, LUA_GCCOLLECT, 0);
@@ -190,12 +190,12 @@ static int tolua_bnd_releaseownership (lua_State* L)
 #endif
         lua_pushstring(L,"tolua_gc"); // ud tolua_gc_key
         lua_rawget(L,LUA_REGISTRYINDEX); // ud tolua_gc
-        lua_pushlightuserdata(L,u); // ud tolua_gc ptr
+        lua_pushinteger(L, refid); // ud tolua_gc ptr
         lua_rawget(L,-2); // ud tolua_gc mt
         lua_getmetatable(L,1); // ud tolua_gc mt mt
         if (lua_rawequal(L,-1,-2))  /* check that we are releasing the correct type */
         {
-            lua_pushlightuserdata(L,u); // ud tolua_gc mt mt ptr
+            lua_pushinteger(L, refid); // ud tolua_gc mt mt ptr
             lua_pushnil(L); // ud tolua_gc mt mt ptr nil
             lua_rawset(L,-5); // ud tolua_gc(ptr->nil) mt mt
             done = 1;
@@ -236,10 +236,12 @@ static int tolua_bnd_cast (lua_State* L)
     };
 
     s = tolua_tostring(L,2,NULL);
-    if (v && s)
-        tolua_pushusertype(L,v,s);
-    else
+    if (v && s) {
+        int refid = *(int*)v;
+        tolua_pushusertype(L,refid,s);
+    } else {
         lua_pushnil(L);
+    }
     return 1;
 }
 
@@ -411,16 +413,16 @@ TOLUA_API int tolua_default_collect (lua_State* tolua_S)
 TOLUA_API int tolua_register_gc (lua_State* L, int lo)
 {
     int success = 1;
-    void *value = *(void **)lua_touserdata(L,lo);
+    int refid = *(int*)lua_touserdata(L,lo);
     lua_pushstring(L,"tolua_gc"); // ud tolua_gc_key
     lua_rawget(L,LUA_REGISTRYINDEX); // ud tolua_gc
-    lua_pushlightuserdata(L,value); // ud tolua_gc ptr
+    lua_pushinteger(L,refid); // ud tolua_gc ptr
     lua_rawget(L,-2); // ud tolua_gc gc
     if (!lua_isnil(L,-1)) /* make sure that object is not already owned */
         success = 0;
     else
     {
-        lua_pushlightuserdata(L,value); // ud tolua_gc nil ptr
+        lua_pushinteger(L,refid); // ud tolua_gc nil ptr
         lua_getmetatable(L,lo); // ud tolua_gc nil ptr mt
         lua_rawset(L,-4); // ud tolua_gc(ptr->mt) nil
     }

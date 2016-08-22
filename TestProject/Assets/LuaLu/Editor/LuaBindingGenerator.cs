@@ -295,7 +295,8 @@
 			buffer += "\t\t\t}\n";
 			buffer += "\t\t#endif\n";
 			buffer += "\t\t\tIntPtr handler = LuaLib.tolua_tousertype(L, 1, IntPtr.Zero);\n";
-			buffer += string.Format("\t\t\tobj = LuaValueBoxer.Ptr2Obj<{0}>(handler);\n", tfn);
+			buffer += "\t\t\tint hash = handler.ToInt32();\n";
+			buffer += string.Format("\t\t\tobj = ({0})NativeObjectMap.FindObject(hash);\n", tfn);
 			buffer += "\t\t#if DEBUG\n";
 			buffer += "\t\t\tif(obj == null) {\n";
 			buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);

@@ -14,10 +14,6 @@ static std::map<unsigned int, char*> hash_type_mapping;
     
 TOLUA_API void toluafix_open(lua_State* L)
 {
-    lua_pushstring(L, TOLUA_REFID_PTR_MAPPING);
-    lua_newtable(L);
-    lua_rawset(L, LUA_REGISTRYINDEX);
-    
     lua_pushstring(L, TOLUA_REFID_TYPE_MAPPING);
     lua_newtable(L);
     lua_rawset(L, LUA_REGISTRYINDEX);
@@ -33,25 +29,14 @@ TOLUA_API void toluafix_open(lua_State* L)
 
 TOLUA_API int toluafix_pushusertype_object(lua_State *L,
                                              int refid,
-                                             int *p_refid,
-                                             void *vptr,
+                                             bool firstPush,
                                              const char *vtype) {
-    if (vptr == NULL || p_refid == NULL) {
+    if (refid == 0) {
         lua_pushnil(L);
         return -1;
     }
     
-    if (*p_refid == 0) {
-        *p_refid = refid;
-        
-        lua_pushstring(L, TOLUA_REFID_PTR_MAPPING);
-        lua_rawget(L, LUA_REGISTRYINDEX);                           /* stack: refid_ptr */
-        lua_pushinteger(L, refid);                                  /* stack: refid_ptr refid */
-        lua_pushlightuserdata(L, vptr);                              /* stack: refid_ptr refid ptr */
-        
-        lua_rawset(L, -3);                  /* refid_ptr[refid] = ptr, stack: refid_ptr */
-        lua_pop(L, 1);                                              /* stack: - */
-        
+    if (firstPush) {
         lua_pushstring(L, TOLUA_REFID_TYPE_MAPPING);
         lua_rawget(L, LUA_REGISTRYINDEX);                           /* stack: refid_type */
         lua_pushinteger(L, refid);                                  /* stack: refid_type refid */
@@ -60,38 +45,15 @@ TOLUA_API int toluafix_pushusertype_object(lua_State *L,
         lua_pop(L, 1);                                              /* stack: - */
     }
     
-    tolua_pushusertype_and_addtoroot(L, vptr, vtype);
+    tolua_pushusertype_and_addtoroot(L, refid, vtype);
     return 0;
 }
     
 TOLUA_API int toluafix_remove_object_by_refid(lua_State* L, int refid)
 {
-	void* ptr = NULL;
     const char* type = NULL;
-    void** ud = NULL;
+    int* ud = NULL;
     if (refid == 0) return -1;
-    
-    // get ptr from tolua_refid_ptr_mapping
-    lua_pushstring(L, TOLUA_REFID_PTR_MAPPING);
-    lua_rawget(L, LUA_REGISTRYINDEX);                               /* stack: refid_ptr */
-    lua_pushinteger(L, refid);                                      /* stack: refid_ptr refid */
-    lua_rawget(L, -2);                                              /* stack: refid_ptr ptr */
-    ptr = lua_touserdata(L, -1);
-    lua_pop(L, 1);                                                  /* stack: refid_ptr */
-    if (ptr == NULL)
-    {
-        lua_pop(L, 1);
-        // Lua stack has closed, C++ object not in Lua.
-        // printf("[LUA ERROR] remove object with NULL ptr, refid: %d\n", refid);
-        return -2;
-    }
-    
-    // remove ptr from tolua_refid_ptr_mapping
-    lua_pushinteger(L, refid);                                      /* stack: refid_ptr refid */
-    lua_pushnil(L);                                                 /* stack: refid_ptr refid nil */
-    lua_rawset(L, -3);                     /* delete refid_ptr[refid], stack: refid_ptr */
-    lua_pop(L, 1);                                                  /* stack: - */
-    
     
     // get type from tolua_refid_type_mapping
     lua_pushstring(L, TOLUA_REFID_TYPE_MAPPING);
@@ -101,7 +63,7 @@ TOLUA_API int toluafix_remove_object_by_refid(lua_State* L, int refid)
     if (lua_isnil(L, -1))
     {
         lua_pop(L, 2);
-        printf("[LUA ERROR] remove Object with NULL type, refid: %d, ptr: %p\n", refid, ptr);
+        printf("[LUA ERROR] remove Object with NULL type, refid: %d", refid);
         return -1;
     }
     
@@ -128,9 +90,9 @@ TOLUA_API int toluafix_remove_object_by_refid(lua_State* L, int refid)
     
     
     // cleanup root
-    tolua_remove_value_from_root(L, ptr);
+    tolua_remove_value_from_root(L, refid);
     
-    lua_pushlightuserdata(L, ptr);                                  /* stack: mt ubox ptr */
+    lua_pushinteger(L, refid);                                  /* stack: mt ubox ptr */
     lua_rawget(L,-2);                                               /* stack: mt ubox ud */
     if (lua_isnil(L, -1))
     {
@@ -144,19 +106,19 @@ TOLUA_API int toluafix_remove_object_by_refid(lua_State* L, int refid)
     lua_pushvalue(L, TOLUA_NOPEER);
     lua_setfenv(L, -2);
 
-    ud = (void**)lua_touserdata(L, -1);
+    ud = (int*)lua_touserdata(L, -1);
     lua_pop(L, 1);                                                  /* stack: mt ubox */
     if (ud == NULL)
     {
-        printf("[LUA ERROR] remove Object with NULL userdata, refid: %d, ptr: %p, type: %s\n", refid, ptr, type);
+        printf("[LUA ERROR] remove Object with NULL userdata, refid: %d, type: %s\n", refid, type);
         lua_pop(L, 2);
         return -1;
     }
     
     // clean userdata
-    *ud = NULL;
+    *ud = 0;
     
-    lua_pushlightuserdata(L, ptr);                                  /* stack: mt ubox ptr */
+    lua_pushinteger(L, refid);                                  /* stack: mt ubox ptr */
     lua_pushnil(L);                                                 /* stack: mt ubox ptr nil */
     lua_rawset(L, -3);                             /* ubox[ptr] = nil, stack: mt ubox */
     

@@ -781,10 +781,10 @@
 		public static extern void tolua_pushuserdata(IntPtr L, IntPtr value);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void tolua_pushusertype(IntPtr L, IntPtr value, string type);
+		public static extern void tolua_pushusertype(IntPtr L, int refid, string type);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void tolua_pushusertype_and_takeownership(IntPtr L, IntPtr value, string type);
+		public static extern void tolua_pushusertype_and_takeownership(IntPtr L, int refid, string type);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void tolua_pushfieldvalue(IntPtr L, int lo, int index, int v);
@@ -802,19 +802,19 @@
 		public static extern void tolua_pushfielduserdata(IntPtr L, int lo, int index, IntPtr v);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void tolua_pushfieldusertype(IntPtr L, int lo, int index, IntPtr v, string type);
+		public static extern void tolua_pushfieldusertype(IntPtr L, int lo, int index, int refid, string type);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void tolua_pushfieldusertype_and_takeownership(IntPtr L, int lo, int index, IntPtr v, string type);
+		public static extern void tolua_pushfieldusertype_and_takeownership(IntPtr L, int lo, int index, int refid, string type);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void tolua_pushusertype_and_addtoroot(IntPtr L, IntPtr value, string type);
+		public static extern void tolua_pushusertype_and_addtoroot(IntPtr L, int value, string type);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void tolua_add_value_to_root(IntPtr L, IntPtr value);
+		public static extern void tolua_add_value_to_root(IntPtr L, int refid);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void tolua_remove_value_from_root(IntPtr L, IntPtr value);
+		public static extern void tolua_remove_value_from_root(IntPtr L, int refid);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern double tolua_tonumber(IntPtr L, int narg, double def);
@@ -878,7 +878,7 @@
 		public static extern void toluafix_open(IntPtr L);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int toluafix_pushusertype_object(IntPtr L, int refid, ref int p_refid, IntPtr vptr, string vtype);
+		public static extern int toluafix_pushusertype_object(IntPtr L, int refid, bool firstPush, string vtype);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int toluafix_remove_object_by_refid(IntPtr L, int refid);

@@ -17,9 +17,9 @@
 
 #include <stdlib.h>
 
-void tolua_pushusertype_internal (lua_State* L, void* value, const char* type, int addToRoot)
+void tolua_pushusertype_internal (lua_State* L, int refid, const char* type, int addToRoot)
 {
-    if (value == NULL)
+    if (refid == 0)
         lua_pushnil(L);
     else
     {
@@ -36,14 +36,14 @@ void tolua_pushusertype_internal (lua_State* L, void* value, const char* type, i
             lua_rawget(L, LUA_REGISTRYINDEX);
         };
         
-        lua_pushlightuserdata(L,value);                             /* stack: mt ubox key<value> */
-        lua_rawget(L,-2);                                           /* stack: mt ubox ubox[value] */
+        lua_pushinteger(L,refid);                             /* stack: mt ubox key<refid> */
+        lua_rawget(L,-2);                                           /* stack: mt ubox ubox[refid] */
         
         if (lua_isnil(L,-1))
         {
             lua_pop(L,1);                                           /* stack: mt ubox */
-            lua_pushlightuserdata(L,value);
-            *(void**)lua_newuserdata(L,sizeof(void *)) = value;     /* stack: mt ubox value newud */
+            lua_pushinteger(L,refid);
+            *(int*)lua_newuserdata(L,sizeof(int)) = refid;     /* stack: mt ubox value newud */
             lua_pushvalue(L,-1);                                    /* stack: mt ubox value newud newud */
             lua_insert(L,-4);                                       /* stack: mt newud ubox value newud */
             lua_rawset(L,-3);                  /* ubox[value] = newud, stack: mt newud ubox */
@@ -88,7 +88,7 @@ void tolua_pushusertype_internal (lua_State* L, void* value, const char* type, i
         if (0 != addToRoot)
         {
             lua_pushvalue(L, -1);
-            tolua_add_value_to_root(L, value);
+            tolua_add_value_to_root(L, refid);
         }
     }
 }
@@ -124,40 +124,40 @@ TOLUA_API void tolua_pushuserdata (lua_State* L, void* value)
         lua_pushlightuserdata(L,value);
 }
 
-TOLUA_API void tolua_pushusertype (lua_State* L, void* value, const char* type)
+TOLUA_API void tolua_pushusertype (lua_State* L, int refid, const char* type)
 {
-    tolua_pushusertype_internal(L, value, type, 0);
+    tolua_pushusertype_internal(L, refid, type, 0);
 }
 
-TOLUA_API void tolua_pushusertype_and_addtoroot (lua_State* L, void* value, const char* type)
+TOLUA_API void tolua_pushusertype_and_addtoroot (lua_State* L, int refid, const char* type)
 {
-    tolua_pushusertype_internal(L, value, type, 1);
+    tolua_pushusertype_internal(L, refid, type, 1);
 }
 
-TOLUA_API void tolua_pushusertype_and_takeownership (lua_State* L, void* value, const char* type)
+TOLUA_API void tolua_pushusertype_and_takeownership (lua_State* L, int refid, const char* type)
 {
-    tolua_pushusertype(L,value,type);
+    tolua_pushusertype(L,refid,type);
     tolua_register_gc(L,lua_gettop(L));
 }
 
-TOLUA_API void tolua_add_value_to_root(lua_State* L, void* ptr)
+TOLUA_API void tolua_add_value_to_root(lua_State* L, int refid)
 {
     
     lua_pushstring(L, TOLUA_VALUE_ROOT);
     lua_rawget(L, LUA_REGISTRYINDEX);                               /* stack: value root */
     lua_insert(L, -2);                                              /* stack: root value */
-    lua_pushlightuserdata(L, ptr);                                  /* stack: root value ptr */
+    lua_pushinteger(L, refid);                                  /* stack: root value ptr */
     lua_insert(L, -2);                                              /* stack: root ptr value */
     lua_rawset(L, -3);                                              /* root[ptr] = value, stack: root */
     lua_pop(L, 1);                                                  /* stack: - */
 }
 
 
-TOLUA_API void tolua_remove_value_from_root (lua_State* L, void* ptr)
+TOLUA_API void tolua_remove_value_from_root (lua_State* L, int refid)
 {
     lua_pushstring(L, TOLUA_VALUE_ROOT);
     lua_rawget(L, LUA_REGISTRYINDEX);                               /* stack: root */
-    lua_pushlightuserdata(L, ptr);                                  /* stack: root ptr */
+    lua_pushinteger(L, refid);                                  /* stack: root ptr */
     
     lua_pushnil(L);                                                 /* stack: root ptr nil */
     lua_rawset(L, -3);                                              /* root[ptr] = nil, stack: root */
@@ -200,17 +200,17 @@ TOLUA_API void tolua_pushfielduserdata (lua_State* L, int lo, int index, void* v
     lua_settable(L,lo);
 }
 
-TOLUA_API void tolua_pushfieldusertype (lua_State* L, int lo, int index, void* v, const char* type)
+TOLUA_API void tolua_pushfieldusertype (lua_State* L, int lo, int index, int refid, const char* type)
 {
     lua_pushnumber(L,index);
-    tolua_pushusertype(L,v,type);
+    tolua_pushusertype(L,refid,type);
     lua_settable(L,lo);
 }
 
-TOLUA_API void tolua_pushfieldusertype_and_takeownership (lua_State* L, int lo, int index, void* v, const char* type)
+TOLUA_API void tolua_pushfieldusertype_and_takeownership (lua_State* L, int lo, int index, int refid, const char* type)
 {
     lua_pushnumber(L,index);
-    tolua_pushusertype(L,v,type);
+    tolua_pushusertype(L,refid,type);
     tolua_register_gc(L,lua_gettop(L));
     lua_settable(L,lo);
 }

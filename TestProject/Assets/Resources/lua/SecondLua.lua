@@ -1,4 +1,4 @@
-SecondLua = class("SecondLua", function() return LuaComponent.new() end)
+SecondLua = class("SecondLua", function() return LuaLu.LuaComponent.new() end)
 
 function SecondLua:testMethod()
   print("from SecondLua test method")
@@ -13,5 +13,4 @@ function SecondLua:Start()
 end
 
 function SecondLua:Update()
-  print("hahahaha, lua side Update for SecondLua!!!!")
 end

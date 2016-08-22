@@ -29,9 +29,6 @@
 		// flag indicating calling in lua
 		private int m_callFromLua;
 
-		// object lua id map
-		private Dictionary<object, int> m_objLuaIdMap = new Dictionary<object, int>();
-
 		// lua asset bundle list
 		private static List<string> s_luaAssetBundleNames;
 
@@ -355,18 +352,6 @@
 			LuaLib.lua_pop(L, 1);
 		}
 
-		private int GetObjLuaId(object obj) {
-			if(m_objLuaIdMap.ContainsKey(obj)) {
-				return m_objLuaIdMap[obj];
-			} else {
-				return 0;
-			}
-		}
-
-		public void SetObjLuaId(object obj, int luaId) {
-			m_objLuaIdMap[obj] = luaId;
-		}
-
 		/// <summary>
 		/// check if two script function handlers point to same function
 		/// </summary>
@@ -385,8 +370,8 @@
 		/// Remove CCObject from lua state
 		/// </summary>
 		/// <param name="obj">object</param>
-		public void RemoveScriptObjectByCCObject(object obj) {
-			LuaLib.toluafix_remove_object_by_refid(L, GetObjLuaId(obj));
+		public void RemoveScriptSideObject(object obj) {
+			LuaLib.toluafix_remove_object_by_refid(L, obj.GetHashCode());
 		}
 
 		/// <summary>
@@ -589,9 +574,11 @@
 		}
 
 		public void PushObject(object obj, string typeName) {
-			int luaId = GetObjLuaId(obj);
-			LuaLib.toluafix_pushusertype_object(L, obj.GetHashCode(), ref luaId, LuaValueBoxer.Obj2Ptr(obj), typeName);
-			SetObjLuaId(obj, luaId);
+			bool isRegistered = NativeObjectMap.isRegistered(obj);
+			if(!isRegistered) {
+				NativeObjectMap.RegisterObject(obj);
+			}
+			LuaLib.toluafix_pushusertype_object(L, obj.GetHashCode(), !isRegistered, typeName);
 		}
 
 		public void PushArray(Array array) {
@@ -644,8 +631,13 @@
 			return nNewHandle;
 		}
 
-		public void SaveInstanceInGlobal(object obj, string globalName) {
+		public void SaveInstanceInGlobal(object obj, string globalName = "__tmp_obj__") {
 			PushObject(obj, obj.GetType().FullName);
+			LuaLib.lua_setglobal(L, globalName);
+		}
+
+		public void ClearInstanceInGlobal(string globalName = "__tmp_obj__") {
+			LuaLib.lua_pushnil(L);
 			LuaLib.lua_setglobal(L, globalName);
 		}
 

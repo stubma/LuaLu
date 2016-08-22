@@ -8,7 +8,6 @@
 extern "C" {
 #endif
     
-#define TOLUA_REFID_PTR_MAPPING "toluafix_refid_ptr_mapping"
 #define TOLUA_REFID_TYPE_MAPPING "toluafix_refid_type_mapping"
 #define TOLUA_REFID_FUNCTION_MAPPING "toluafix_refid_function_mapping"
 #define TOLUA_REFID_TABLE_MAPPING "toluafix_refid_table_mapping"
@@ -16,8 +15,7 @@ extern "C" {
 TOLUA_API void toluafix_open(lua_State* L);
 TOLUA_API int toluafix_pushusertype_object(lua_State *L,
                                              int refid,
-                                             int *p_refid,
-                                             void *vptr,
+                                             bool firstPush,
                                              const char *vtype);
 TOLUA_API int toluafix_remove_object_by_refid(lua_State* L, int refid);
 TOLUA_API int toluafix_ref_function(lua_State* L, int lo, int def);

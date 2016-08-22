@@ -14,34 +14,6 @@
 			tolua_err = new tolua_Error();
 		}
 
-		public static IntPtr Obj2Ptr(object obj) {
-			if(obj != null) {
-				GCHandle h = GCHandle.Alloc(obj);
-				return (IntPtr)h;
-			} else {
-				return IntPtr.Zero;
-			}
-		}
-
-		public static object Ptr2Obj(IntPtr ptr) {
-			if(ptr == IntPtr.Zero) {
-				return null;
-			} else {
-				GCHandle h = (GCHandle)ptr;
-				return h.Target;
-			}
-		}
-
-		public static T Ptr2Obj<T>(IntPtr ptr) {
-			if(ptr == IntPtr.Zero) {
-				return default(T);
-			} else {
-				GCHandle h = (GCHandle)ptr;
-				T t = (T)h.Target;
-				return t;
-			}
-		}
-
 		static bool luaval_is_usertype(IntPtr L, int lo, string type) {
 			if(LuaLib.lua_gettop(L) < Math.Abs(lo))
 				return true;
@@ -409,7 +381,8 @@
 
 			// to obj
 			IntPtr handle = LuaLib.tolua_tousertype(L, lo, IntPtr.Zero);
-			ret = Ptr2Obj<T>(handle);
+			int hash = handle.ToInt32();
+			ret = (T)NativeObjectMap.FindObject(hash);
 
 			// check
 			if(ret == null) {
@@ -1121,7 +1094,8 @@
 					LuaLib.lua_gettable(L, lo);
 					if(luaval_is_usertype(L, -1, type)) {
 						IntPtr handle = LuaLib.tolua_tousertype(L, -1, IntPtr.Zero);
-						ret[i] = Ptr2Obj<T>(handle);
+						int hash = handle.ToInt32();
+						ret[i] = (T)NativeObjectMap.FindObject(hash);
 					} else {
 						Debug.Assert(false, string.Format("{0} type is needed", type));
 					}
@@ -1191,9 +1165,7 @@
 
 		public static void object_to_luaval<T>(IntPtr L, string type, T t) {
 			if(t == null) {
-				int luaId = 0;
-				LuaLib.toluafix_pushusertype_object(L, t.GetHashCode(), ref luaId, Obj2Ptr(t), type);
-				LuaStack.SharedInstance().SetObjLuaId(t, luaId); // TODO think about a better way
+				LuaStack.SharedInstance().PushObject(t, type);
 			} else {
 				LuaLib.lua_pushnil(L);
 			}

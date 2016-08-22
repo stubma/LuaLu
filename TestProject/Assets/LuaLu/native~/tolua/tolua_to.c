@@ -62,7 +62,7 @@ TOLUA_API void* tolua_tousertype (lua_State* L, int narg, void* def)
             if (!push_table_instance(L, narg)) return NULL;
         }
         u = lua_touserdata(L,narg);
-        return (u==NULL) ? NULL : *((void**)u); /* nil represents NULL */
+        return u;
     }
 }
 
