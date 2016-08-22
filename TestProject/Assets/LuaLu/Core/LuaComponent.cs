@@ -47,6 +47,7 @@
 			} else {
 				m_valid = true;
 			}
+
 		}
 
 		void Awake() {
@@ -83,9 +84,7 @@
 
 			// run lua side Start
 			LuaStack L = LuaStack.SharedInstance();
-			L.SaveInstanceInGlobal(this);
-			L.ExecuteString("_G[\"__tmp_obj__\"]:Start()");
-			L.ClearInstanceInGlobal();
+			L.ExecuteObjectFunction(this, "Start");
 		}
 
 		void Update() {
@@ -96,9 +95,7 @@
 
 			// run lua side Update
 			LuaStack L = LuaStack.SharedInstance();
-			L.SaveInstanceInGlobal(this);
-			L.ExecuteString("_G[\"__tmp_obj__\"]:Update()");
-			L.ClearInstanceInGlobal();
+			L.ExecuteObjectFunction(this, "Update");
 		}
 	}
 }

@@ -523,6 +523,40 @@
 			return ret;
 		}
 
+		public int ExecuteObjectFunction(object obj, string funcName, Array args = null, bool isStatic = false, Action<IntPtr> collector = null) {
+			// get func
+			PushObject(obj, obj.GetType().GetNormalizedName());
+			PushString(funcName);
+			LuaLib.lua_gettable(L, -2);
+
+			// check func
+			if(LuaLib.lua_isnil(L, -1) || !LuaLib.lua_isfunction(L, -1)) {
+				return 0;
+			}
+
+			// push obj if not static method
+			int argc = 0;
+			if(!isStatic) {
+				LuaLib.lua_pushvalue(L, -2);
+				argc++;
+			}
+
+			// push args
+			if(args != null) {
+				PushArray(args);
+				argc += args.Length;
+			}
+
+			// exec
+			int ret = ExecuteFunction(argc, collector);
+
+			// pop obj
+			LuaLib.lua_pop(L, 1);
+
+			// return
+			return ret;
+		}
+
 		/// <summary>
 		/// Execute a scripted global function. The function should not take any parameters and should return an integer.
 		/// </summary>
