@@ -291,8 +291,6 @@
 			buffer += string.Format("\t\tpublic static int {0}(IntPtr L) {{\n", mn);
 			buffer += "\t\t\t// variables\n";
 			buffer += "\t\t\tint argc = 0;\n";
-			buffer += string.Format("\t\t\t{0} obj = null;\n", tfn);
-			buffer += "\t\t\tbool ok = true;\n";
 			buffer += "\t\t#if DEBUG\n";
 			buffer += "\t\t\ttolua_Error err = new tolua_Error();\n";
 			buffer += "\t\t#endif\n";
@@ -332,6 +330,7 @@
 					// argument conversion
 					buffer += "\n";
 					buffer += "\t\t\t\t// convert lua value to desired arguments\n";
+					buffer += "\t\t\t\tbool ok = true;\n";
 					for(int i = 0; i < pList.Length; i++) {
 						buffer += GenerateUnboxParameters(pList[i], i, tn + "." + mn);
 					}
@@ -364,7 +363,7 @@
 				buffer += "\t\t\t#endif\n";
 				if(!callM.IsStatic) {
 					buffer += "\t\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
-					buffer += string.Format("\t\t\t\tobj = ({0})NativeObjectMap.FindObject(refId);\n", tfn);
+					buffer += string.Format("\t\t\t\t{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tfn);
 					buffer += "\t\t\t#if DEBUG\n";
 					buffer += "\t\t\t\tif(obj == null) {\n";
 					buffer += string.Format("\t\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);
