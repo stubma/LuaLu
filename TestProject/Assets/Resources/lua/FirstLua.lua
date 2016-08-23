@@ -9,14 +9,8 @@ function FirstLua.staticMethod()
 end
 
 function FirstLua:Start()
-  print("hahahaha, lua side Start for first lua!!!!")
-  print("firstlua component tag is " .. self.tag)
-  if self:CompareTag("PickUp") then
-    print("this component tag is pickup!! 哈哈")
-  else
-    print("this compent tag is not!!!")
-  end
 end
 
 function FirstLua:Update()
+  self.transform:Rotate(UnityEngine.Vector3.new(15 * UnityEngine.Time.deltaTime, 30 * UnityEngine.Time.deltaTime, 45 * UnityEngine.Time.deltaTime))
 end

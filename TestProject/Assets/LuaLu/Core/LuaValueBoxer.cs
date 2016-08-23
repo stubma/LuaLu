@@ -330,7 +330,7 @@
 		}
 
 		public static void object_to_luaval(IntPtr L, string type, object t) {
-			if(t == null) {
+			if(t != null) {
 				LuaStack.SharedInstance().PushObject(t, type);
 			} else {
 				LuaLib.lua_pushnil(L);
@@ -435,7 +435,7 @@
 					LuaLib.lua_pushinteger(L, (int)e.Current);
 					LuaLib.lua_rawset(L, -3);
 					++indexTable;
-				} else if(t.IsEnumerable()) {
+				} else if(t.IsList() && t.IsEnumerable()) {
 					LuaLib.lua_pushnumber(L, indexTable);
 					list_to_luaval(L, e.Current as IEnumerable);
 					LuaLib.lua_rawset(L, -3);
@@ -552,7 +552,7 @@
 				} else if(vt.IsEnum) {
 					LuaLib.lua_pushinteger(L, (int)e.Value);
 					LuaLib.lua_rawset(L, -3);
-				} else if(vt.IsEnumerable()) {
+				} else if(vt.IsList() && vt.IsEnumerable()) {
 					list_to_luaval(L, e.Value as IEnumerable);
 					LuaLib.lua_rawset(L, -3);
 				} else if(vt.IsDictionary()) {
@@ -600,7 +600,7 @@
 				// do nothing for void
 			} else if(t.IsEnum) {
 				LuaLib.lua_pushinteger(L, Convert.ToInt32(v));
-			} else if(t.IsEnumerable()) {
+			} else if(t.IsList() && t.IsEnumerable()) {
 				list_to_luaval(L, v as IEnumerable);
 			} else if(t.IsDictionary()) {
 				dictionary_to_luaval(L, v as IDictionary);
