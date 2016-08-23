@@ -60,15 +60,15 @@
 			// convert
 			bool ok = true;
 			if(tn == "byte" ||
-				tn == "sbyte" ||
-				tn == "short" ||
-				tn == "ushort" ||
-				tn == "bool" ||
-				tn == "int" ||
-				tn == "uint" ||
-				tn == "decimal" ||
-				tn == "long" ||
-				tn == "ulong") {
+			   tn == "sbyte" ||
+			   tn == "short" ||
+			   tn == "ushort" ||
+			   tn == "bool" ||
+			   tn == "int" ||
+			   tn == "uint" ||
+			   tn == "decimal" ||
+			   tn == "long" ||
+			   tn == "ulong") {
 				// top should be a number
 				if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
 					#if DEBUG
@@ -235,9 +235,9 @@
 			// fill elements
 			if(ok) {
 				LuaLib.lua_pushnil(L);
-				while (LuaLib.lua_next(L, lo) != 0) {
+				while(LuaLib.lua_next(L, lo) != 0) {
 					// if key is not string, ignore
-					if (!LuaLib.lua_isstring(L, -2)) {
+					if(!LuaLib.lua_isstring(L, -2)) {
 						LuaLib.lua_pop(L, 1);
 						continue;
 					}
@@ -342,7 +342,7 @@
 			LuaLib.lua_newtable(L);
 
 			// validate
-			if (IntPtr.Zero == L || null == inValue)
+			if(IntPtr.Zero == L || null == inValue)
 				return;
 
 			// push every element
@@ -358,7 +358,7 @@
 			LuaLib.lua_newtable(L);
 
 			// validate
-			if (IntPtr.Zero == L || null == inValue)
+			if(IntPtr.Zero == L || null == inValue)
 				return;
 
 			// push every element
@@ -462,7 +462,7 @@
 			LuaLib.lua_newtable(L);
 
 			// validate
-			if (IntPtr.Zero == L || null == dict)
+			if(IntPtr.Zero == L || null == dict)
 				return;
 
 			// push
@@ -609,15 +609,134 @@
 			}
 		}
 
-		public static bool CheckParameterType(IntPtr L, params string[] ptList) {
+		public static void GetLuaParameterTypes(IntPtr L, out int[] types) {
 			int argc = LuaLib.lua_gettop(L) - 1;
-			if(ptList != null && ptList.Length >= argc) {
+			types = new int[argc];
+			for(int i = 0; i < argc; i++) {
+				types[i] = LuaLib.lua_type(L, i + 2);
+			}
+		}
+
+		public static bool CheckParameterType(IntPtr L, int[] luaTypes, string[] typeFullNames, bool fuzzy = false) {
+			// get argument count
+			int argc = LuaLib.lua_gettop(L) - 1;
+
+			// first time we perform accurate match
+			bool matched = false;
+			if(typeFullNames != null && typeFullNames.Length >= argc) {
 				for(int i = 0; i < argc; i++) {
-					
+					int luaType = LuaLib.lua_type(L, i + 2);
+					string tfn = typeFullNames[i];
+					if(luaType == (int)LuaTypes.LUA_TBOOLEAN) {
+						if(fuzzy) {
+							if(tfn == "System.Boolean" ||
+							   tfn == "System.Byte" ||
+							   tfn == "System.SByte" ||
+							   tfn == "System.Int16" ||
+							   tfn == "System.Int32" ||
+							   tfn == "System.Int64" ||
+							   tfn == "System.UInt16" ||
+							   tfn == "System.UInt32" ||
+							   tfn == "System.UInt64") {
+								matched = true;
+								break;
+							}
+						} else if(tfn == "System.Boolean") {
+							matched = true;
+							break;
+						}
+					} else if(luaType == (int)LuaTypes.LUA_TNUMBER) {
+						if(fuzzy) {
+							if(tfn == "System.Boolean" ||
+							   tfn == "System.Byte" ||
+							   tfn == "System.SByte" ||
+							   tfn == "System.Int16" ||
+							   tfn == "System.Int32" ||
+							   tfn == "System.Int64" ||
+							   tfn == "System.UInt16" ||
+							   tfn == "System.UInt32" ||
+							   tfn == "System.UInt64" ||
+							   tfn == "System.Decimal" ||
+							   tfn == "System.Double" ||
+							   tfn == "System.Single") {
+								matched = true;
+								break;
+							}
+						} else if(tfn == "System.Int16" ||
+						          tfn == "System.Int32" ||
+						          tfn == "System.Int64" ||
+						          tfn == "System.UInt16" ||
+						          tfn == "System.UInt32" ||
+						          tfn == "System.UInt64" ||
+						          tfn == "System.Decimal" ||
+						          tfn == "System.Double" ||
+						          tfn == "System.Single") {
+							matched = true;
+							break;
+						}
+					} else if(luaType == (int)LuaTypes.LUA_TSTRING) {
+						if(fuzzy) {
+							if(tfn == "System.String") {
+								matched = true;
+								break;
+							} else if(tfn == "System.Char") {
+								string arg = LuaLib.lua_tostring(L, i + 2);
+								if(arg.Length == 1) {
+									matched = true;
+									break;
+								}
+							}
+						} else if(tfn == "System.String") {
+							matched = true;
+							break;
+						}
+					} else if(luaType == (int)LuaTypes.LUA_TTABLE) {
+						Type t = Type.GetType(tfn);
+						if(t.IsList() || t.IsDictionary()) {
+							matched = true;
+							break;
+						}
+					} else if(luaType == (int)LuaTypes.LUA_TUSERDATA) {
+						string typeName = LuaLib.tolua_typename(L, i + 2);
+						if(fuzzy) {
+							Type nt = Type.GetType(tfn);
+							Type lt = Type.GetType(typeName);
+							if(typeName == tfn || nt.IsAssignableFrom(lt)) {
+								matched = true;
+								break;
+							}
+						} else if(typeName == tfn) {
+							matched = true;
+							break;
+						}
+					} else if(luaType == (int)LuaTypes.LUA_TNIL) {
+						Type t = Type.GetType(tfn);
+						if(fuzzy) {
+							if(!t.IsPrimitive ||
+							   tfn == "System.Boolean" ||
+							   tfn == "System.Byte" ||
+							   tfn == "System.SByte" ||
+							   tfn == "System.Int16" ||
+							   tfn == "System.Int32" ||
+							   tfn == "System.Int64" ||
+							   tfn == "System.UInt16" ||
+							   tfn == "System.UInt32" ||
+							   tfn == "System.UInt64" ||
+							   tfn == "System.Decimal" ||
+							   tfn == "System.Double" ||
+							   tfn == "System.Single") {
+								matched = true;
+								break;
+							}
+						} else if(!t.IsPrimitive) {
+							matched = true;
+							break;
+						}
+					}
 				}
 			}
 
-			return false;
+			return matched;
 		}
 	}
 }

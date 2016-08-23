@@ -300,8 +300,71 @@
 				MethodInfo callM = null;
 				List<MethodInfo> ml = mpMap[c];
 				if(ml.Count > 1) {
-					// only one method, so it is simple, just pick the only one
-					buffer += GenerateMethodInvocation(t, ml[0], c, false);
+					// get lua types
+					buffer += "\t\t\t\t// get lua parameter types\n";
+					buffer += "\t\t\t\tint[] luaTypes;\n";
+					buffer += "\t\t\t\tLuaValueBoxer.GetLuaParameterTypes(L, out luaTypes);\n";
+
+					// native types
+					buffer += "\n";
+					buffer += "\t\t\t\t// native types\n";
+					for(int i = 0; i < ml.Count; i++) {
+						// get parameter name which can be queried by GetType
+						buffer += string.Format("\t\t\t\tstring[] nativeTypes{0} = new string[] {{\n", i);
+						ParameterInfo[] pList = ml[i].GetParameters();
+						for(int j = 0; j < pList.Length; j++) {
+							ParameterInfo pi = pList[j];
+							Type pt = pi.ParameterType;
+							string ptn = pt.FullName;
+							if(pt.IsGenericType) {
+								int gArgc = pt.GetGenericArguments().Length;
+								if(gArgc > 0) {
+									ptn = ptn.Substring(0, ptn.IndexOf('`')) + "`" + gArgc;
+								}
+							}
+
+							// put
+							buffer += string.Format("\t\t\t\t\t\"{0}\"", ptn);
+							if(j < pList.Length - 1) {
+								buffer += ",";
+							}
+							buffer += "\n";
+						}
+						buffer += "\t\t\t\t};\n";
+					}
+
+					// accurate match every method
+					buffer += "\n";
+					for(int i = 0; i < ml.Count; i++) {
+						// accurate match
+						if(i == 0) {
+							buffer += "\t\t\t\t";
+						}
+						buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0})) {{\n", i);
+
+						// only one method, so it is simple, just pick the only one
+						buffer += GenerateMethodInvocation(t, ml[i], c, true);
+
+						// close if
+						buffer += "\t\t\t\t} else ";
+					}
+
+					// fuzzy match every method
+					for(int i = 0; i < ml.Count; i++) {
+						// accurate match
+						buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, true)) {{\n", i);
+
+						// only one method, so it is simple, just pick the only one
+						buffer += GenerateMethodInvocation(t, ml[i], c, true);
+
+						// close if
+						buffer += "\t\t\t\t}";
+						if(i < ml.Count - 1) {
+							buffer += " else ";
+						} else {
+							buffer += "\n";
+						}
+					}
 				} else {
 					// only one method, so it is simple, just pick the only one
 					buffer += GenerateMethodInvocation(t, ml[0], c, false);
@@ -349,7 +412,7 @@
 				buffer += indent + "// convert lua value to desired arguments\n";
 				buffer += indent + "bool ok = true;\n";
 				for(int i = 0; i < pList.Length; i++) {
-					buffer += GenerateUnboxParameters(pList[i], i, tn + "." + mn);
+					buffer += GenerateUnboxParameters(pList[i], i, tn + "." + mn, indent);
 				}
 
 				// check conversion
@@ -413,14 +476,14 @@
 			buffer += ");\n";
 
 			// push returned value
-			buffer += GenerateBoxReturnValue(callM);
+			buffer += GenerateBoxReturnValue(callM, indent);
 			buffer += indent + "return 1;\n";
 
 			// return
 			return buffer;
 		}
 
-		private static string GenerateBoxReturnValue(MethodInfo m) {
+		private static string GenerateBoxReturnValue(MethodInfo m, string indent) {
 			Type rt = m.ReturnType;
 			string rtn = rt.GetNormalizedName();
 			string buffer = "";
@@ -431,16 +494,16 @@
 			} else if(rt.IsArray) {
 				Type et = rt.GetElementType();
 				string etn = et.GetNormalizedName();
-				buffer += string.Format("\t\t\t\tLuaValueBoxer.array_to_luaval<{0}>(L, ret);\n", etn);
+				buffer += string.Format(indent + "LuaValueBoxer.array_to_luaval<{0}>(L, ret);\n", etn);
 			} else {
-				buffer += string.Format("\t\t\t\tLuaValueBoxer.type_to_luaval<{0}>(L, ret);\n", rtn);
+				buffer += string.Format(indent + "LuaValueBoxer.type_to_luaval<{0}>(L, ret);\n", rtn);
 			}
 
 			// return
 			return buffer;
 		}
 
-		private static string GenerateUnboxParameters(ParameterInfo pi, int argIndex, string methodName) {
+		private static string GenerateUnboxParameters(ParameterInfo pi, int argIndex, string methodName, string indent) {
 			// if parameter is out, no need unbox it
 			if(pi.IsOut) {
 				// TODO need remember this parameter and use multiret
@@ -459,14 +522,14 @@
 				if(et.IsArray) {
 					// TODO more than one dimension array? not supported yet
 				} else {
-					buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_array<{0}>(L, {1}, out arg{2}, \"{3}\");\n", etn, argIndex + 2, argIndex, methodName);
+					buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_array<{0}>(L, {1}, out arg{2}, \"{3}\");\n", etn, argIndex + 2, argIndex, methodName);
 				}
 			} else if(pt.IsList()) {
-				buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
+				buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_list<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
 			} else if(pt.IsDictionary()) {
-				buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
+				buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_dictionary<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
 			} else {
-				buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_type<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
+				buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_type<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
 			}
 
 			// return

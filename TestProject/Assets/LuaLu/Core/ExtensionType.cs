@@ -29,7 +29,7 @@ public static class ExtensionType {
 		} else if(t.IsGenericType) {
 			return t.GetGenericName();
 		} else {
-			return t.FullName.NormalizeTypeName();            
+			return t.FullName == null ? t.Name.NormalizeTypeName() : t.FullName.NormalizeTypeName();            
 		}
 	}
 
