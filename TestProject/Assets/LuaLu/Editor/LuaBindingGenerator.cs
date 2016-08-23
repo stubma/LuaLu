@@ -9,27 +9,10 @@
 
 	public class LuaBindingGenerator {
 		private static List<string> INCLUDE_NAMESPACES;
-		private static List<string> FUNDMENTAL_TYPES;
 
 		static LuaBindingGenerator() {
 			INCLUDE_NAMESPACES = new List<string> {
 				"System"
-			};
-			FUNDMENTAL_TYPES = new List<string> {
-				"byte",
-				"sbyte",
-				"char",
-				"short",
-				"ushort",
-				"bool",
-				"int",
-				"uint",
-				"long",
-				"ulong",
-				"float",
-				"double",
-				"decimal",
-				"string"
 			};
 		}
 
@@ -443,18 +426,14 @@
 			string buffer = "";
 
 			// convert to lua value
-			if(FUNDMENTAL_TYPES.Contains(rtn)) {
-				buffer += string.Format("\t\t\t\tLuaValueBoxer.{0}_to_luaval(L, ret);\n", rtn);
-			} else if(rtn == "System.Void") {
-				// do nothing for void
-			} else if(rt.IsEnum) {
-				buffer += "\t\t\t\tLuaValueBoxer.int_to_luaval(L, (int)ret);\n";
+			if(rt.IsVoid()) {
+				// do not generate for void return
 			} else if(rt.IsArray) {
 				Type et = rt.GetElementType();
 				string etn = et.GetNormalizedName();
 				buffer += string.Format("\t\t\t\tLuaValueBoxer.array_to_luaval<{0}>(L, ret);\n", etn);
 			} else {
-				buffer += string.Format("\t\t\t\tLuaValueBoxer.object_to_luaval(L, \"{0}\", ret);\n", rtn);
+				buffer += string.Format("\t\t\t\tLuaValueBoxer.type_to_luaval<{0}>(L, ret);\n", rtn);
 			}
 
 			// return
@@ -474,24 +453,20 @@
 			string ptn = pt.GetNormalizedName();
 
 			// find conversion by parameter type name
-			if(FUNDMENTAL_TYPES.Contains(ptn)) {
-				buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_{0}(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
-			} else if(pt.IsEnum) {
-				buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_enum<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
-			} else if(pt.IsArray) {
+			if(pt.IsArray) {
 				Type et = pt.GetElementType();
 				string etn = et.GetNormalizedName();
-				if(FUNDMENTAL_TYPES.Contains(etn)) {
-					buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_{0}_array(L, {1}, out arg{2}, \"{3}\");\n", etn, argIndex + 2, argIndex, methodName);
-				} else if(et.IsEnum) {
-					buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_enum_array<{0}>(L, {1}, out arg{2}, \"{3}\");\n", etn, argIndex + 2, argIndex, methodName);
-				} else if(et.IsArray) {
+				if(et.IsArray) {
 					// TODO more than one dimension array? not supported yet
 				} else {
-					buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_object_array<{0}>(L, {1}, \"{0}\", out arg{2}, \"{3}\");\n", etn, argIndex + 2, argIndex, methodName);
+					buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_array<{0}>(L, {1}, out arg{2}, \"{3}\");\n", etn, argIndex + 2, argIndex, methodName);
 				}
+			} else if(pt.IsList()) {
+				buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
+			} else if(pt.IsDictionary()) {
+				buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
 			} else {
-				buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_object<{0}>(L, {1}, \"{0}\", out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
+				buffer += string.Format("\t\t\t\tok &= LuaValueBoxer.luaval_to_type<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + 2, argIndex, methodName);
 			}
 
 			// return

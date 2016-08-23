@@ -46,379 +46,114 @@
 			}
 		}
 
-		public static bool luaval_to_byte(IntPtr L, int lo, out byte outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = 0;
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = (byte)LuaLib.tolua_tointeger(L, lo, 0);
-			} else {
-				outValue = 0;
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_sbyte(IntPtr L, int lo, out sbyte outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = 0;
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = (sbyte)LuaLib.tolua_tointeger(L, lo, 0);
-			} else {
-				outValue = 0;
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_char(IntPtr L, int lo, out char outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = '\0';
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = (char)LuaLib.tolua_tointeger(L, lo, 0);
-			} else {
-				outValue = '\0';
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_short(IntPtr L, int lo, out short outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = 0;
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = (short)LuaLib.tolua_tointeger(L, lo, 0);
-			} else {
-				outValue = 0;
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_ushort(IntPtr L, int lo, out ushort outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = 0;
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = (ushort)LuaLib.tolua_tointeger(L, lo, 0);
-			} else {
-				outValue = 0;
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_bool(IntPtr L, int lo, out bool outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = false;
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isboolean(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = LuaLib.tolua_toboolean(L, lo, 0);
-			} else {
-				outValue = false;
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_int(IntPtr L, int lo, out int outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = 0;
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = LuaLib.tolua_tointeger(L, lo, 0);
-			} else {
-				outValue = 0;
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_uint(IntPtr L, int lo, out uint outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = 0;
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = (uint)LuaLib.tolua_tointeger(L, lo, 0);
-			} else {
-				outValue = 0;
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_long(IntPtr L, int lo, out long outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = 0;
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = (long)LuaLib.tolua_tointeger(L, lo, 0);
-			} else {
-				outValue = 0;
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_ulong(IntPtr L, int lo, out ulong outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = 0;
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = (ulong)LuaLib.tolua_tointeger(L, lo, 0);
-			} else {
-				outValue = 0;
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_float(IntPtr L, int lo, out float outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = 0;
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = (float)LuaLib.tolua_tonumber(L, lo, 0);
-			} else {
-				outValue = 0;
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_double(IntPtr L, int lo, out double outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = 0;
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = LuaLib.tolua_tonumber(L, lo, 0);
-			} else {
-				outValue = 0;
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_decimal(IntPtr L, int lo, out decimal outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = 0;
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = (decimal)LuaLib.tolua_tointeger(L, lo, 0);
-			} else {
-				outValue = 0;
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_string(IntPtr L, int lo, out string outValue, string funcName = "") {
-			if(IntPtr.Zero == L) {
-				outValue = "";
-				return false;
-			}
-
-			bool ok = true;
-			if(!LuaLib.tolua_isstring(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			if(ok) {
-				outValue = LuaLib.tolua_tostring(L, lo, "");
-			} else {
-				outValue = "";
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_object<T>(IntPtr L, int lo, string type, out T ret, string funcName = "") {
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				ret = default(T);
-				return false;
-			}
-			if(!luaval_is_usertype(L, lo, type)) {
-				ret = default(T);
-				return false;
-			}
-
-			// to obj
-			int refId = LuaLib.tolua_tousertype(L, lo);
-			ret = (T)NativeObjectMap.FindObject(refId);
-
-			// check
-			if(ret == null) {
-				Debug.Log(string.Format("luaval_to_object failed when convert to object type: {0} for func: {1}", type, funcName));
-			}
-
-			return true;
-		}
-
-		public static bool luaval_to_enum<T>(IntPtr L, int lo, out T ret, string funcName = "") {
+		public static bool luaval_to_type<T>(IntPtr L, int lo, out T ret, string funcName = "") {
 			// validate
 			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
 				ret = default(T);
 				return false;
 			}
 
-			bool ok = true;
-			if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
+			// get type and name
+			Type t = typeof(T);
+			string tn = t.GetNormalizedName();
 
-			// to enum
-			if(ok) {
-				ret = (T)Enum.ToObject(typeof(T), LuaLib.tolua_tointeger(L, lo, 0));
+			// convert
+			bool ok = true;
+			if(tn == "byte" ||
+				tn == "sbyte" ||
+				tn == "short" ||
+				tn == "ushort" ||
+				tn == "bool" ||
+				tn == "int" ||
+				tn == "uint" ||
+				tn == "decimal" ||
+				tn == "long" ||
+				tn == "ulong") {
+				// top should be a number
+				if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// to integer than convert
+				if(ok) {
+					ret = (T)Convert.ChangeType(LuaLib.tolua_tointeger(L, lo, 0), t);
+				} else {
+					ret = default(T);
+				}
+			} else if(tn == "char" || tn == "string") {
+				// top should be a string
+				if(!LuaLib.tolua_isstring(L, lo, 0, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// to number then convert
+				if(ok) {
+					ret = (T)Convert.ChangeType(LuaLib.tolua_tostring(L, lo, ""), t);
+				} else {
+					ret = default(T);
+				}
+			} else if(tn == "float" || tn == "double") {
+				// top should be a number
+				if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// to string then convert
+				if(ok) {
+					ret = (T)Convert.ChangeType(LuaLib.tolua_tonumber(L, lo, 0), t);
+				} else {
+					ret = default(T);
+				}
+			} else if(t.IsEnum) {
+				// top should be a number
+				if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// to enum
+				if(ok) {
+					ret = (T)Enum.ToObject(typeof(T), LuaLib.tolua_tointeger(L, lo, 0));
+				} else {
+					ret = default(T);
+				}
 			} else {
-				ret = default(T);
+				// top should be a user type
+				if(!luaval_is_usertype(L, lo, tn)) {
+					ok = false;
+				}
+
+				// to obj
+				if(ok) {
+					int refId = LuaLib.tolua_tousertype(L, lo);
+					ret = (T)NativeObjectMap.FindObject(refId);
+				} else {
+					ret = default(T);
+				}
+
+				// check
+				if(ret == null) {
+					Debug.Log(string.Format("luaval_to_object failed when convert to object type: {0} for func: {1}", tn, funcName));
+				}
 			}
 
-			return true;
+			return ok;
 		}
 
-		public static bool luaval_to_byte_array(IntPtr L, int lo, out byte[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
+		public static bool luaval_to_list<T>(IntPtr L, int lo, out T ret, string funcName = "") where T : IList, new() {
+			// new
+			ret = new T();
 
 			// validate
 			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
@@ -442,16 +177,31 @@
 			// fill elements
 			if(ok) {
 				int len = LuaLib.lua_objlen(L, lo);
-				ret = new byte[len];
 				for(int i = 0; i < len; i++) {
 					LuaLib.lua_pushnumber(L, i + 1);
 					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = (byte)LuaLib.tolua_tointeger(L, -1, 0);
-					} else {
-						Debug.Assert(false, "int type is needed");
+
+					// get value and push to list
+					int t = LuaLib.lua_type(L, -1);
+					if(t == (int)LuaTypes.LUA_TBOOLEAN) {
+						ret.Add(LuaLib.tolua_toboolean(L, -1, 0));
+					} else if(t == (int)LuaTypes.LUA_TNUMBER) {
+						ret.Add(LuaLib.tolua_tonumber(L, -1, 0));
+					} else if(t == (int)LuaTypes.LUA_TSTRING) {
+						ret.Add(LuaLib.tolua_tostring(L, -1, ""));
+					} else if(t == (int)LuaTypes.LUA_TUSERDATA) {
+						string tn = LuaLib.tolua_typename(L, -1);
+						if(luaval_is_usertype(L, -1, tn)) {
+							// to obj
+							int refId = LuaLib.tolua_tousertype(L, -1);
+							object obj = NativeObjectMap.FindObject(refId);
+							if(obj != null) {
+								ret.Add(obj);
+							}
+						}
 					}
 
+					// pop value
 					LuaLib.lua_pop(L, 1);
 				}
 			}
@@ -459,7 +209,71 @@
 			return ok;
 		}
 
-		public static bool luaval_to_sbyte_array(IntPtr L, int lo, out sbyte[] ret, string funcName = "") {
+		public static bool luaval_to_dictionary<T>(IntPtr L, int lo, out T ret, string funcName = "") where T: IDictionary, new() {
+			// new
+			ret = new T();
+
+			// validate
+			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
+				return false;
+			}
+
+			// convert negative index to positive
+			if(lo < 0) {
+				lo = LuaLib.lua_gettop(L) + lo + 1;
+			}
+
+			// top should be a table
+			bool ok = true;
+			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
+				#if DEBUG
+				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+				#endif
+				ok = false;
+			}
+
+			// fill elements
+			if(ok) {
+				LuaLib.lua_pushnil(L);
+				while (LuaLib.lua_next(L, lo) != 0) {
+					// if key is not string, ignore
+					if (!LuaLib.lua_isstring(L, -2)) {
+						LuaLib.lua_pop(L, 1);
+						continue;
+					}
+
+					// get key
+					string strKey = LuaLib.lua_tostring(L, -2);
+
+					// get value and push to list
+					int vt = LuaLib.lua_type(L, -1);
+					if(vt == (int)LuaTypes.LUA_TBOOLEAN) {
+						ret.Add(strKey, LuaLib.tolua_toboolean(L, -1, 0));
+					} else if(vt == (int)LuaTypes.LUA_TNUMBER) {
+						ret.Add(strKey, LuaLib.tolua_tonumber(L, -1, 0));
+					} else if(vt == (int)LuaTypes.LUA_TSTRING) {
+						ret.Add(strKey, LuaLib.tolua_tostring(L, -1, ""));
+					} else if(vt == (int)LuaTypes.LUA_TUSERDATA) {
+						string tn = LuaLib.tolua_typename(L, -1);
+						if(luaval_is_usertype(L, -1, tn)) {
+							// to obj
+							int refId = LuaLib.tolua_tousertype(L, -1);
+							object obj = NativeObjectMap.FindObject(refId);
+							if(obj != null) {
+								ret.Add(strKey, obj);
+							}
+						}
+					}
+
+					// pop value
+					LuaLib.lua_pop(L, 1);
+				}
+			}
+
+			return ok;
+		}
+
+		public static bool luaval_to_array<T>(IntPtr L, int lo, out T[] ret, string funcName = "") {
 			// by default nullify it
 			ret = null;
 
@@ -484,681 +298,35 @@
 
 			// fill elements
 			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new sbyte[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = (sbyte)LuaLib.tolua_tointeger(L, -1, 0);
-					} else {
-						Debug.Assert(false, "int type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_char_array(IntPtr L, int lo, out char[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new char[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = (char)LuaLib.tolua_tointeger(L, -1, 0);
-					} else {
-						Debug.Assert(false, "int type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_short_array(IntPtr L, int lo, out short[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new short[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = (short)LuaLib.tolua_tointeger(L, -1, 0);
-					} else {
-						Debug.Assert(false, "int type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_ushort_array(IntPtr L, int lo, out ushort[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new ushort[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = (ushort)LuaLib.tolua_tointeger(L, -1, 0);
-					} else {
-						Debug.Assert(false, "int type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_bool_array(IntPtr L, int lo, out bool[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new bool[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isboolean(L, -1)) {
-						ret[i] = LuaLib.tolua_toboolean(L, -1, 0);
-					} else {
-						Debug.Assert(false, "boolean type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_int_array(IntPtr L, int lo, out int[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new int[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = (int)LuaLib.tolua_tointeger(L, -1, 0);
-					} else {
-						Debug.Assert(false, "int type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_uint_array(IntPtr L, int lo, out uint[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new uint[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = (uint)LuaLib.tolua_tointeger(L, -1, 0);
-					} else {
-						Debug.Assert(false, "int type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_long_array(IntPtr L, int lo, out long[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new long[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = (long)LuaLib.tolua_tointeger(L, -1, 0);
-					} else {
-						Debug.Assert(false, "int type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_ulong_array(IntPtr L, int lo, out ulong[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new ulong[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = (ulong)LuaLib.tolua_tointeger(L, -1, 0);
-					} else {
-						Debug.Assert(false, "int type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_decimal_array(IntPtr L, int lo, out decimal[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new decimal[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = (decimal)LuaLib.tolua_tointeger(L, -1, 0);
-					} else {
-						Debug.Assert(false, "int type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_float_array(IntPtr L, int lo, out float[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new float[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = (float)LuaLib.tolua_tonumber(L, -1, 0);
-					} else {
-						Debug.Assert(false, "int type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_double_array(IntPtr L, int lo, out double[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new double[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = LuaLib.tolua_tonumber(L, -1, 0);
-					} else {
-						Debug.Assert(false, "int type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_string_array(IntPtr L, int lo, out string[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new string[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isstring(L, -1)) {
-						ret[i] = LuaLib.tolua_tostring(L, -1, "");
-					} else {
-						Debug.Assert(false, "int type is needed");
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static bool luaval_to_enum_array<T>(IntPtr L, int lo, out T[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
+				// element type
+				Type t = typeof(T);
+				string tn = t.GetNormalizedName();
+
+				// iterate all elements
 				int len = LuaLib.lua_objlen(L, lo);
 				ret = new T[len];
 				for(int i = 0; i < len; i++) {
 					LuaLib.lua_pushnumber(L, i + 1);
 					LuaLib.lua_gettable(L, lo);
-					if(LuaLib.lua_isnumber(L, -1)) {
-						ret[i] = (T)Enum.ToObject(typeof(T), LuaLib.tolua_tointeger(L, -1, 0));
-					} else {
-						Debug.Assert(false, "int type is needed");
+
+					// convert value
+					T element;
+					ok = luaval_to_type<T>(L, -1, out element, funcName);
+					if(ok) {
+						ret[i] = element;
 					}
 
+					// if failed, assert fail
+					if(!ok) {
+						Debug.Assert(false, string.Format("luaval_to_array: some element are not type: {0}", tn));
+					}
+
+					// pop value
 					LuaLib.lua_pop(L, 1);
 				}
 			}
 
 			return ok;
-		}
-
-		public static bool luaval_to_object_array<T>(IntPtr L, int lo, string type, out T[] ret, string funcName = "") {
-			// by default nullify it
-			ret = null;
-
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
-				return false;
-			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
-			}
-
-			// top should be a table
-			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
-			}
-
-			// fill elements
-			if(ok) {
-				int len = LuaLib.lua_objlen(L, lo);
-				ret = new T[len];
-				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
-					if(luaval_is_usertype(L, -1, type)) {
-						int refId = LuaLib.tolua_tousertype(L, -1);
-						ret[i] = (T)NativeObjectMap.FindObject(refId);
-					} else {
-						Debug.Assert(false, string.Format("{0} type is needed", type));
-					}
-
-					LuaLib.lua_pop(L, 1);
-				}
-			}
-
-			return ok;
-		}
-
-		public static void byte_to_luaval(IntPtr L, byte v) {
-			LuaLib.lua_pushinteger(L, v);
-		}
-
-		public static void sbyte_to_luaval(IntPtr L, sbyte v) {
-			LuaLib.lua_pushinteger(L, v);
-		}
-
-		public static void char_to_luaval(IntPtr L, char v) {
-			LuaLib.lua_pushinteger(L, v);
-		}
-
-		public static void short_to_luaval(IntPtr L, short v) {
-			LuaLib.lua_pushinteger(L, v);
-		}
-
-		public static void ushort_to_luaval(IntPtr L, ushort v) {
-			LuaLib.lua_pushinteger(L, v);
-		}
-
-		public static void int_to_luaval(IntPtr L, int v) {
-			LuaLib.lua_pushinteger(L, v);
-		}
-
-		public static void uint_to_luaval(IntPtr L, uint v) {
-			LuaLib.lua_pushinteger(L, (int)v);
-		}
-
-		public static void long_to_luaval(IntPtr L, long v) {
-			LuaLib.lua_pushinteger(L, (int)v);
-		}
-
-		public static void ulong_to_luaval(IntPtr L, ulong v) {
-			LuaLib.lua_pushinteger(L, (int)v);
-		}
-
-		public static void bool_to_luaval(IntPtr L, bool v) {
-			LuaLib.tolua_pushboolean(L, v);
-		}
-
-		public static void decimal_to_luaval(IntPtr L, decimal v) {
-			LuaLib.lua_pushinteger(L, (int)v);
-		}
-
-		public static void float_to_luaval(IntPtr L, float v) {
-			LuaLib.tolua_pushnumber(L, v);
-		}
-
-		public static void double_to_luaval(IntPtr L, double v) {
-			LuaLib.tolua_pushnumber(L, v);
-		}
-
-		public static void string_to_luaval(IntPtr L, string v) {
-			LuaLib.tolua_pushstring(L, v);
 		}
 
 		public static void object_to_luaval(IntPtr L, string type, object t) {
@@ -1169,262 +337,23 @@
 			}
 		}
 
-		public static void byte_array_to_luaval(IntPtr L, byte[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.lua_pushinteger(L, inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void sbyte_array_to_luaval(IntPtr L, sbyte[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.lua_pushinteger(L, inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void char_array_to_luaval(IntPtr L, char[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.lua_pushinteger(L, inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void short_array_to_luaval(IntPtr L, short[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.lua_pushinteger(L, inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void ushort_array_to_luaval(IntPtr L, ushort[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.lua_pushinteger(L, inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void int_array_to_luaval(IntPtr L, int[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.lua_pushinteger(L, inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void uint_array_to_luaval(IntPtr L, uint[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.lua_pushinteger(L, (int)inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void long_array_to_luaval(IntPtr L, long[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.lua_pushinteger(L, (int)inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void ulong_array_to_luaval(IntPtr L, ulong[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.lua_pushinteger(L, (int)inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void bool_array_to_luaval(IntPtr L, bool[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.tolua_pushboolean(L, inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void float_array_to_luaval(IntPtr L, float[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.lua_pushnumber(L, inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void double_array_to_luaval(IntPtr L, double[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.lua_pushnumber(L, inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void string_array_to_luaval(IntPtr L, string[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				LuaLib.tolua_pushstring(L, inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void enum_array_to_luaval<T>(IntPtr L, T[] inValue) {
-			int[] iv = new int[inValue.Length];
-			for(int i = 0; i < inValue.Length; i++) {
-				string s = inValue[i].ToString();
-				iv[i] = (int)Enum.Parse(typeof(T), s);
-			}
-			int_array_to_luaval(L, iv);
-		}
-
-		public static void object_array_to_luaval<T>(IntPtr L, string type, T[] inValue) {
-			// validate
-			if(IntPtr.Zero == L)
-				return;
-
-			// new table for array
-			LuaLib.lua_newtable(L);
-
-			// push
-			int c = inValue.Length;
-			for(int i = 0; i < c; i++) {
-				LuaLib.lua_pushinteger(L, i + 1);
-				object_to_luaval(L, type, inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
 		public static void array_to_luaval<T>(IntPtr L, T[] inValue) {
-			Array a = Array.CreateInstance(typeof(T), inValue.Length);
+			// new table for array value
+			LuaLib.lua_newtable(L);
+
+			// validate
+			if (IntPtr.Zero == L || null == inValue)
+				return;
+
+			// push every element
 			for(int i = 0; i < inValue.Length; i++) {
-				a.SetValue(inValue[i], i);
+				LuaLib.lua_pushnumber(L, i + 1);
+				type_to_luaval<T>(L, inValue[i]);
+				LuaLib.lua_rawset(L, -3);
 			}
-			array_to_luaval(L, a);
 		}
 
-		public static void array_to_luaval(IntPtr L, Array inValue) {
+		public static void list_to_luaval(IntPtr L, IEnumerable inValue) {
 			// new table for array value
 			LuaLib.lua_newtable(L);
 
@@ -1453,7 +382,7 @@
 					++indexTable;
 				} else if(tn == "char") {
 					LuaLib.lua_pushnumber(L, indexTable);
-					LuaLib.lua_pushinteger(L, Convert.ToChar(e.Current));
+					LuaLib.lua_pushstring(L, Convert.ToChar(e.Current).ToString());
 					LuaLib.lua_rawset(L, -3);
 					++indexTable;
 				} else if(tn == "short") {
@@ -1506,9 +435,9 @@
 					LuaLib.lua_pushinteger(L, (int)e.Current);
 					LuaLib.lua_rawset(L, -3);
 					++indexTable;
-				} else if(t.IsArray) {
+				} else if(t.IsEnumerable()) {
 					LuaLib.lua_pushnumber(L, indexTable);
-					array_to_luaval(L, (Array)e.Current);
+					list_to_luaval(L, e.Current as IEnumerable);
 					LuaLib.lua_rawset(L, -3);
 					++indexTable;
 				} else if(t.IsDictionary()) {
@@ -1591,7 +520,7 @@
 					LuaLib.lua_pushinteger(L, Convert.ToSByte(e.Value));
 					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "char") {
-					LuaLib.lua_pushinteger(L, Convert.ToChar(e.Value));
+					LuaLib.lua_pushstring(L, Convert.ToChar(e.Value).ToString());
 					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "short") {
 					LuaLib.lua_pushinteger(L, Convert.ToInt16(e.Value));
@@ -1623,11 +552,11 @@
 				} else if(vt.IsEnum) {
 					LuaLib.lua_pushinteger(L, (int)e.Value);
 					LuaLib.lua_rawset(L, -3);
-				} else if(vt.IsArray) {
-					array_to_luaval(L, (Array)e.Value);
+				} else if(vt.IsEnumerable()) {
+					list_to_luaval(L, e.Value as IEnumerable);
 					LuaLib.lua_rawset(L, -3);
 				} else if(vt.IsDictionary()) {
-					dictionary_to_luaval(L, (IDictionary)e.Value);
+					dictionary_to_luaval(L, e.Value as IDictionary);
 					LuaLib.lua_rawset(L, -3);
 				} else {
 					object_to_luaval(L, vtn, e.Value);
@@ -1636,6 +565,47 @@
 
 				// next
 				e.MoveNext();
+			}
+		}
+
+		public static void type_to_luaval<T>(IntPtr L, T v) {
+			Type t = v.GetType();
+			string tn = t.GetNormalizedName();
+
+			if(tn == "byte") {
+				LuaLib.lua_pushinteger(L, Convert.ToByte(v));
+			} else if(tn == "sbyte") {
+				LuaLib.lua_pushinteger(L, Convert.ToSByte(v));
+			} else if(tn == "char") {
+				LuaLib.lua_pushstring(L, Convert.ToChar(v).ToString());
+			} else if(tn == "short") {
+				LuaLib.lua_pushinteger(L, Convert.ToInt16(v));
+			} else if(tn == "ushort") {
+				LuaLib.lua_pushinteger(L, Convert.ToUInt16(v));
+			} else if(tn == "bool") {
+				LuaLib.lua_pushboolean(L, Convert.ToBoolean(v));
+			} else if(tn == "int" || tn == "decimal") {
+				LuaLib.lua_pushinteger(L, Convert.ToInt32(v));
+			} else if(tn == "uint") {
+				LuaLib.lua_pushinteger(L, (int)Convert.ToUInt32(v));
+			} else if(tn == "long") {
+				LuaLib.lua_pushinteger(L, (int)Convert.ToInt64(v));
+			} else if(tn == "ulong") {
+				LuaLib.lua_pushinteger(L, (int)Convert.ToUInt64(v));
+			} else if(tn == "float" || tn == "double") {
+				LuaLib.lua_pushnumber(L, Convert.ToDouble(v));
+			} else if(tn == "string") {
+				LuaLib.lua_pushstring(L, Convert.ToString(v));
+			} else if(t.IsVoid()) {
+				// do nothing for void
+			} else if(t.IsEnum) {
+				LuaLib.lua_pushinteger(L, Convert.ToInt32(v));
+			} else if(t.IsEnumerable()) {
+				list_to_luaval(L, v as IEnumerable);
+			} else if(t.IsDictionary()) {
+				dictionary_to_luaval(L, v as IDictionary);
+			} else {
+				object_to_luaval(L, tn, v);
 			}
 		}
 

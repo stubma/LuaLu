@@ -609,7 +609,7 @@
 		}
 
 		public void PushArray(Array array) {
-			LuaValueBoxer.array_to_luaval(L, array);
+			LuaValueBoxer.list_to_luaval(L, array);
 		}
 
 		public void PushDictionary(Dictionary<string, object> dict) {

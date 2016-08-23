@@ -5,7 +5,19 @@ using System;
 
 public static class ExtensionType {
 	public static bool IsDictionary(this Type t) {
-		return t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Dictionary<,>);
+		return typeof(IDictionary).IsAssignableFrom(t);
+	}
+
+	public static bool IsEnumerable(this Type t) {
+		return typeof(IEnumerable).IsAssignableFrom(t);
+	}
+
+	public static bool IsVoid(this Type t) {
+		return t == typeof(void);
+	}
+
+	public static bool IsList(this Type t) {
+		return typeof(IList).IsAssignableFrom(t);
 	}
 
 	public static string GetNormalizedName(this Type t) {
