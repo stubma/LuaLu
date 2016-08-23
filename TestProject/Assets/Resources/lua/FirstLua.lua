@@ -10,6 +10,7 @@ end
 
 function FirstLua:Start()
   print("hahahaha, lua side Start for first lua!!!!")
+  print("firstlua component tag is " .. self.tag)
   if self:CompareTag("PickUp") then
     print("this component tag is pickup!! 哈哈")
   else
