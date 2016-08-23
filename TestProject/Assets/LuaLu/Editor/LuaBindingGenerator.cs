@@ -214,6 +214,14 @@
 			PropertyInfo[] staticProps = t.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
 			buffer += GenerateProperties(t, staticProps);
 
+			// get fields
+			FieldInfo[] fields = t.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance);
+			buffer += GenerateFields(t, fields);
+
+			// get static fields
+			FieldInfo[] staticFields = t.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
+			buffer += GenerateFields(t, staticFields);
+
 			// register method
 			buffer += "\t\tpublic static int __Register__(IntPtr L) {\n";
 			buffer += string.Format("\t\t\tLuaLib.tolua_usertype(L, \"{0}\");\n", tfn);
@@ -271,6 +279,32 @@
 					getter == null ? "null" : string.Format("new LuaFunction({0})", getter.Name), 
 					setter == null ? "null" : string.Format("new LuaFunction({0})", setter.Name));
 			}
+			foreach(FieldInfo fi in fields) {
+				// skip some
+				if(fi.IsObsolete() || fi.IsLiteral) {
+					continue;
+				}
+
+				// get info
+				string fin = fi.Name;
+
+				// register field
+				buffer += string.Format("\t\t\tLuaLib.tolua_variable(L, \"{0}\", new LuaFunction(get_{0}), {1});\n", fin,
+					fi.IsInitOnly ? "null" : string.Format("new LuaFunction(set_{0})", fin));
+			}
+			foreach(FieldInfo fi in staticFields) {
+				// skip some
+				if(fi.IsObsolete() || fi.IsLiteral) {
+					continue;
+				}
+
+				// get info
+				string fin = fi.Name;
+
+				// register field
+				buffer += string.Format("\t\t\tLuaLib.tolua_variable(L, \"{0}\", new LuaFunction(get_{0}), {1});\n", fin,
+					fi.IsInitOnly ? "null" : string.Format("new LuaFunction(set_{0})", fin));
+			}
 			buffer += "\t\t\tLuaLib.tolua_endmodule(L);\n";
 			for(int i = 0; i < nsList.Length; i++) {
 				buffer += "\t\t\tLuaLib.tolua_endmodule(L);\n";
@@ -283,6 +317,141 @@
 
 			// write to file
 			File.WriteAllText(path, buffer);
+		}
+
+		private static string GenerateFields(Type t, FieldInfo[] fields) {
+			string buffer = "";
+
+			// generate every fields
+			foreach(FieldInfo fi in fields) {
+				// skip
+				if(fi.IsObsolete() || fi.IsLiteral) {
+					continue;
+				}
+
+				// get info
+				Type ft = fi.FieldType;
+				string ftn = ft.GetNormalizedName();
+				string fin = fi.Name;
+				string gn = "get_" + fin;
+				string sn = "set_" + fin;
+				string tn = t.GetNormalizedName();
+
+				// generate getter
+				{
+					// method start
+					buffer += "\t\t[MonoPInvokeCallback(typeof(LuaFunction))]\n";
+					buffer += string.Format("\t\tpublic static int {0}(IntPtr L) {{\n", gn);
+
+					// err object
+					buffer += "\t\t#if DEBUG\n";
+					buffer += "\t\t\ttolua_Error err = new tolua_Error();\n";
+					buffer += "\t\t#endif\n";
+
+					// try to get object from first parameter
+					buffer += "\n";
+					buffer += "\t\t\t// caller type check\n";
+					buffer += "\t\t#if DEBUG\n";
+					if(fi.IsStatic) {
+						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertable(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+					} else {
+						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+					}
+					buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", gn);
+					buffer += "\t\t\t\treturn 0;\n";
+					buffer += "\t\t\t}\n";
+					buffer += "\t\t#endif\n";
+					if(!fi.IsStatic) {
+						buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
+						buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tn);
+						buffer += "\t\t#if DEBUG\n";
+						buffer += "\t\t\tif(obj == null) {\n";
+						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", gn);
+						buffer += "\t\t\t\treturn 0;\n";
+						buffer += "\t\t\t}\n";
+						buffer += "\t\t#endif\n";
+					}
+
+					// call function
+					buffer += "\n";
+					buffer += "\t\t\t// get field\n";
+					buffer += string.Format("\t\t\t{0} ret = {1}.{2};\n", ftn, fi.IsStatic ? tn : "obj", fin);
+
+					// push returned value
+					buffer += GenerateBoxReturnValue(ft, "\t\t\t");
+
+					// method end
+					buffer += "\t\t\treturn 1;\n";
+					buffer += "\t\t}\n\n";
+				}
+
+				// generate setter
+				if(!fi.IsInitOnly) {
+					// method start
+					buffer += "\t\t[MonoPInvokeCallback(typeof(LuaFunction))]\n";
+					buffer += string.Format("\t\tpublic static int {0}(IntPtr L) {{\n", sn);
+
+					// err object
+					buffer += "\t\t#if DEBUG\n";
+					buffer += "\t\t\ttolua_Error err = new tolua_Error();\n";
+					buffer += "\t\t#endif\n";
+
+					// try to get object from first parameter
+					buffer += "\n";
+					buffer += "\t\t\t// caller type check\n";
+					buffer += "\t\t#if DEBUG\n";
+					if(fi.IsStatic) {
+						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertable(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+					} else {
+						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+					}
+					buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", sn);
+					buffer += "\t\t\t\treturn 0;\n";
+					buffer += "\t\t\t}\n";
+					buffer += "\t\t#endif\n";
+					if(!fi.IsStatic) {
+						buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
+						buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tn);
+						buffer += "\t\t#if DEBUG\n";
+						buffer += "\t\t\tif(obj == null) {\n";
+						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", sn);
+						buffer += "\t\t\t\treturn 0;\n";
+						buffer += "\t\t\t}\n";
+						buffer += "\t\t#endif\n";
+					}
+
+					// find conversion by property type name
+					buffer += "\n";
+					buffer += "\t\t\t// set field\n";
+					buffer += "\t\t\tbool ok = true;\n";
+					buffer += string.Format("\t\t\t{0} ret;\n", ftn);
+					if(ft.IsArray) {
+						Type et = ft.GetElementType();
+						string etn = et.GetNormalizedName();
+						if(et.IsArray) {
+							// TODO more than one dimension array? not supported yet
+						} else {
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_array<{0}>(L, 2, out ret, \"{1}\");\n", etn, sn);
+						}
+					} else if(ft.IsList()) {
+						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, 2, out ret, \"{1}\");\n", ftn, sn);
+					} else if(ft.IsDictionary()) {
+						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<{0}>(L, 2, out ret, \"{1}\");\n", ftn, sn);
+					} else {
+						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_type<{0}>(L, 2, out ret, \"{1}\");\n", ftn, sn);
+					}
+					buffer += "\t\t\tif(ok) {\n";
+					buffer += string.Format("\t\t\t\t{0}.{1} = ret;\n", fi.IsStatic ? tn : "obj", fin);
+					buffer += "\t\t\t}\n\n";
+
+					// method end
+					buffer += "\t\t\treturn 0;\n";
+					buffer += "\t\t}\n\n";
+				}
+			}
+
+			// return
+			return buffer;
 		}
 
 		private static string GenerateProperties(Type t, PropertyInfo[] props) {
@@ -683,16 +852,15 @@
 			return buffer;
 		}
 
-		private static string GenerateBoxReturnValue(MethodInfo m, string indent) {
-			Type rt = m.ReturnType;
-			string rtn = rt.GetNormalizedName();
+		private static string GenerateBoxReturnValue(Type returnType, string indent) {
+			string rtn = returnType.GetNormalizedName();
 			string buffer = "";
 
 			// convert to lua value
-			if(rt.IsVoid()) {
+			if(returnType.IsVoid()) {
 				// do not generate for void return
-			} else if(rt.IsArray) {
-				Type et = rt.GetElementType();
+			} else if(returnType.IsArray) {
+				Type et = returnType.GetElementType();
 				string etn = et.GetNormalizedName();
 				buffer += string.Format(indent + "LuaValueBoxer.array_to_luaval<{0}>(L, ret);\n", etn);
 			} else {
@@ -701,6 +869,11 @@
 
 			// return
 			return buffer;
+		}
+
+		private static string GenerateBoxReturnValue(MethodInfo m, string indent) {
+			Type rt = m.ReturnType;
+			return GenerateBoxReturnValue(rt, indent);
 		}
 
 		private static string GenerateUnboxParameters(ParameterInfo pi, int argIndex, string methodName, string indent) {
