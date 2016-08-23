@@ -45,6 +45,8 @@
 			s_types.Add(typeof(LuaComponent));
 			s_types.Add(typeof(GameObject));
 			s_types.Add(typeof(Transform));
+			s_types.Add(typeof(Time));
+			s_types.Add(typeof(Vector3));
 
 			// filter types
 			for(int i = s_types.Count - 1; i >= 0; i--) {
@@ -208,6 +210,10 @@
 			PropertyInfo[] props = t.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance);
 			buffer += GenerateProperties(t, props);
 
+			// static properties
+			PropertyInfo[] staticProps = t.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
+			buffer += GenerateProperties(t, staticProps);
+
 			// register method
 			buffer += "\t\tpublic static int __Register__(IntPtr L) {\n";
 			buffer += string.Format("\t\t\tLuaLib.tolua_usertype(L, \"{0}\");\n", tfn);
@@ -226,6 +232,32 @@
 			foreach(PropertyInfo pi in props) {
 				// skip some
 				if(pi.IsObsolete()) {
+					continue;
+				}
+
+				// filter special name
+				if(pi.Name == "Item") {
+					continue;
+				}
+
+				// get info
+				MethodInfo getter = pi.GetGetMethod();
+				MethodInfo setter = pi.GetSetMethod();
+				string pn = pi.Name;
+
+				// register property
+				buffer += string.Format("\t\t\tLuaLib.tolua_variable(L, \"{0}\", {1}, {2});\n", pn, 
+					getter == null ? "null" : string.Format("new LuaFunction({0})", getter.Name), 
+					setter == null ? "null" : string.Format("new LuaFunction({0})", setter.Name));
+			}
+			foreach(PropertyInfo pi in staticProps) {
+				// skip some
+				if(pi.IsObsolete()) {
+					continue;
+				}
+
+				// filter special name
+				if(pi.Name == "Item") {
 					continue;
 				}
 
@@ -271,6 +303,11 @@
 				string pn = pi.Name;
 				string tn = t.GetNormalizedName();
 
+				// filter special name
+				if(pi.Name == "Item") {
+					continue;
+				}
+
 				// generate getter
 				if(getter != null) {
 					string fn = getter.Name;
@@ -285,26 +322,33 @@
 					buffer += "\t\t#endif\n";
 
 					// try to get object from first parameter
+					buffer += "\n";
 					buffer += "\t\t\t// caller type check\n";
 					buffer += "\t\t#if DEBUG\n";
-					buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+					if(getter.IsStatic) {
+						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertable(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+					} else {
+						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+					}
 					buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
 					buffer += "\t\t\t\treturn 0;\n";
 					buffer += "\t\t\t}\n";
 					buffer += "\t\t#endif\n";
-					buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
-					buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tn);
-					buffer += "\t\t#if DEBUG\n";
-					buffer += "\t\t\tif(obj == null) {\n";
-					buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);
-					buffer += "\t\t\t\treturn 0;\n";
-					buffer += "\t\t\t}\n";
-					buffer += "\t\t#endif\n";
+					if(!getter.IsStatic) {
+						buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
+						buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tn);
+						buffer += "\t\t#if DEBUG\n";
+						buffer += "\t\t\tif(obj == null) {\n";
+						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);
+						buffer += "\t\t\t\treturn 0;\n";
+						buffer += "\t\t\t}\n";
+						buffer += "\t\t#endif\n";
+					}
 
 					// call function
 					buffer += "\n";
 					buffer += "\t\t\t// get property\n";
-					buffer += string.Format("\t\t\t{0} ret = obj.{1};\n", ptn, pn);
+					buffer += string.Format("\t\t\t{0} ret = {1}.{2};\n", ptn, getter.IsStatic ? tn : "obj", pn);
 
 					// push returned value
 					buffer += GenerateBoxReturnValue(getter, "\t\t\t");
@@ -331,19 +375,25 @@
 					buffer += "\n";
 					buffer += "\t\t\t// caller type check\n";
 					buffer += "\t\t#if DEBUG\n";
-					buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+					if(setter.IsStatic) {
+						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertable(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+					} else {
+						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+					}
 					buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
 					buffer += "\t\t\t\treturn 0;\n";
 					buffer += "\t\t\t}\n";
 					buffer += "\t\t#endif\n";
-					buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
-					buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tn);
-					buffer += "\t\t#if DEBUG\n";
-					buffer += "\t\t\tif(obj == null) {\n";
-					buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);
-					buffer += "\t\t\t\treturn 0;\n";
-					buffer += "\t\t\t}\n";
-					buffer += "\t\t#endif\n";
+					if(!setter.IsStatic) {
+						buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
+						buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tn);
+						buffer += "\t\t#if DEBUG\n";
+						buffer += "\t\t\tif(obj == null) {\n";
+						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);
+						buffer += "\t\t\t\treturn 0;\n";
+						buffer += "\t\t\t}\n";
+						buffer += "\t\t#endif\n";
+					}
 
 					// find conversion by property type name
 					buffer += "\n";
@@ -366,7 +416,7 @@
 						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_type<{0}>(L, 2, out ret, \"{1}\");\n", ptn, fn);
 					}
 					buffer += "\t\t\tif(ok) {\n";
-					buffer += string.Format("\t\t\t\tobj.{0} = ret;\n", pn);
+					buffer += string.Format("\t\t\t\t{0}.{1} = ret;\n", setter.IsStatic ? tn : "obj", pn);
 					buffer += "\t\t\t}\n\n";
 
 					// method end
@@ -614,6 +664,9 @@
 			for(int i = 0; i < pList.Length; i++) {
 				if(pList[i].IsOut) {
 					buffer += "out ";
+				}
+				if(pList[i].ParameterType.IsByRef) {
+					buffer += "ref ";
 				}
 				buffer += string.Format("arg{0}", i);
 				if(i < pList.Length - 1) {
