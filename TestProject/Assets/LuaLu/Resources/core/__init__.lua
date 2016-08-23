@@ -13,14 +13,6 @@ function __G__TRACKBACK__(msg)
     cc.log("----------------------------------------")
 end
 
--- load lua file under a folder, include subfolders
-function loadLua(name)
-	-- TODO
-end
-
--- load all core lua
-loadLua("core")
-
 require("core/debug")
 require("core/oop")
 require("core/overload")
