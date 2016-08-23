@@ -26,7 +26,7 @@ Just copy Assets/LuaLu to your project Assets folder, do NOT rename, keep the fo
 How to use
 ===
 
-After coping LuaLu, you should see Lua menu in unity editor, select ```Generate Unity Lua Binding``` menu item to generate unity class lua binding, and it's all. You can write your lua for unity now! <font color=red>Note: the binding generate is not fully completed, I just generate several classes for testing, you can run TestProject to see what I have done</font>
+After coping LuaLu, you should see Lua menu in unity editor, select ```Generate Unity Lua Binding``` menu item to generate unity class lua binding, and it's all. You can write your lua for unity now! <font color=red>Note: the binding generator is not fully completed, I just generate several classes for testing, you can run TestProject to see what I have done</font>
 
 用户指南
 ===
@@ -46,7 +46,7 @@ Guide
 ---
 
 1. select a game object
-2. click ```Add Component``` button in inspector
+2. click ```Add Component``` button in inspector, select to add "Lua/Lua Script" component. The component implemention is LuaComponent.cs
 3. it will pops up a file dialog, choose a directory to save your new lua file, NOTE: the lua file must be saved in Assets/Resources folder
 4. now you can edit lua file, there is a LuaLu section in unity preference, you can set favorite lua editor here, currently it only has three options. You can search ZeroBraneStudio in github. I will add code assistant for ZeroBraneStudio first.
 5. LuaComponent will redirect MonoBehaviour messages to lua side so you can operate game object in lua now. Take a glance at TestProject for a quick understanding. LuaComponent only does some initialization and bridge work so you hardly need to modify it.
