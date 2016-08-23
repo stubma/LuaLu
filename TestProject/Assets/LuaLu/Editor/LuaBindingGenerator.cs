@@ -602,10 +602,139 @@
 			ConstructorInfo m = mList[0];
 			string tfn = t.FullName;
 			string buffer = "";
+			string tfnUnderscore = tfn.Replace(".", "_");
+			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
+			string fn = clazz + ".__Constructor__";
 
-			// constructor
+			// constructor start
 			buffer += "\t\t[MonoPInvokeCallback(typeof(LuaFunction))]\n";
 			buffer += "\t\tpublic static int __Constructor__(IntPtr L) {\n";
+
+			// group constructor by parameter count, mind optional parameter
+			Dictionary<int, List<ConstructorInfo>> cpMap = new Dictionary<int, List<ConstructorInfo>>();
+			Array.ForEach<ConstructorInfo>(mList, c => {
+				ParameterInfo[] pList = c.GetParameters();
+				int maxArg = pList.Length;
+				int minArg = maxArg;
+				foreach(ParameterInfo pi in pList) {
+					if(pi.IsOptional) {
+						minArg--;
+					}
+				}
+				for(int i = minArg; i <= maxArg; i++) {
+					List<ConstructorInfo> cl = null;
+					if(cpMap.ContainsKey(i)) {
+						cl = cpMap[i];
+					} else {
+						cl = new List<ConstructorInfo>();
+						cpMap[i] = cl;
+					}
+					cl.Add(c);
+				}
+			});
+
+			// variables
+			buffer += "\t\t\t// variables\n";
+			buffer += "\t\t\tint argc = 0;\n";
+			buffer += "\t\t#if DEBUG\n";
+			buffer += "\t\t\ttolua_Error err = new tolua_Error();\n";
+			buffer += "\t\t#endif\n";
+
+			// get argument count
+			buffer += "\n";
+			buffer += "\t\t\t// get argument count\n";
+			buffer += "\t\t\targc = LuaLib.lua_gettop(L) - 1;\n";
+
+			// constructor body
+			buffer += "\n";
+			foreach(int c in cpMap.Keys) {
+				// check argument count
+				buffer += "\t\t\t// if argument count matched, call\n";
+				buffer += string.Format("\t\t\tif(argc == {0}) {{\n", c);
+
+				// check constructor count with same parameter count
+				ConstructorInfo callM = null;
+				List<ConstructorInfo> cl = cpMap[c];
+				if(cl.Count > 1) {
+					// get lua types
+					buffer += "\t\t\t\t// get lua parameter types\n";
+					buffer += "\t\t\t\tint[] luaTypes;\n";
+					buffer += "\t\t\t\tLuaValueBoxer.GetLuaParameterTypes(L, out luaTypes);\n";
+
+					// native types
+					buffer += "\n";
+					buffer += "\t\t\t\t// native types\n";
+					for(int i = 0; i < cl.Count; i++) {
+						// get parameter name which can be queried by GetType
+						buffer += string.Format("\t\t\t\tstring[] nativeTypes{0} = new string[] {{\n", i);
+						ParameterInfo[] pList = cl[i].GetParameters();
+						for(int j = 0; j < pList.Length; j++) {
+							ParameterInfo pi = pList[j];
+							Type pt = pi.ParameterType;
+							string ptn = pt.FullName;
+							if(pt.IsGenericType) {
+								int gArgc = pt.GetGenericArguments().Length;
+								if(gArgc > 0) {
+									ptn = ptn.Substring(0, ptn.IndexOf('`')) + "`" + gArgc;
+								}
+							}
+
+							// put
+							buffer += string.Format("\t\t\t\t\t\"{0}\"", ptn);
+							if(j < pList.Length - 1) {
+								buffer += ",";
+							}
+							buffer += "\n";
+						}
+						buffer += "\t\t\t\t};\n";
+					}
+
+					// accurate match every method
+					buffer += "\n";
+					for(int i = 0; i < cl.Count; i++) {
+						// accurate match
+						if(i == 0) {
+							buffer += "\t\t\t\t";
+						}
+						buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0})) {{\n", i);
+
+						// only one method, so it is simple, just pick the only one
+						buffer += GenerateConstructorInvocation(t, cl[i], c, true);
+
+						// close if
+						buffer += "\t\t\t\t} else ";
+					}
+
+					// fuzzy match every method
+					for(int i = 0; i < cl.Count; i++) {
+						// accurate match
+						buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, true)) {{\n", i);
+
+						// only one method, so it is simple, just pick the only one
+						buffer += GenerateConstructorInvocation(t, cl[i], c, true);
+
+						// close if
+						buffer += "\t\t\t\t}";
+						if(i < cl.Count - 1) {
+							buffer += " else ";
+						} else {
+							buffer += "\n";
+						}
+					}
+				} else {
+					// only one method, so it is simple, just pick the only one
+					buffer += GenerateConstructorInvocation(t, cl[0], c, false);
+				}
+
+				// close if
+				buffer += "\t\t\t}\n\n";
+			}
+
+			// fallback if argc doesn't match
+			buffer += "\t\t\t// if to here, means argument count is not correct\n";
+			buffer += string.Format("\t\t\tLuaLib.luaL_error(L, \"{0} has wrong number of arguments: \" + argc);\n", fn);
+
+			// constructor end
 			buffer += "\t\t\treturn 0;\n";
 			buffer += "\t\t}\n\n";
 
@@ -745,6 +874,77 @@
 			buffer += string.Format("\t\t\tLuaLib.luaL_error(L, \"{0} has wrong number of arguments: \" + argc);\n", fn);
 			buffer += "\t\t\treturn 0;\n";
 			buffer += "\t\t}\n\n";
+
+			// return
+			return buffer;
+		}
+
+		private static string GenerateConstructorInvocation(Type t, ConstructorInfo callM, int paramCount, bool paramTypeCheck) {
+			string mn = callM.Name;
+			string tn = t.Name;
+			string tfn = t.FullName;
+			string tfnUnderscore = tfn.Replace(".", "_");
+			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
+			string fn = clazz + "." + mn;
+			string indent = paramTypeCheck ? "\t\t\t\t\t" : "\t\t\t\t";
+			string buffer = "";
+
+			// parameters
+			ParameterInfo[] pList = callM.GetParameters();
+
+			// argument handling
+			if(paramCount > 0) {
+				// argument declaration
+				buffer += indent + "// arguments declaration\n";
+				for(int i = 0; i < pList.Length; i++) {
+					Type pt = pList[i].ParameterType;
+					string ptn = pt.GetNormalizedName();
+					buffer += string.Format(indent + "{0} arg{1} = default({0});\n", ptn, i);
+				}
+
+				// argument conversion
+				buffer += "\n";
+				buffer += indent + "// convert lua value to desired arguments\n";
+				buffer += indent + "bool ok = true;\n";
+				for(int i = 0; i < pList.Length; i++) {
+					buffer += GenerateUnboxParameters(pList[i], i, tn + mn, indent);
+				}
+
+				// check conversion
+				buffer += "\n";
+				buffer += indent + "// if conversion is not ok, print error and return\n";
+				buffer += indent + "if(!ok) {\n";
+				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"invalid arguments in function '{0}'\", ref err);\n", fn);
+				buffer += indent + "\treturn 0;\n";
+				buffer += indent + "}\n";
+			}
+
+			// perform object type checking based on method type, static or not
+			buffer += "\n";
+			buffer += indent + "// caller type check\n";
+			buffer += indent.Substring(1) + "#if DEBUG\n";
+			buffer += string.Format(indent + "if(!LuaLib.tolua_isusertable(L, 1, \"{0}\", 0, ref err)) {{\n", tfn);
+			buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
+			buffer += indent + "\treturn 0;\n";
+			buffer += indent + "}\n";
+			buffer += indent.Substring(1) + "#endif\n";
+
+			// call function
+			buffer += "\n";
+			buffer += indent + "// call constructor\n";
+			buffer += indent;
+			buffer += string.Format("{0} ret = new {0}(", tfn);
+			for(int i = 0; i < pList.Length; i++) {
+				buffer += string.Format("arg{0}", i);
+				if(i < pList.Length - 1) {
+					buffer += ", ";
+				}
+			}
+			buffer += ");\n";
+
+			// push returned value
+			buffer += GenerateBoxReturnValue(t, indent);
+			buffer += indent + "return 1;\n";
 
 			// return
 			return buffer;
