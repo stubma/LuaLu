@@ -26,12 +26,6 @@
 extern "C" {
 #endif
 
-#define tolua_pushcppstring(x,y)                tolua_pushstring(x,y.c_str())
-#define tolua_iscppstring                       tolua_isstring
-
-#define tolua_iscppstringarray                  tolua_isstringarray
-#define tolua_pushfieldcppstring(L,lo,idx,s)    tolua_pushfieldstring(L, lo, idx, s.c_str())
-
 #ifndef TEMPLATE_BIND
 #define TEMPLATE_BIND(p)
 #endif
@@ -115,13 +109,6 @@ TOLUA_API void tolua_pushstring (lua_State* L, const char* value);
 TOLUA_API void tolua_pushuserdata (lua_State* L, void* value);
 TOLUA_API void tolua_pushusertype (lua_State* L, int refid, const char* type);
 TOLUA_API void tolua_pushusertype_and_takeownership(lua_State* L, int refid, const char* type);
-TOLUA_API void tolua_pushfieldvalue (lua_State* L, int lo, int index, int v);
-TOLUA_API void tolua_pushfieldboolean (lua_State* L, int lo, int index, int v);
-TOLUA_API void tolua_pushfieldnumber (lua_State* L, int lo, int index, lua_Number v);
-TOLUA_API void tolua_pushfieldstring (lua_State* L, int lo, int index, const char* v);
-TOLUA_API void tolua_pushfielduserdata (lua_State* L, int lo, int index, void* v);
-TOLUA_API void tolua_pushfieldusertype (lua_State* L, int lo, int index, int refid, const char* type);
-TOLUA_API void tolua_pushfieldusertype_and_takeownership (lua_State* L, int lo, int index, int refid, const char* type);
     
 TOLUA_API void tolua_pushusertype_and_addtoroot (lua_State* L, int refid, const char* type);
 TOLUA_API void tolua_add_value_to_root (lua_State* L, int refid);
@@ -133,34 +120,10 @@ TOLUA_API const char* tolua_tostring (lua_State* L, int narg, const char* def);
 TOLUA_API int tolua_tousertype (lua_State* L, int narg);
 TOLUA_API int tolua_tovalue (lua_State* L, int narg, int def);
 TOLUA_API int tolua_toboolean (lua_State* L, int narg, int def);
-TOLUA_API lua_Number tolua_tofieldnumber (lua_State* L, int lo, int index, lua_Number def);
-TOLUA_API const char* tolua_tofieldstring (lua_State* L, int lo, int index, const char* def);
-TOLUA_API void* tolua_tofielduserdata (lua_State* L, int lo, int index, void* def);
-TOLUA_API void* tolua_tofieldusertype (lua_State* L, int lo, int index, void* def);
-TOLUA_API int tolua_tofieldvalue (lua_State* L, int lo, int index, int def);
-TOLUA_API int tolua_getfieldboolean (lua_State* L, int lo, int index, int def);
 
 TOLUA_API void tolua_dobuffer(lua_State* L, char* B, unsigned int size, const char* name);
 
 TOLUA_API int class_gc_event (lua_State* L);
-
-#ifdef __cplusplus
-static inline const char* tolua_tocppstring (lua_State* L, int narg, const char* def) {
-
-    const char* s = tolua_tostring(L, narg, def);
-    return s?s:"";
-};
-
-static inline const char* tolua_tofieldcppstring (lua_State* L, int lo, int index, const char* def) {
-
-    const char* s = tolua_tofieldstring(L, lo, index, def);
-    return s?s:"";
-};
-
-#else
-#define tolua_tocppstring tolua_tostring
-#define tolua_tofieldcppstring tolua_tofieldstring
-#endif
 
 TOLUA_API int tolua_fast_isa(lua_State *L, int mt_indexa, int mt_indexb, int super_index);
 

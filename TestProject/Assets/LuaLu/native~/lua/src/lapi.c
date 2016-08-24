@@ -244,6 +244,13 @@ LUA_API int lua_type (lua_State *L, int idx) {
   return (o == luaO_nilobject) ? LUA_TNONE : ttype(o);
 }
 
+LUA_API const char     *(lua_typelname) (lua_State *L, int tp, size_t* len) {
+  const char* s = lua_typename(L, tp);
+  if(len) {
+    *len = strlen(s);
+  }
+  return s;
+}
 
 LUA_API const char *lua_typename (lua_State *L, int t) {
   UNUSED(L);

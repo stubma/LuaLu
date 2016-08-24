@@ -5425,6 +5425,13 @@ static const char*lua_typename(lua_State*L,int t){
 UNUSED(L);
 return(t==(-1))?"no value":luaT_typenames[t];
 }
+static const char * lua_typelname(lua_State *L, int tp, size_t* len) {
+  const char* s = lua_typename(L, tp);
+  if(len) {
+    *len = strlen(s);
+  }
+  return s;
+}
 static int lua_iscfunction(lua_State*L,int idx){
 StkId o=index2adr(L,idx);
 return iscfunction(o);

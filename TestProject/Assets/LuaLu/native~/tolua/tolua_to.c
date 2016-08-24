@@ -59,67 +59,6 @@ TOLUA_API int tolua_toboolean (lua_State* L, int narg, int def)
     return lua_gettop(L)<abs(narg) ?  def : lua_toboolean(L,narg);
 }
 
-TOLUA_API lua_Number tolua_tofieldnumber (lua_State* L, int lo, int index, lua_Number def)
-{
-    double v;
-    lua_pushnumber(L,index);
-    lua_gettable(L,lo);
-    v = lua_isnil(L,-1) ? def : lua_tonumber(L,-1);
-    lua_pop(L,1);
-    return v;
-}
-
-TOLUA_API const char* tolua_tofieldstring
-(lua_State* L, int lo, int index, const char* def)
-{
-    const char* v;
-    lua_pushnumber(L,index);
-    lua_gettable(L,lo);
-    v = lua_isnil(L,-1) ? def : lua_tostring(L,-1);
-    lua_pop(L,1);
-    return v;
-}
-
-TOLUA_API void* tolua_tofielduserdata (lua_State* L, int lo, int index, void* def)
-{
-    void* v;
-    lua_pushnumber(L,index);
-    lua_gettable(L,lo);
-    v = lua_isnil(L,-1) ? def : lua_touserdata(L,-1);
-    lua_pop(L,1);
-    return v;
-}
-
-TOLUA_API void* tolua_tofieldusertype (lua_State* L, int lo, int index, void* def)
-{
-    void* v;
-    lua_pushnumber(L,index);
-    lua_gettable(L,lo);
-    v = lua_isnil(L,-1) ? def : (*(void **)(lua_touserdata(L, -1))); /* lua_unboxpointer(L,-1); */
-    lua_pop(L,1);
-    return v;
-}
-
-TOLUA_API int tolua_tofieldvalue (lua_State* L, int lo, int index, int def)
-{
-    int v;
-    lua_pushnumber(L,index);
-    lua_gettable(L,lo);
-    v = lua_isnil(L,-1) ? def : lo;
-    lua_pop(L,1);
-    return v;
-}
-
-TOLUA_API int tolua_getfieldboolean (lua_State* L, int lo, int index, int def)
-{
-    int v;
-    lua_pushnumber(L,index);
-    lua_gettable(L,lo);
-    v = lua_isnil(L,-1) ? 0 : lua_toboolean(L,-1);
-    lua_pop(L,1);
-    return v;
-}
-
 TOLUA_API void tolua_stack_dump(lua_State* L, const char* label)
 {
     int i;
