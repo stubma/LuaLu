@@ -573,12 +573,12 @@
 			LuaLib.lua_pushnil(L);
 		}
 
-		public void PushObject(object obj, string typeName, bool addToRoot = false) {
+		public void PushObject(object obj, string typeName, bool keepAlive = false) {
 			bool isRegistered = NativeObjectManager.isRegistered(obj);
 			if(!isRegistered) {
 				NativeObjectManager.RegisterObject(obj);
 			}
-			LuaLib.toluafix_pushusertype_object(L, obj.GetHashCode(), !isRegistered, typeName, addToRoot);
+			LuaLib.toluafix_pushusertype_object(L, obj.GetHashCode(), !isRegistered, typeName, keepAlive);
 		}
 
 		public void PushArray(Array array) {
