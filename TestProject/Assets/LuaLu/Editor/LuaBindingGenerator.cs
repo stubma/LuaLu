@@ -235,7 +235,7 @@
 				buffer += string.Format("\t\t\tLuaLib.tolua_module(L, \"{0}\", 0);\n", ns);
 				buffer += string.Format("\t\t\tLuaLib.tolua_beginmodule(L, \"{0}\");\n", ns);
 			}
-			buffer += string.Format("\t\t\tLuaLib.tolua_class(L, \"{0}\", \"{1}\", null);\n", tfn, btfn);
+			buffer += string.Format("\t\t\tLuaLib.tolua_class(L, \"{0}\", \"{1}\", new LuaFunction(LuaStack.LuaGC));\n", tfn, btfn);
 			buffer += string.Format("\t\t\tLuaLib.tolua_beginmodule(L, \"{0}\");\n", tn);
 			if(ctors.Length > 0) {
 				buffer += "\t\t\tLuaLib.tolua_function(L, \"new\", new LuaFunction(__Constructor__));\n";
@@ -359,7 +359,7 @@
 						buffer += "\t\t\t}\n";
 						buffer += "\t\t#endif\n";
 						buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
-						buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tn);
+						buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectManager.FindObject(refId);\n", tn);
 						buffer += "\t\t#if DEBUG\n";
 						buffer += "\t\t\tif(obj == null) {\n";
 						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", gn);
@@ -396,7 +396,7 @@
 						buffer += "\t\t\t}\n";
 						buffer += "\t\t#endif\n";
 						buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
-						buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tn);
+						buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectManager.FindObject(refId);\n", tn);
 						buffer += "\t\t#if DEBUG\n";
 						buffer += "\t\t\tif(obj == null) {\n";
 						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", sn);
@@ -480,7 +480,7 @@
 						buffer += "\t\t\t}\n";
 						buffer += "\t\t#endif\n";
 						buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
-						buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tn);
+						buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectManager.FindObject(refId);\n", tn);
 						buffer += "\t\t#if DEBUG\n";
 						buffer += "\t\t\tif(obj == null) {\n";
 						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);
@@ -520,7 +520,7 @@
 						buffer += "\t\t\t}\n";
 						buffer += "\t\t#endif\n";
 						buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
-						buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tn);
+						buffer += string.Format("\t\t\t{0} obj = ({0})NativeObjectManager.FindObject(refId);\n", tn);
 						buffer += "\t\t#if DEBUG\n";
 						buffer += "\t\t\tif(obj == null) {\n";
 						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);
@@ -879,11 +879,10 @@
 				buffer += indent + "if(!ok) {\n";
 				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"invalid arguments in function '{0}'\", ref err);\n", fn);
 				buffer += indent + "\treturn 0;\n";
-				buffer += indent + "}\n";
+				buffer += indent + "}\n\n";
 			}
 
 			// call function
-			buffer += "\n";
 			buffer += indent + "// call constructor\n";
 			buffer += indent;
 			buffer += string.Format("{0} ret = new {0}(", tfn);
@@ -956,7 +955,7 @@
 				buffer += indent + "}\n";
 				buffer += indent.Substring(1) + "#endif\n";
 				buffer += indent + "int refId = LuaLib.tolua_tousertype(L, 1);\n";
-				buffer += string.Format(indent + "{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tfn);
+				buffer += string.Format(indent + "{0} obj = ({0})NativeObjectManager.FindObject(refId);\n", tfn);
 				buffer += indent.Substring(1) + "#if DEBUG\n";
 				buffer += indent + "if(obj == null) {\n";
 				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);

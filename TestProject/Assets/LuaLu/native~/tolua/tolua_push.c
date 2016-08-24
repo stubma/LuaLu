@@ -17,7 +17,38 @@
 
 #include <stdlib.h>
 
-void tolua_pushusertype_internal (lua_State* L, int refid, const char* type, int addToRoot)
+TOLUA_API void tolua_pushvalue (lua_State* L, int lo)
+{
+    lua_pushvalue(L,lo);
+}
+
+TOLUA_API void tolua_pushboolean (lua_State* L, int value)
+{
+    lua_pushboolean(L,value);
+}
+
+TOLUA_API void tolua_pushnumber (lua_State* L, lua_Number value)
+{
+    lua_pushnumber(L,value);
+}
+
+TOLUA_API void tolua_pushstring (lua_State* L, const char* value)
+{
+    if (value == NULL)
+        lua_pushnil(L);
+    else
+        lua_pushstring(L,value);
+}
+
+TOLUA_API void tolua_pushuserdata (lua_State* L, void* value)
+{
+    if (value == NULL)
+        lua_pushnil(L);
+    else
+        lua_pushlightuserdata(L,value);
+}
+
+TOLUA_API void tolua_pushusertype (lua_State* L, int refid, const char* type, int addToRoot)
 {
     if (refid == 0)
         lua_pushnil(L);
@@ -90,54 +121,10 @@ void tolua_pushusertype_internal (lua_State* L, int refid, const char* type, int
             lua_pushvalue(L, -1);
             tolua_add_value_to_root(L, refid);
         }
+        
+        // register gc for this instance
+        tolua_register_gc(L,lua_gettop(L));
     }
-}
-
-TOLUA_API void tolua_pushvalue (lua_State* L, int lo)
-{
-    lua_pushvalue(L,lo);
-}
-
-TOLUA_API void tolua_pushboolean (lua_State* L, int value)
-{
-    lua_pushboolean(L,value);
-}
-
-TOLUA_API void tolua_pushnumber (lua_State* L, lua_Number value)
-{
-    lua_pushnumber(L,value);
-}
-
-TOLUA_API void tolua_pushstring (lua_State* L, const char* value)
-{
-    if (value == NULL)
-        lua_pushnil(L);
-    else
-        lua_pushstring(L,value);
-}
-
-TOLUA_API void tolua_pushuserdata (lua_State* L, void* value)
-{
-    if (value == NULL)
-        lua_pushnil(L);
-    else
-        lua_pushlightuserdata(L,value);
-}
-
-TOLUA_API void tolua_pushusertype (lua_State* L, int refid, const char* type)
-{
-    tolua_pushusertype_internal(L, refid, type, 0);
-}
-
-TOLUA_API void tolua_pushusertype_and_addtoroot (lua_State* L, int refid, const char* type)
-{
-    tolua_pushusertype_internal(L, refid, type, 1);
-}
-
-TOLUA_API void tolua_pushusertype_and_takeownership (lua_State* L, int refid, const char* type)
-{
-    tolua_pushusertype(L,refid,type);
-    tolua_register_gc(L,lua_gettop(L));
 }
 
 TOLUA_API void tolua_add_value_to_root(lua_State* L, int refid)

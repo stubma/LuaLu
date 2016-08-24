@@ -16,7 +16,8 @@ TOLUA_API void toluafix_open(lua_State* L);
 TOLUA_API int toluafix_pushusertype_object(lua_State *L,
                                              int refid,
                                              bool firstPush,
-                                             const char *vtype);
+                                             const char *vtype,
+                                             bool addToRoot);
 TOLUA_API int toluafix_remove_object_by_refid(lua_State* L, int refid);
 TOLUA_API int toluafix_ref_function(lua_State* L, int lo, int def);
 TOLUA_API void toluafix_get_function_by_refid(lua_State* L, int refid);

@@ -210,6 +210,18 @@
 		}
 
 		/// <summary>
+		/// garbage collection for lua side, it clears native object
+		/// </summary>
+		/// <returns>The G.</returns>
+		/// <param name="L">L.</param>
+		[MonoPInvokeCallback(typeof(LuaFunction))]
+		public static int LuaGC(IntPtr L) {
+			int refId = LuaLib.tolua_tousertype(L, -1);
+			NativeObjectManager.RemoveObject(refId);
+			return 0;
+		}
+
+		/// <summary>
 		/// Find lua asset from file path relative to Resources, it try asset bundle first, then
 		/// fallback to app Resources if not found
 		/// </summary>
@@ -426,46 +438,6 @@
 			return 0;
 		}
 
-		public void ExecuteObjectDestructor(object obj) {
-			// top
-			int top = LuaLib.lua_gettop(L);
-
-			// push object
-			Type objType = obj.GetType();
-			PushObject(obj, objType.FullName); // obj
-
-			// push super until none
-			while(true) {
-				LuaLib.lua_pushstring(L, "super"); // obj super[n] "super"
-				LuaLib.lua_gettable(L, -2); // obj super[n+1]
-				if(LuaLib.lua_isnil(L, -1)) {
-					LuaLib.lua_pop(L, 1); // obj super[n+1]
-					break;
-				}
-			}
-
-			// count of obj
-			int count = LuaLib.lua_gettop(L) - top;
-
-			// reverse the super order, make obj at the top
-			for(int i = 0; i < count - 1; i++) {
-				LuaLib.lua_insert(L, top + 1);
-			}
-
-			// call dtor from obj to super, but the argument should always be obj
-			while(count-- > 0) {
-				LuaLib.lua_pushstring(L, "dtor"); // super[n] "dtor"
-				LuaLib.lua_gettable(L, -2); // super[n] dtor
-				if(LuaLib.lua_isnil(L, -1) || !LuaLib.lua_isfunction(L, -1)) {
-					LuaLib.lua_pop(L, 2); // super[n-1]
-				} else {
-					PushObject(obj, objType.FullName); // super[n] dtor obj
-					ExecuteFunction(1); // after executed, super[n]
-					LuaLib.lua_pop(L, 1); // super[n-1]
-				}
-			}
-		}
-
 		/// <summary>
 		/// invoke a lua function
 		/// </summary>
@@ -480,6 +452,7 @@
 				return 0;
 			}
 
+			// add trackback
 			int traceback = 0;
 			LuaLib.lua_getglobal(L, "__G__TRACKBACK__");                         /* L: ... func arg1 arg2 ... G */
 			if(!LuaLib.lua_isfunction(L, -1)) {
@@ -600,12 +573,12 @@
 			LuaLib.lua_pushnil(L);
 		}
 
-		public void PushObject(object obj, string typeName) {
-			bool isRegistered = NativeObjectMap.isRegistered(obj);
+		public void PushObject(object obj, string typeName, bool addToRoot = false) {
+			bool isRegistered = NativeObjectManager.isRegistered(obj);
 			if(!isRegistered) {
-				NativeObjectMap.RegisterObject(obj);
+				NativeObjectManager.RegisterObject(obj);
 			}
-			LuaLib.toluafix_pushusertype_object(L, obj.GetHashCode(), !isRegistered, typeName);
+			LuaLib.toluafix_pushusertype_object(L, obj.GetHashCode(), !isRegistered, typeName, addToRoot);
 		}
 
 		public void PushArray(Array array) {
@@ -658,19 +631,9 @@
 			return nNewHandle;
 		}
 
-		public void SaveInstanceInGlobal(object obj, string globalName = "__tmp_obj__") {
-			PushObject(obj, obj.GetType().FullName);
-			LuaLib.lua_setglobal(L, globalName);
-		}
-
-		public void ClearInstanceInGlobal(string globalName = "__tmp_obj__") {
-			LuaLib.lua_pushnil(L);
-			LuaLib.lua_setglobal(L, globalName);
-		}
-
 		public void BindInstanceToLuaClass(object obj, string luaType) {
 			// push obj to a tmp global
-			PushObject(obj, obj.GetType().FullName);
+			PushObject(obj, obj.GetType().FullName, true);
 			LuaLib.lua_setglobal(L, "__tmp_obj__");
 
 			// build script and run

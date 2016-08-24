@@ -13,6 +13,11 @@ function __G__TRACKBACK__(msg)
     u3d.log("----------------------------------------")
 end
 
+-- avoid memory leak
+collectgarbage("setpause", 100)
+collectgarbage("setstepmul", 5000)
+    
+-- load core lib
 require("core/debug")
 require("core/oop")
 require("core/overload")

@@ -107,10 +107,8 @@ TOLUA_API void tolua_pushboolean (lua_State* L, int value);
 TOLUA_API void tolua_pushnumber (lua_State* L, lua_Number value);
 TOLUA_API void tolua_pushstring (lua_State* L, const char* value);
 TOLUA_API void tolua_pushuserdata (lua_State* L, void* value);
-TOLUA_API void tolua_pushusertype (lua_State* L, int refid, const char* type);
-TOLUA_API void tolua_pushusertype_and_takeownership(lua_State* L, int refid, const char* type);
+TOLUA_API void tolua_pushusertype (lua_State* L, int refid, const char* type, int addToRoot);
     
-TOLUA_API void tolua_pushusertype_and_addtoroot (lua_State* L, int refid, const char* type);
 TOLUA_API void tolua_add_value_to_root (lua_State* L, int refid);
 TOLUA_API void tolua_remove_value_from_root (lua_State* L, int refid);
 

@@ -150,61 +150,6 @@ static int tolua_bnd_type (lua_State* L)
     return 1;
 }
 
-/* Take ownership
-*/
-static int tolua_bnd_takeownership (lua_State* L)
-{
-    int success = 0;
-    if (lua_isuserdata(L,1))
-    {
-        if (lua_getmetatable(L,1))        /* if metatable? */
-        {
-            lua_pop(L,1);             /* clear metatable off stack */
-            /* force garbage collection to avoid C to reuse a to-be-collected address */
-#ifdef LUA_VERSION_NUM
-            lua_gc(L, LUA_GCCOLLECT, 0);
-#else
-            lua_setgcthreshold(L,0);
-#endif
-
-            success = tolua_register_gc(L,1);
-        }
-    }
-    lua_pushboolean(L,success!=0);
-    return 1;
-}
-
-/* Release ownership
-*/
-static int tolua_bnd_releaseownership (lua_State* L)
-{
-    int done = 0;
-    if (lua_isuserdata(L,1)) // ud
-    {
-        int refid = *(int*)lua_touserdata(L,1);
-        /* force garbage collection to avoid releasing a to-be-collected address */
-#ifdef LUA_VERSION_NUM
-        lua_gc(L, LUA_GCCOLLECT, 0);
-#else
-        lua_setgcthreshold(L,0);
-#endif
-        lua_pushstring(L,"tolua_gc"); // ud tolua_gc_key
-        lua_rawget(L,LUA_REGISTRYINDEX); // ud tolua_gc
-        lua_pushinteger(L, refid); // ud tolua_gc ptr
-        lua_rawget(L,-2); // ud tolua_gc mt
-        lua_getmetatable(L,1); // ud tolua_gc mt mt
-        if (lua_rawequal(L,-1,-2))  /* check that we are releasing the correct type */
-        {
-            lua_pushinteger(L, refid); // ud tolua_gc mt mt ptr
-            lua_pushnil(L); // ud tolua_gc mt mt ptr nil
-            lua_rawset(L,-5); // ud tolua_gc(ptr->nil) mt mt
-            done = 1;
-        }
-    }
-    lua_pushboolean(L,done!=0); // ud tolua_gc mt mt done
-    return 1;
-}
-
 static int tolua_bnd_isa(lua_State* L) {
     tolua_Error err;
     const char* type = tolua_tostring(L, 2, NULL);
@@ -226,7 +171,7 @@ static int tolua_bnd_cast (lua_State* L)
 
     s = tolua_tostring(L,2,NULL);
     if (refid && s) {
-        tolua_pushusertype(L,refid,s);
+        tolua_pushusertype(L,refid,s,0);
     } else {
         lua_pushnil(L);
     }
@@ -236,8 +181,8 @@ static int tolua_bnd_cast (lua_State* L)
 /* Test userdata is null
 */
 static int tolua_bnd_isnulluserdata (lua_State* L) {
-    void **ud = (void**)lua_touserdata(L, -1);
-    tolua_pushboolean(L, ud == NULL || *ud == NULL);
+    void* ud = (void*)lua_touserdata(L, -1);
+    tolua_pushboolean(L, ud == NULL);
     return 1;
 }
 
@@ -358,8 +303,6 @@ TOLUA_API void tolua_open (lua_State* L)
         tolua_module(L,"tolua",0);
         tolua_beginmodule(L,"tolua");
         tolua_function(L,"type",tolua_bnd_type);
-        tolua_function(L,"takeownership",tolua_bnd_takeownership);
-        tolua_function(L,"releaseownership",tolua_bnd_releaseownership);
         tolua_function(L,"cast",tolua_bnd_cast);
         tolua_function(L, "isa", tolua_bnd_isa);
         tolua_function(L,"isnull",tolua_bnd_isnulluserdata);

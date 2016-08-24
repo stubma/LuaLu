@@ -19,5 +19,6 @@ function FirstLua:Start()
 end
 
 function FirstLua:Update()
+  --collectgarbage()
   self.transform:Rotate(UnityEngine.Vector3.new(15 * UnityEngine.Time.deltaTime, 30 * UnityEngine.Time.deltaTime, 45 * UnityEngine.Time.deltaTime))
 end

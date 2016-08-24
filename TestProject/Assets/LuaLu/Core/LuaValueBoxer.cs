@@ -137,7 +137,7 @@
 				// to obj
 				if(ok) {
 					int refId = LuaLib.tolua_tousertype(L, lo);
-					ret = (T)NativeObjectMap.FindObject(refId);
+					ret = (T)NativeObjectManager.FindObject(refId);
 				} else {
 					ret = default(T);
 				}
@@ -194,7 +194,7 @@
 						if(luaval_is_usertype(L, -1, tn)) {
 							// to obj
 							int refId = LuaLib.tolua_tousertype(L, -1);
-							object obj = NativeObjectMap.FindObject(refId);
+							object obj = NativeObjectManager.FindObject(refId);
 							if(obj != null) {
 								ret.Add(obj);
 							}
@@ -258,7 +258,7 @@
 						if(luaval_is_usertype(L, -1, tn)) {
 							// to obj
 							int refId = LuaLib.tolua_tousertype(L, -1);
-							object obj = NativeObjectMap.FindObject(refId);
+							object obj = NativeObjectManager.FindObject(refId);
 							if(obj != null) {
 								ret.Add(strKey, obj);
 							}

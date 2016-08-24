@@ -30,7 +30,8 @@ TOLUA_API void toluafix_open(lua_State* L)
 TOLUA_API int toluafix_pushusertype_object(lua_State *L,
                                              int refid,
                                              bool firstPush,
-                                             const char *vtype) {
+                                             const char *vtype,
+                                             bool addToRoot) {
     if (refid == 0) {
         lua_pushnil(L);
         return -1;
@@ -45,7 +46,7 @@ TOLUA_API int toluafix_pushusertype_object(lua_State *L,
         lua_pop(L, 1);                                              /* stack: - */
     }
     
-    tolua_pushusertype_and_addtoroot(L, refid, vtype);
+    tolua_pushusertype(L, refid, vtype, addToRoot);
     return 0;
 }
     
@@ -90,7 +91,7 @@ TOLUA_API int toluafix_remove_object_by_refid(lua_State* L, int refid)
     
     
     // cleanup root
-    tolua_remove_value_from_root(L, refid);
+//    tolua_remove_value_from_root(L, refid);
     
     lua_pushinteger(L, refid);                                  /* stack: mt ubox ptr */
     lua_rawget(L,-2);                                               /* stack: mt ubox ud */

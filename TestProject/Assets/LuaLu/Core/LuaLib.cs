@@ -763,13 +763,7 @@
 		public static extern void tolua_pushuserdata(IntPtr L, IntPtr value);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void tolua_pushusertype(IntPtr L, int refid, string type);
-
-		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void tolua_pushusertype_and_takeownership(IntPtr L, int refid, string type);
-
-		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void tolua_pushusertype_and_addtoroot(IntPtr L, int value, string type);
+		public static extern void tolua_pushusertype(IntPtr L, int refid, string type, bool addToRoot);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void tolua_add_value_to_root(IntPtr L, int refid);
@@ -813,7 +807,7 @@
 		public static extern void toluafix_open(IntPtr L);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int toluafix_pushusertype_object(IntPtr L, int refid, bool firstPush, string vtype);
+		public static extern int toluafix_pushusertype_object(IntPtr L, int refid, bool firstPush, string vtype, bool addToRoot);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int toluafix_remove_object_by_refid(IntPtr L, int refid);

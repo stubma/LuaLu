@@ -389,9 +389,10 @@ static int class_gc_event (lua_State* L)
     return 0;
 }
 */
+
 TOLUA_API int class_gc_event (lua_State* L)
 {
-    void* u = *((void**)lua_touserdata(L,1));
+    int refid = *(int*)lua_touserdata(L,1);
     int top;
     /*fprintf(stderr, "collecting: looking at %p\n", u);*/
     /*
@@ -399,9 +400,9 @@ TOLUA_API int class_gc_event (lua_State* L)
     lua_rawget(L,LUA_REGISTRYINDEX);
     */
     lua_pushvalue(L, lua_upvalueindex(1)); // ud tolua_gc
-    lua_pushlightuserdata(L,u); // ud tolua_gc ptr
-    lua_rawget(L,-2);            // ud tolua_gc ptr mt
-    lua_getmetatable(L,1);       // ud tolua_gc ptr mt mt
+    lua_pushinteger(L, refid); // ud tolua_gc refid
+    lua_rawget(L,-2);            // ud tolua_gc mt
+    lua_getmetatable(L,1);       // ud tolua_gc mt mt
     /*fprintf(stderr, "checking type\n");*/
     top = lua_gettop(L);
     if (tolua_fast_isa(L,top,top-1, lua_upvalueindex(2))) /* make sure we collect correct type */
@@ -412,8 +413,7 @@ TOLUA_API int class_gc_event (lua_State* L)
         lua_rawget(L,-2);           // ud tolua_gc ptr mt mt collector
         if (lua_isfunction(L,-1)) {
             /*fprintf(stderr, "Found .collector!\n");*/
-        }
-        else {
+        } else {
             lua_pop(L,1); // ud tolua_gc ptr mt
             /*fprintf(stderr, "Using default cleanup\n");*/
             lua_pushcfunction(L,tolua_default_collect); // ud tolua_gc ptr mt collector(default)
@@ -422,7 +422,7 @@ TOLUA_API int class_gc_event (lua_State* L)
         lua_pushvalue(L,1);         // ud tolua_gc ptr mt collector ud
         lua_call(L,1,0); // collector executed, ud tolua_gc ptr mt
 
-        lua_pushlightuserdata(L,u); // ud tolua_gc ptr mt ptr
+        lua_pushinteger(L, refid); // ud tolua_gc ptr mt ptr
         lua_pushnil(L);             // ud tolua_gc ptr mt ptr nil
         lua_rawset(L,-5);           // ud tolua_gc(ptr->nil) ptr mt
     }
