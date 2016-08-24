@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <map>
 #include <typeinfo>
+#include "unity_log.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,7 +65,9 @@ TOLUA_API int toluafix_remove_object_by_refid(lua_State* L, int refid)
     if (lua_isnil(L, -1))
     {
         lua_pop(L, 2);
-        printf("[LUA ERROR] remove Object with NULL type, refid: %d", refid);
+        char buf[256];
+        sprintf(buf, "[LUA ERROR] remove Object with NULL type, refid: %d", refid);
+        unity_log(buf);
         return -1;
     }
     
@@ -87,7 +90,7 @@ TOLUA_API int toluafix_remove_object_by_refid(lua_State* L, int refid)
         lua_pop(L, 1);                                              /* stack: mt */
         lua_pushstring(L, "tolua_ubox");                            /* stack: mt key */
         lua_rawget(L, LUA_REGISTRYINDEX);                           /* stack: mt ubox */
-    };
+    }
     
     
     // cleanup root
@@ -111,7 +114,9 @@ TOLUA_API int toluafix_remove_object_by_refid(lua_State* L, int refid)
     lua_pop(L, 1);                                                  /* stack: mt ubox */
     if (ud == NULL)
     {
-        printf("[LUA ERROR] remove Object with NULL userdata, refid: %d, type: %s\n", refid, type);
+        char buf[256];
+        sprintf(buf, "[LUA ERROR] remove Object with NULL userdata, refid: %d, type: %s\n", refid, type);
+        unity_log(buf);
         lua_pop(L, 2);
         return -1;
     }

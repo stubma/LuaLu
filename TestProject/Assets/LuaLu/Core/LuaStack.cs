@@ -107,7 +107,7 @@
 		public static void InitGlobalState() {
 			if(!s_globalInited) {
 				lock(s_lockRoot) {
-					LuaStack L = SharedInstance();
+					SharedInstance();
 					s_globalInited = true;
 				}
 			}
@@ -353,16 +353,39 @@
 		}
 
 		public void RemoveObject(int hash) {
+			bool istransform = m_objMap[hash].GetType() == typeof(Transform);
+			if(istransform) {
+				Debug.Log("remove transform: " + hash);
+			}
 			LuaLib.toluafix_remove_object_by_refid(LuaStack.SharedInstance().GetLuaState(), hash);
 			m_objMap.Remove(hash);
+			if(istransform) {
+				Debug.Log(string.Format("transform removed, lua top: {0}", LuaLib.lua_gettop(L)));
+			}
 		}
 
 		public void RegisterObject(object obj) {
 			int hash = obj.GetHashCode();
-			if(m_objMap.ContainsKey(hash)) {
-				RemoveObject(hash);
+			if(!m_objMap.ContainsKey(hash)) {
+				m_objMap[hash] = obj;
 			}
-			m_objMap[hash] = obj;
+		}
+
+		public void PushObject(object obj, string typeName, bool keepAlive = false) {
+			// is object registered in manager, if not, it is first time to push to lua side
+			bool isRegistered = IsRegistered(obj);
+			if(!isRegistered) {
+				RegisterObject(obj);
+			}
+
+			// actually we alwasy add this type to root, but if keepAlive is false, it will be removed
+			// from root next update. This mechanism is way like cocos2dx autorelease and its purpose is
+			// preventing it to be collected in current event loop
+			int refId = obj.GetHashCode();
+			LuaLib.toluafix_pushusertype_object(L, refId, !isRegistered, typeName, true);
+			if(!keepAlive) {
+				AutoRelease(refId);
+			}
 		}
 
 		/// <summary>
@@ -649,24 +672,7 @@
 		public void PushNil() {
 			LuaLib.lua_pushnil(L);
 		}
-
-		public void PushObject(object obj, string typeName, bool keepAlive = false) {
-			// is object registered in manager, if not, it is first time to push to lua side
-			bool isRegistered = IsRegistered(obj);
-			if(!isRegistered) {
-				RegisterObject(obj);
-			}
-
-			// actually we alwasy add this type to root, but if keepAlive is false, it will be removed
-			// from root next update. This mechanism is way like cocos2dx autorelease and its purpose is
-			// preventing it to be collected in current event loop
-			int refId = obj.GetHashCode();
-			LuaLib.toluafix_pushusertype_object(L, refId, !isRegistered, typeName, true);
-			if(!keepAlive) {
-				AutoRelease(refId);
-			}
-		}
-
+			
 		public void PushArray(Array array) {
 			LuaValueBoxer.list_to_luaval(L, array);
 		}
