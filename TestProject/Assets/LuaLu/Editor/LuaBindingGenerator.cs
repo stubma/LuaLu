@@ -563,7 +563,6 @@
 		}
 
 		private static string GenerateConstructor(Type t, ConstructorInfo[] mList) {
-			ConstructorInfo m = mList[0];
 			string tfn = t.FullName;
 			string buffer = "";
 			string tfnUnderscore = tfn.Replace(".", "_");
@@ -609,7 +608,6 @@
 				buffer += string.Format("\t\t\tif(argc == {0}) {{\n", c);
 
 				// check constructor count with same parameter count
-				ConstructorInfo callM = null;
 				List<ConstructorInfo> cl = cpMap[c];
 				if(cl.Count > 1) {
 					// get lua types
@@ -700,7 +698,6 @@
 
 		private static string GeneratePublicMethod(Type t, List<MethodInfo> mList) {
 			string mn = mList[0].Name;
-			string tn = t.Name;
 			string tfn = t.FullName;
 			string buffer = "";
 			string tfnUnderscore = tfn.Replace(".", "_");
@@ -745,7 +742,6 @@
 				buffer += string.Format("\t\t\tif(argc == {0}) {{\n", c);
 
 				// check method count with same parameter count
-				MethodInfo callM = null;
 				List<MethodInfo> ml = mpMap[c];
 				if(ml.Count > 1) {
 					// get lua types
