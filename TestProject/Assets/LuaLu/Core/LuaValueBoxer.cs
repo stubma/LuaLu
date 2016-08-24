@@ -609,23 +609,24 @@
 			}
 		}
 
-		public static void GetLuaParameterTypes(IntPtr L, out int[] types) {
-			int argc = LuaLib.lua_gettop(L) - 1;
+		public static void GetLuaParameterTypes(IntPtr L, out int[] types, bool isStatic) {
+			int argc = LuaLib.lua_gettop(L);
+			if(!isStatic) {
+				argc--;
+			}
 			types = new int[argc];
 			for(int i = 0; i < argc; i++) {
-				types[i] = LuaLib.lua_type(L, i + 2);
+				types[i] = LuaLib.lua_type(L, i + 1 + (isStatic ? 0 : 1));
 			}
 		}
 
-		public static bool CheckParameterType(IntPtr L, int[] luaTypes, string[] typeFullNames, bool fuzzy = false) {
-			// get argument count
-			int argc = LuaLib.lua_gettop(L) - 1;
-
+		public static bool CheckParameterType(IntPtr L, int[] luaTypes, string[] typeFullNames, bool isStatic, bool fuzzy = false) {
 			// first time we perform accurate match
+			int argc = luaTypes.Length;
 			bool matched = false;
 			if(typeFullNames != null && typeFullNames.Length >= argc) {
 				for(int i = 0; i < argc; i++) {
-					int luaType = LuaLib.lua_type(L, i + 2);
+					int luaType = luaTypes[i];
 					string tfn = typeFullNames[i];
 					if(luaType == (int)LuaTypes.LUA_TBOOLEAN) {
 						if(fuzzy) {
@@ -680,7 +681,7 @@
 								matched = true;
 								break;
 							} else if(tfn == "System.Char") {
-								string arg = LuaLib.lua_tostring(L, i + 2);
+								string arg = LuaLib.lua_tostring(L, i + (isStatic ? 1 : 2));
 								if(arg.Length == 1) {
 									matched = true;
 									break;
@@ -697,7 +698,7 @@
 							break;
 						}
 					} else if(luaType == (int)LuaTypes.LUA_TUSERDATA) {
-						string typeName = LuaLib.tolua_typename(L, i + 2);
+						string typeName = LuaLib.tolua_typename(L, i + (isStatic ? 1 : 2));
 						if(fuzzy) {
 							Type nt = Type.GetType(tfn);
 							Type lt = Type.GetType(typeName);

@@ -40,6 +40,7 @@
 
 			// test code
 			s_types = new List<Type>();
+			s_types.Add(typeof(System.Object));
 			s_types.Add(typeof(Component));
 			s_types.Add(typeof(Type));
 			s_types.Add(typeof(LuaComponent));
@@ -160,6 +161,11 @@
 			buffer += "\tusing UnityEngine;\n";
 			buffer += "\tusing LuaInterface;\n";
 			buffer += string.Format("\n\tpublic class {0} {{\n", clazz);
+
+			// shared err struct
+			buffer += "\t#if DEBUG\n";
+			buffer += "\t\tstatic tolua_Error err = new tolua_Error();\n";
+			buffer += "\t#endif\n\n";
 
 			// get constructors
 			ConstructorInfo[] ctors = t.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
@@ -343,14 +349,8 @@
 					buffer += "\t\t[MonoPInvokeCallback(typeof(LuaFunction))]\n";
 					buffer += string.Format("\t\tpublic static int {0}(IntPtr L) {{\n", gn);
 
-					// err object
-					buffer += "\t\t#if DEBUG\n";
-					buffer += "\t\t\ttolua_Error err = new tolua_Error();\n";
-					buffer += "\t\t#endif\n";
-
 					// try to get object from first parameter
 					if(!fi.IsStatic) {
-						buffer += "\n";
 						buffer += "\t\t\t// caller type check\n";
 						buffer += "\t\t#if DEBUG\n";
 						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
@@ -365,11 +365,10 @@
 						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", gn);
 						buffer += "\t\t\t\treturn 0;\n";
 						buffer += "\t\t\t}\n";
-						buffer += "\t\t#endif\n";
+						buffer += "\t\t#endif\n\n";
 					}
 
 					// call function
-					buffer += "\n";
 					buffer += "\t\t\t// get field\n";
 					buffer += string.Format("\t\t\t{0} ret = {1}.{2};\n", ftn, fi.IsStatic ? tn : "obj", fin);
 
@@ -387,14 +386,8 @@
 					buffer += "\t\t[MonoPInvokeCallback(typeof(LuaFunction))]\n";
 					buffer += string.Format("\t\tpublic static int {0}(IntPtr L) {{\n", sn);
 
-					// err object
-					buffer += "\t\t#if DEBUG\n";
-					buffer += "\t\t\ttolua_Error err = new tolua_Error();\n";
-					buffer += "\t\t#endif\n";
-
 					// try to get object from first parameter
 					if(!fi.IsStatic) {
-						buffer += "\n";
 						buffer += "\t\t\t// caller type check\n";
 						buffer += "\t\t#if DEBUG\n";
 						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
@@ -409,11 +402,10 @@
 						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", sn);
 						buffer += "\t\t\t\treturn 0;\n";
 						buffer += "\t\t\t}\n";
-						buffer += "\t\t#endif\n";
+						buffer += "\t\t#endif\n\n";
 					}
 
 					// find conversion by property type name
-					buffer += "\n";
 					buffer += "\t\t\t// set field\n";
 					buffer += "\t\t\tbool ok = true;\n";
 					buffer += string.Format("\t\t\t{0} ret;\n", ftn);
@@ -480,10 +472,6 @@
 					// try to get object from first parameter
 					if(!getter.IsStatic) {
 						// err object
-						buffer += "\t\t#if DEBUG\n";
-						buffer += "\t\t\ttolua_Error err = new tolua_Error();\n";
-						buffer += "\t\t#endif\n";
-						buffer += "\n";
 						buffer += "\t\t\t// caller type check\n";
 						buffer += "\t\t#if DEBUG\n";
 						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
@@ -498,11 +486,10 @@
 						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);
 						buffer += "\t\t\t\treturn 0;\n";
 						buffer += "\t\t\t}\n";
-						buffer += "\t\t#endif\n";
+						buffer += "\t\t#endif\n\n";
 					}
 
 					// call function
-					buffer += "\n";
 					buffer += "\t\t\t// get property\n";
 					buffer += string.Format("\t\t\t{0} ret = {1}.{2};\n", ptn, getter.IsStatic ? tn : "obj", pn);
 
@@ -525,10 +512,6 @@
 					// try to get object from first parameter
 					if(!setter.IsStatic) {
 						// err object
-						buffer += "\t\t#if DEBUG\n";
-						buffer += "\t\t\ttolua_Error err = new tolua_Error();\n";
-						buffer += "\t\t#endif\n";
-						buffer += "\n";
 						buffer += "\t\t\t// caller type check\n";
 						buffer += "\t\t#if DEBUG\n";
 						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
@@ -543,11 +526,10 @@
 						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);
 						buffer += "\t\t\t\treturn 0;\n";
 						buffer += "\t\t\t}\n";
-						buffer += "\t\t#endif\n";
+						buffer += "\t\t#endif\n\n";
 					}
 
 					// find conversion by property type name
-					buffer += "\n";
 					buffer += "\t\t\t// set property\n";
 					buffer += "\t\t\tbool ok = true;\n";
 					buffer += string.Format("\t\t\t{0} ret;\n", ptn);
@@ -615,17 +597,9 @@
 				}
 			});
 
-			// variables
-			buffer += "\t\t\t// variables\n";
-			buffer += "\t\t\tint argc = 0;\n";
-			buffer += "\t\t#if DEBUG\n";
-			buffer += "\t\t\ttolua_Error err = new tolua_Error();\n";
-			buffer += "\t\t#endif\n";
-
 			// get argument count
-			buffer += "\n";
 			buffer += "\t\t\t// get argument count\n";
-			buffer += "\t\t\targc = LuaLib.lua_gettop(L);\n";
+			buffer += "\t\t\tint argc = LuaLib.lua_gettop(L);\n";
 
 			// constructor body
 			buffer += "\n";
@@ -678,7 +652,7 @@
 						if(i == 0) {
 							buffer += "\t\t\t\t";
 						}
-						buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0})) {{\n", i);
+						buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, true)) {{\n", i);
 
 						// only one method, so it is simple, just pick the only one
 						buffer += GenerateConstructorInvocation(t, cl[i], c, true);
@@ -690,7 +664,7 @@
 					// fuzzy match every method
 					for(int i = 0; i < cl.Count; i++) {
 						// accurate match
-						buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, true)) {{\n", i);
+						buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, true, true)) {{\n", i);
 
 						// only one method, so it is simple, just pick the only one
 						buffer += GenerateConstructorInvocation(t, cl[i], c, true);
@@ -738,6 +712,9 @@
 			mList.ForEach(m => {
 				ParameterInfo[] pList = m.GetParameters();
 				int maxArg = pList.Length;
+				if(!m.IsStatic) {
+					maxArg++;
+				}
 				int minArg = maxArg;
 				foreach(ParameterInfo pi in pList) {
 					if(pi.IsOptional) {
@@ -759,14 +736,8 @@
 			// method
 			buffer += "\t\t[MonoPInvokeCallback(typeof(LuaFunction))]\n";
 			buffer += string.Format("\t\tpublic static int {0}(IntPtr L) {{\n", mn);
-			buffer += "\t\t\t// variables\n";
-			buffer += "\t\t\tint argc = 0;\n";
-			buffer += "\t\t#if DEBUG\n";
-			buffer += "\t\t\ttolua_Error err = new tolua_Error();\n";
-			buffer += "\t\t#endif\n";
-			buffer += "\n";
 			buffer += "\t\t\t// get argument count\n";
-			buffer += "\t\t\targc = LuaLib.lua_gettop(L) - 1;\n";
+			buffer += "\t\t\tint argc = LuaLib.lua_gettop(L);\n";
 			buffer += "\n";
 			foreach(int c in mpMap.Keys) {
 				// check argument count
@@ -780,7 +751,9 @@
 					// get lua types
 					buffer += "\t\t\t\t// get lua parameter types\n";
 					buffer += "\t\t\t\tint[] luaTypes;\n";
-					buffer += "\t\t\t\tLuaValueBoxer.GetLuaParameterTypes(L, out luaTypes);\n";
+					buffer += "\t\t\t\tint[] staticLuaTypes;\n";
+					buffer += "\t\t\t\tLuaValueBoxer.GetLuaParameterTypes(L, out luaTypes, false);\n";
+					buffer += "\t\t\t\tLuaValueBoxer.GetLuaParameterTypes(L, out staticLuaTypes, true);\n";
 
 					// native types
 					buffer += "\n";
@@ -817,10 +790,14 @@
 						if(i == 0) {
 							buffer += "\t\t\t\t";
 						}
-						buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0})) {{\n", i);
+						if(ml[i].IsStatic) {
+							buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, staticLuaTypes, nativeTypes{0}, true)) {{\n", i);
+						} else {
+							buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, false)) {{\n", i);
+						}
 
 						// only one method, so it is simple, just pick the only one
-						buffer += GenerateMethodInvocation(t, ml[i], c, true);
+						buffer += GenerateMethodInvocation(t, ml[i], c, "\t\t\t\t\t");
 
 						// close if
 						buffer += "\t\t\t\t} else ";
@@ -829,10 +806,14 @@
 					// fuzzy match every method
 					for(int i = 0; i < ml.Count; i++) {
 						// accurate match
-						buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, true)) {{\n", i);
+						if(ml[i].IsStatic) {
+							buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, staticLuaTypes, nativeTypes{0}, true, true)) {{\n", i);
+						} else {
+							buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, false, true)) {{\n", i);
+						}
 
 						// only one method, so it is simple, just pick the only one
-						buffer += GenerateMethodInvocation(t, ml[i], c, true);
+						buffer += GenerateMethodInvocation(t, ml[i], c, "\t\t\t\t\t");
 
 						// close if
 						buffer += "\t\t\t\t}";
@@ -844,7 +825,7 @@
 					}
 				} else {
 					// only one method, so it is simple, just pick the only one
-					buffer += GenerateMethodInvocation(t, ml[0], c, false);
+					buffer += GenerateMethodInvocation(t, ml[0], c, "\t\t\t\t");
 				}
 
 				// close if
@@ -922,14 +903,13 @@
 			return buffer;
 		}
 
-		private static string GenerateMethodInvocation(Type t, MethodInfo callM, int paramCount, bool paramTypeCheck) {
+		private static string GenerateMethodInvocation(Type t, MethodInfo callM, int paramCount, string indent) {
 			string mn = callM.Name;
 			string tn = t.Name;
 			string tfn = t.FullName;
 			string tfnUnderscore = tfn.Replace(".", "_");
 			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
 			string fn = clazz + "." + mn;
-			string indent = paramTypeCheck ? "\t\t\t\t\t" : "\t\t\t\t";
 			string buffer = "";
 
 			// parameters
@@ -959,7 +939,7 @@
 				buffer += indent + "if(!ok) {\n";
 				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"invalid arguments in function '{0}'\", ref err);\n", fn);
 				buffer += indent + "\treturn 0;\n";
-				buffer += indent + "}\n";
+				buffer += indent + "}\n\n";
 			}
 
 			// get info of method to be called
@@ -967,19 +947,14 @@
 			string rtn = rt.GetNormalizedName();
 
 			// perform object type checking based on method type, static or not
-			buffer += "\n";
-			buffer += indent + "// caller type check\n";
-			buffer += indent.Substring(1) + "#if DEBUG\n";
-			if(callM.IsStatic) {
-				buffer += string.Format(indent + "if(!LuaLib.tolua_isusertable(L, 1, \"{0}\", 0, ref err)) {{\n", tfn);
-			} else {
-				buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tfn);
-			}
-			buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
-			buffer += indent + "\treturn 0;\n";
-			buffer += indent + "}\n";
-			buffer += indent.Substring(1) + "#endif\n";
 			if(!callM.IsStatic) {
+				buffer += indent + "// caller type check\n";
+				buffer += indent.Substring(1) + "#if DEBUG\n";
+				buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tfn);
+				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
+				buffer += indent + "\treturn 0;\n";
+				buffer += indent + "}\n";
+				buffer += indent.Substring(1) + "#endif\n";
 				buffer += indent + "int refId = LuaLib.tolua_tousertype(L, 1);\n";
 				buffer += string.Format(indent + "{0} obj = ({0})NativeObjectMap.FindObject(refId);\n", tfn);
 				buffer += indent.Substring(1) + "#if DEBUG\n";
@@ -987,11 +962,10 @@
 				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"invalid 'cobj' in function '{0}'\", ref err);\n", fn);
 				buffer += indent + "\treturn 0;\n";
 				buffer += indent + "}\n";
-				buffer += indent.Substring(1) + "#endif\n";
+				buffer += indent.Substring(1) + "#endif\n\n";
 			}
 
 			// call function
-			buffer += "\n";
 			buffer += indent + "// call function\n";
 			buffer += indent;
 			if(rtn != "System.Void") {

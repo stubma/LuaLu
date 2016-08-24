@@ -9,6 +9,13 @@ function FirstLua.staticMethod()
 end
 
 function FirstLua:Start()
+  local s1 = UnityEngine.Vector3.new(1, 1, 1)
+  local s2 = UnityEngine.Vector3.new(1, 1, 1)
+  if System.Object.Equals(s1, s2) then
+    print("vector are same!!!")
+  else
+    print("vector are not same!!")
+  end
 end
 
 function FirstLua:Update()
