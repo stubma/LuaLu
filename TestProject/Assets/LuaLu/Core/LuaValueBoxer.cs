@@ -623,114 +623,114 @@
 		public static bool CheckParameterType(IntPtr L, int[] luaTypes, string[] typeFullNames, bool isStatic, bool fuzzy = false) {
 			// first time we perform accurate match
 			int argc = luaTypes.Length;
-			bool matched = false;
+			bool matched = true;
 			if(typeFullNames != null && typeFullNames.Length >= argc) {
 				for(int i = 0; i < argc; i++) {
 					int luaType = luaTypes[i];
 					string tfn = typeFullNames[i];
 					if(luaType == (int)LuaTypes.LUA_TBOOLEAN) {
 						if(fuzzy) {
-							if(tfn == "System.Boolean" ||
-							   tfn == "System.Byte" ||
-							   tfn == "System.SByte" ||
-							   tfn == "System.Int16" ||
-							   tfn == "System.Int32" ||
-							   tfn == "System.Int64" ||
-							   tfn == "System.UInt16" ||
-							   tfn == "System.UInt32" ||
-							   tfn == "System.UInt64") {
-								matched = true;
+							if(tfn != "System.Boolean" &&
+							   tfn != "System.Byte" &&
+							   tfn != "System.SByte" &&
+							   tfn != "System.Int16" &&
+							   tfn != "System.Int32" &&
+							   tfn != "System.Int64" &&
+							   tfn != "System.UInt16" &&
+							   tfn != "System.UInt32" &&
+							   tfn != "System.UInt64") {
+								matched = false;
 								break;
 							}
-						} else if(tfn == "System.Boolean") {
-							matched = true;
+						} else if(tfn != "System.Boolean") {
+							matched = false;
 							break;
 						}
 					} else if(luaType == (int)LuaTypes.LUA_TNUMBER) {
 						if(fuzzy) {
-							if(tfn == "System.Boolean" ||
-							   tfn == "System.Byte" ||
-							   tfn == "System.SByte" ||
-							   tfn == "System.Int16" ||
-							   tfn == "System.Int32" ||
-							   tfn == "System.Int64" ||
-							   tfn == "System.UInt16" ||
-							   tfn == "System.UInt32" ||
-							   tfn == "System.UInt64" ||
-							   tfn == "System.Decimal" ||
-							   tfn == "System.Double" ||
-							   tfn == "System.Single") {
-								matched = true;
+							if(tfn != "System.Boolean" &&
+							   tfn != "System.Byte" &&
+							   tfn != "System.SByte" &&
+							   tfn != "System.Int16" &&
+							   tfn != "System.Int32" &&
+							   tfn != "System.Int64" &&
+							   tfn != "System.UInt16" &&
+							   tfn != "System.UInt32" &&
+							   tfn != "System.UInt64" &&
+							   tfn != "System.Decimal" &&
+							   tfn != "System.Double" &&
+							   tfn != "System.Single") {
+								matched = false;
 								break;
 							}
-						} else if(tfn == "System.Int16" ||
-						          tfn == "System.Int32" ||
-						          tfn == "System.Int64" ||
-						          tfn == "System.UInt16" ||
-						          tfn == "System.UInt32" ||
-						          tfn == "System.UInt64" ||
-						          tfn == "System.Decimal" ||
-						          tfn == "System.Double" ||
-						          tfn == "System.Single") {
-							matched = true;
+						} else if(tfn != "System.Int16" &&
+						          tfn != "System.Int32" &&
+						          tfn != "System.Int64" &&
+						          tfn != "System.UInt16" &&
+						          tfn != "System.UInt32" &&
+						          tfn != "System.UInt64" &&
+						          tfn != "System.Decimal" &&
+						          tfn != "System.Double" &&
+						          tfn != "System.Single") {
+							matched = false;
 							break;
 						}
 					} else if(luaType == (int)LuaTypes.LUA_TSTRING) {
 						if(fuzzy) {
-							if(tfn == "System.String") {
-								matched = true;
+							if(tfn != "System.String" && tfn != "System.Char") {
+								matched = false;
 								break;
 							} else if(tfn == "System.Char") {
 								string arg = LuaLib.lua_tostring(L, i + (isStatic ? 1 : 2));
-								if(arg.Length == 1) {
-									matched = true;
+								if(arg.Length != 1) {
+									matched = false;
 									break;
 								}
 							}
-						} else if(tfn == "System.String") {
-							matched = true;
+						} else if(tfn != "System.String") {
+							matched = false;
 							break;
 						}
 					} else if(luaType == (int)LuaTypes.LUA_TTABLE) {
-						Type t = Type.GetType(tfn);
-						if(t.IsList() || t.IsDictionary()) {
-							matched = true;
+						Type t = ExtensionType.GetType(tfn);
+						if(!t.IsList() && !t.IsDictionary()) {
+							matched = false;
 							break;
 						}
 					} else if(luaType == (int)LuaTypes.LUA_TUSERDATA) {
 						string typeName = LuaLib.tolua_typename(L, i + (isStatic ? 1 : 2));
 						if(fuzzy) {
-							Type nt = Type.GetType(tfn);
-							Type lt = Type.GetType(typeName);
-							if(typeName == tfn || nt.IsAssignableFrom(lt)) {
-								matched = true;
+							Type nt = ExtensionType.GetType(tfn);
+							Type lt = ExtensionType.GetType(typeName);
+							if(typeName != tfn && !nt.IsAssignableFrom(lt)) {
+								matched = false;
 								break;
 							}
-						} else if(typeName == tfn) {
-							matched = true;
+						} else if(typeName != tfn) {
+							matched = false;
 							break;
 						}
 					} else if(luaType == (int)LuaTypes.LUA_TNIL) {
-						Type t = Type.GetType(tfn);
+						Type t = ExtensionType.GetType(tfn);
 						if(fuzzy) {
-							if(!t.IsPrimitive ||
-							   tfn == "System.Boolean" ||
-							   tfn == "System.Byte" ||
-							   tfn == "System.SByte" ||
-							   tfn == "System.Int16" ||
-							   tfn == "System.Int32" ||
-							   tfn == "System.Int64" ||
-							   tfn == "System.UInt16" ||
-							   tfn == "System.UInt32" ||
-							   tfn == "System.UInt64" ||
-							   tfn == "System.Decimal" ||
-							   tfn == "System.Double" ||
-							   tfn == "System.Single") {
-								matched = true;
+							if(t.IsPrimitive &&
+							   tfn != "System.Boolean" &&
+							   tfn != "System.Byte" &&
+							   tfn != "System.SByte" &&
+							   tfn != "System.Int16" &&
+							   tfn != "System.Int32" &&
+							   tfn != "System.Int64" &&
+							   tfn != "System.UInt16" &&
+							   tfn != "System.UInt32" &&
+							   tfn != "System.UInt64" &&
+							   tfn != "System.Decimal" &&
+							   tfn != "System.Double" &&
+							   tfn != "System.Single") {
+								matched = false;
 								break;
 							}
-						} else if(!t.IsPrimitive) {
-							matched = true;
+						} else if(t.IsPrimitive) {
+							matched = false;
 							break;
 						}
 					}
