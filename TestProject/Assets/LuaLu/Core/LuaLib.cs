@@ -119,6 +119,21 @@
 			return LUALIB;
 		}
 
+		public static string Ptr2String(IntPtr ptr, int len) {
+			if(ptr != IntPtr.Zero) {
+				string ss = Marshal.PtrToStringAnsi(ptr, len);
+
+				// when lua return non-ansi string, conversion fails
+				if(ss == null) {
+					return Marshal.PtrToStringUni(ptr, len);
+				}
+
+				return ss;
+			} else {
+				return null;
+			}
+		}
+
 		/////////////////////////////////////////////
 		// lua.h
 		/////////////////////////////////////////////
@@ -392,18 +407,7 @@
 		public static string lua_tostring(IntPtr L, int idx) {
 			int len;
 			IntPtr str = lua_tolstring(L, idx, out len);
-			if(str != IntPtr.Zero) {
-				string ss = Marshal.PtrToStringAnsi(str, len);
-
-				// when lua return non-ansi string, conversion fails
-				if(ss == null) {
-					return Marshal.PtrToStringUni(str, len);
-				}
-
-				return ss;
-			} else {
-				return null;
-			}
+			return Ptr2String(str, len);
 		}
 
 		public static IntPtr lua_open() {
@@ -532,35 +536,13 @@
 		public static string luaL_checkstring(IntPtr L, int n) {
 			int len;
 			IntPtr str = luaL_checklstring(L, n, out len);
-			if(str != IntPtr.Zero) {
-				string ss = Marshal.PtrToStringAnsi(str, len);
-
-				// when lua return non-ansi string, conversion fails
-				if(ss == null) {
-					return Marshal.PtrToStringUni(str, len);
-				}
-
-				return ss;
-			} else {
-				return null;
-			}
+			return Ptr2String(str, len);
 		}
 
 		public static string luaL_optstring(IntPtr L, int n, string d) {
 			int len;
 			IntPtr str = luaL_optlstring(L, n, Encoding.UTF8.GetBytes(d), out len);
-			if(str != IntPtr.Zero) {
-				string ss = Marshal.PtrToStringAnsi(str, len);
-
-				// when lua return non-ansi string, conversion fails
-				if(ss == null) {
-					return Marshal.PtrToStringUni(str, len);
-				}
-
-				return ss;
-			} else {
-				return null;
-			}
+			return Ptr2String(str, len);
 		}
 
 		public static int luaL_checkint(IntPtr L, int n) {
@@ -652,7 +634,13 @@
 		public static extern bool lua_isusertype(IntPtr L, int lo, string type);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern string tolua_typename(IntPtr L, int lo);
+		public static extern IntPtr tolua_typelname(IntPtr L, int lo, out int len);
+
+		public static string tolua_typename(IntPtr L, int lo) {
+			int len;
+			IntPtr str = tolua_typelname(L, lo, out len);
+			return Ptr2String(str, len);
+		}
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void tolua_error(IntPtr L, string msg, ref tolua_Error err);
