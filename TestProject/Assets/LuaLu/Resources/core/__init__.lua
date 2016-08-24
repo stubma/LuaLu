@@ -7,10 +7,10 @@ end
 
 -- for CCLuaEngine traceback
 function __G__TRACKBACK__(msg)
-    cc.log("----------------------------------------")
-    cc.log("LUA ERROR: " .. tostring(msg))
-    cc.log(debug.traceback())
-    cc.log("----------------------------------------")
+    u3d.log("----------------------------------------")
+    u3d.log("LUA ERROR: " .. tostring(msg))
+    u3d.log(debug.traceback())
+    u3d.log("----------------------------------------")
 end
 
 require("core/debug")
