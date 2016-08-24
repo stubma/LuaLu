@@ -12,6 +12,14 @@ public static class ExtensionType {
 		return typeof(IEnumerable).IsAssignableFrom(t);
 	}
 
+	public static Type GetType(string name) {
+		if(name.StartsWith("UnityEngine.")) {
+			return Type.GetType(name + ", UnityEngine");
+		} else {
+			return Type.GetType(name);
+		}
+	}
+
 	public static bool IsVoid(this Type t) {
 		return t == typeof(void);
 	}
