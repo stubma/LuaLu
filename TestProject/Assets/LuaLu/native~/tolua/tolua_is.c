@@ -44,25 +44,35 @@ TOLUA_API int tolua_fast_isa(lua_State *L, int mt_indexa, int mt_indexb, int sup
     return result;
 }
 
+TOLUA_API const char* tolua_typelname (lua_State* L, int lo, size_t* len) {
+    const char* s = tolua_typename(L, lo);
+    if(len) {
+        *len = strlen(s);
+    }
+    return s;
+}
+
 /* Push and returns the corresponding object typename */
 TOLUA_API const char* tolua_typename (lua_State* L, int lo)
 {
     int tag = lua_type(L,lo);
     if (tag == LUA_TNONE)
-        lua_pushstring(L,"[no object]");
+        return "[no object]";
     else if (tag != LUA_TUSERDATA && tag != LUA_TTABLE)
-        lua_pushstring(L,lua_typename(L,tag));
+        return lua_typename(L,tag);
     else if (tag == LUA_TUSERDATA)
     {
-        if (!lua_getmetatable(L,lo))
-            lua_pushstring(L,lua_typename(L,tag));
-        else
-        {
+        if (!lua_getmetatable(L,lo)) {
+            return lua_typename(L,tag);
+        } else {
             lua_rawget(L,LUA_REGISTRYINDEX);
-            if (!lua_isstring(L,-1))
-            {
+            if (!lua_isstring(L,-1)) {
                 lua_pop(L,1);
-                lua_pushstring(L,"[undefined]");
+                return "[undefined]";
+            } else {
+                const char* s = lua_tostring(L,-1);
+                lua_pop(L,1);
+                return s;
             }
         }
     }
@@ -73,16 +83,18 @@ TOLUA_API const char* tolua_typename (lua_State* L, int lo)
         if (!lua_isstring(L,-1))
         {
             lua_pop(L,1);
-            lua_pushstring(L,"table");
+            return "table";
         }
         else
         {
             lua_pushstring(L,"class ");
             lua_insert(L,-2);
             lua_concat(L,2);
+            const char* s = lua_tostring(L,-1);
+            lua_pop(L,1);
+            return s;
         }
     }
-    return lua_tostring(L,-1);
 }
 
 TOLUA_API void tolua_error (lua_State* L, const char* msg, tolua_Error* err)

@@ -13,7 +13,7 @@
 */
 
 #include "tolua++.h"
-
+#include "unity_log.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -124,24 +124,30 @@ TOLUA_API void tolua_stack_dump(lua_State* L, const char* label)
 {
     int i;
     int top = lua_gettop(L);
-    printf("Total [%d] in lua stack: %s\n", top, label != 0 ? label : "");
+    char buf[512];
+    sprintf(buf, "Total [%d] in lua stack: %s", top, label != 0 ? label : "");
+    unity_log(buf);
     for (i = -1; i >= -top; i--)
     {
         int t = lua_type(L, i);
         switch (t)
         {
             case LUA_TSTRING:
-                printf("  [%02d] string %s\n", i, lua_tostring(L, i));
+                sprintf(buf, "  [%02d] string %s", i, lua_tostring(L, i));
+                unity_log(buf);
                 break;
             case LUA_TBOOLEAN:
-                printf("  [%02d] boolean %s\n", i, lua_toboolean(L, i) ? "true" : "false");
+                sprintf(buf, "  [%02d] boolean %s", i, lua_toboolean(L, i) ? "true" : "false");
+                unity_log(buf);
                 break;
             case LUA_TNUMBER:
-                printf("  [%02d] number %g\n", i, lua_tonumber(L, i));
+                sprintf(buf, "  [%02d] number %g", i, lua_tonumber(L, i));
+                unity_log(buf);
                 break;
             default:
-                printf("  [%02d] %s\n", i, lua_typename(L, t));
+                sprintf(buf, "  [%02d] %s", i, lua_typename(L, t));
+                unity_log(buf);
+                break;
         }
     }
-    printf("\n");
 }

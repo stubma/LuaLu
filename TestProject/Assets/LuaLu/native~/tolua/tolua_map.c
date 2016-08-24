@@ -146,7 +146,7 @@ static void mapinheritance (lua_State* L, const char* name, const char* base)
 */
 static int tolua_bnd_type (lua_State* L)
 {
-    tolua_typename(L,lua_gettop(L));
+    lua_pushstring(L, tolua_typename(L,lua_gettop(L)));
     return 1;
 }
 
