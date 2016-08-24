@@ -12,7 +12,7 @@
 	[AddComponentMenu("Lua/Lua Script")]
 	public class LuaComponent : MonoBehaviour {
 		// default file index
-		private static int m_fileIndex = 1;
+		private static int s_fileIndex;
 
 		// default file name
 		public string m_luaFile;
@@ -28,9 +28,13 @@
 
 		// generate default file name
 		static string DefaultFileName() {
-			string fn = "Untitled" + m_fileIndex + ".lua";
-			m_fileIndex++;
+			string fn = "Untitled" + s_fileIndex + ".lua";
+			s_fileIndex++;
 			return fn;
+		}
+
+		static LuaComponent() {
+			s_fileIndex = 1;
 		}
 
 		public LuaComponent() {
@@ -96,6 +100,20 @@
 			// run lua side Update
 			LuaStack L = LuaStack.SharedInstance();
 			L.ExecuteObjectFunction(this, "Update");
+		}
+
+		void LateUpdate() {
+			// stack late update
+			LuaStack L = LuaStack.SharedInstance();
+			L.LateUpdate();
+
+			// if not valid, return
+			if(!m_valid) {
+				return;
+			}
+
+			// run lua side LateUpdate
+			L.ExecuteObjectFunction(this, "LateUpdate");
 		}
 	}
 }

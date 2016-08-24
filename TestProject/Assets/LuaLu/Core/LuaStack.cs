@@ -22,6 +22,12 @@
 		// flag indicating calling in lua
 		private int m_callFromLua;
 
+		// hash -> object, hold native object in case it is recycled
+		private Dictionary<int, object> m_objMap;
+
+		// hash of object which should be released next update
+		private List<int> m_autoReleasePool;
+
 		// lua asset bundle list
 		private static List<string> s_luaAssetBundleNames;
 
@@ -40,10 +46,14 @@
 		// global init flag
 		private static volatile bool s_globalInited = false;
 
+		// stack state map, to support multi lua state
+		private static Dictionary<IntPtr, LuaStack> s_stackMap;
+
 		static LuaStack() {
 			// init static
 			s_luaAssetBundleNames = new List<string>();
 			s_bundledLuaFiles = new Dictionary<string, List<string>>();
+			s_stackMap = new Dictionary<IntPtr, LuaStack>();
 
 			// load lua asset bundle names and load lua file list in bundles
 			TextAsset t = Resources.Load<TextAsset>(LuaConst.LUA_ASSET_BUNDLE_LIST_FILE);
@@ -98,13 +108,21 @@
 			if(!s_globalInited) {
 				lock(s_lockRoot) {
 					LuaStack L = SharedInstance();
-					L.ExecuteString("require(\"core/__init__\")");
 					s_globalInited = true;
 				}
 			}
 		}
 
+		public static LuaStack FromState(IntPtr L) {
+			return s_stackMap[L];
+		}
+
 		public LuaStack() {
+			// init member
+			m_objMap = new Dictionary<int, object>();
+			m_autoReleasePool = new List<int>();
+			m_callFromLua = 0;
+
 			// set log function
 			LogDelegate logd = new LogDelegate(LogCallback);
 			IntPtr logPtr = Marshal.GetFunctionPointerForDelegate(logd);
@@ -136,12 +154,18 @@
 					new luaL_Reg(null, null)
 				};
 				LuaLib.luaL_register(L, "_G", global_functions);
+
+				// map it
+				s_stackMap[L] = this;
 			} else {
 				Debug.Log("Fatal error: Failed to create lua state!");
 			}
 
 			// add lua loader
 			AddLuaLoader(new LuaFunction(LuaLoader));
+
+			// load core lib
+			ExecuteString("require(\"core/__init__\")");
 		}
 
 		private static AssetBundle LoadAssetBundle(string abName) {
@@ -217,7 +241,7 @@
 		[MonoPInvokeCallback(typeof(LuaFunction))]
 		public static int LuaGC(IntPtr L) {
 			int refId = LuaLib.tolua_tousertype(L, -1);
-			NativeObjectManager.RemoveObject(refId);
+			LuaStack.FromState(L).RemoveObject(refId);
 			return 0;
 		}
 
@@ -299,6 +323,7 @@
 
 		public void Dispose() {
 			if(L != IntPtr.Zero) {
+				s_stackMap.Remove(L);
 				LuaLib.lua_close(L);
 				L = IntPtr.Zero;
 			}
@@ -313,6 +338,58 @@
 		/// <returns>A pointer to the lua_State that the script module is attached to.</returns>
 		public IntPtr GetLuaState() {
 			return L;
+		}
+
+		public object FindObject(int hash) {
+			if(m_objMap.ContainsKey(hash)) {
+				return m_objMap[hash];
+			} else {
+				return null;
+			}
+		}
+
+		public bool IsRegistered(object obj) {
+			return m_objMap.ContainsKey(obj.GetHashCode());
+		}
+
+		public void RemoveObject(int hash) {
+			LuaLib.toluafix_remove_object_by_refid(LuaStack.SharedInstance().GetLuaState(), hash);
+			m_objMap.Remove(hash);
+		}
+
+		public void RegisterObject(object obj) {
+			int hash = obj.GetHashCode();
+			if(m_objMap.ContainsKey(hash)) {
+				RemoveObject(hash);
+			}
+			m_objMap[hash] = obj;
+		}
+
+		/// <summary>
+		/// record a object need to be auto released next update
+		/// </summary>
+		/// <param name="hash">object hash</param>
+		public void AutoRelease(int hash) {
+			m_autoReleasePool.Add(hash);
+		}
+
+		/// <summary>
+		/// you should have a place to call this method
+		/// </summary>
+		public void LateUpdate() {
+			DrainAutoReleasePool();
+		}
+
+		/// <summary>
+		/// auto release some objects from value root
+		/// </summary>
+		private void DrainAutoReleasePool() {
+			if(m_autoReleasePool.Count > 0) {
+				foreach(int hash in m_autoReleasePool) {
+					LuaLib.tolua_remove_value_from_root(L, hash);
+				}
+				m_autoReleasePool.Clear();
+			}
 		}
 
 		/// <summary>
@@ -574,11 +651,20 @@
 		}
 
 		public void PushObject(object obj, string typeName, bool keepAlive = false) {
-			bool isRegistered = NativeObjectManager.isRegistered(obj);
+			// is object registered in manager, if not, it is first time to push to lua side
+			bool isRegistered = IsRegistered(obj);
 			if(!isRegistered) {
-				NativeObjectManager.RegisterObject(obj);
+				RegisterObject(obj);
 			}
-			LuaLib.toluafix_pushusertype_object(L, obj.GetHashCode(), !isRegistered, typeName, keepAlive);
+
+			// actually we alwasy add this type to root, but if keepAlive is false, it will be removed
+			// from root next update. This mechanism is way like cocos2dx autorelease and its purpose is
+			// preventing it to be collected in current event loop
+			int refId = obj.GetHashCode();
+			LuaLib.toluafix_pushusertype_object(L, refId, !isRegistered, typeName, true);
+			if(!keepAlive) {
+				AutoRelease(refId);
+			}
 		}
 
 		public void PushArray(Array array) {
