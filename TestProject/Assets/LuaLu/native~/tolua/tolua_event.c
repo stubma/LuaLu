@@ -182,13 +182,15 @@ static int class_index_event (lua_State* L)
             lua_rawget(L,-2);                      /* stack: obj key mt tget */
             if (lua_istable(L,-1))
             {
-                lua_pushvalue(L,2);
-                lua_rawget(L,-2);                      /* stack: obj key mt vget */
+                lua_pushvalue(L,2); // obj key mt tget key
+                lua_rawget(L,-2);                      /* stack: obj key mt tget vget */
                 if (lua_iscfunction(L,-1))
                 {
-                    lua_pushvalue(L,1);
-                    lua_pushvalue(L,2);
-                    lua_call(L,2,1);
+                    lua_pushvalue(L,1); // obj key mt tget vget obj
+                    lua_pushvalue(L,2); // obj key mt tget vget obj key
+                    lua_call(L,2,1); // obj key mt tget value
+                    lua_insert(L, -3); // obj key value mt tget
+                    lua_pop(L, 2); // obj key value
                     return 1;
                 }
                 else if (lua_istable(L,-1))
@@ -210,6 +212,7 @@ static int class_index_event (lua_State* L)
             }
             lua_settop(L,3);
         }
+        lua_settop(L,2);
         lua_pushnil(L);
         return 1;
     }
