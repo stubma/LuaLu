@@ -24,6 +24,8 @@
 
 		// hash -> object, hold native object in case it is recycled
 		private Dictionary<int, object> m_objMap;
+		private Dictionary<int, int> m_objRefMap;
+		private Dictionary<int, string> m_objNameMap;
 
 		// hash of object which should be released next update
 		private List<int> m_autoReleasePool;
@@ -120,6 +122,8 @@
 		public LuaStack() {
 			// init member
 			m_objMap = new Dictionary<int, object>();
+			m_objRefMap = new Dictionary<int, int>();
+			m_objNameMap = new Dictionary<int, string>();
 			m_autoReleasePool = new List<int>();
 			m_callFromLua = 0;
 
@@ -348,24 +352,37 @@
 			}
 		}
 
-		public bool IsRegistered(object obj) {
-			return m_objMap.ContainsKey(obj.GetHashCode());
-		}
-
 		public void RemoveObject(int hash) {
-			m_objMap.Remove(hash);
+			if(m_objRefMap[hash] > 0) {
+				// sometimes, lua side perform a gc to collect userdata, then
+				// native side want to refer this object again, to recover from
+				// such situation, we push this object again to re-establish data
+				// struct in lua side, and abort removing
+				string typeName = m_objNameMap[hash];
+				LuaLib.tolua_pushusertype(L, hash, typeName, true);
+				LuaLib.lua_pop(L, 1);
+			} else {
+				m_objMap.Remove(hash);
+				m_objRefMap.Remove(hash);
+				m_objNameMap.Remove(hash);
+			}
 		}
 
-		public void RegisterObject(object obj) {
+		public void RegisterObject(object obj, string typeName) {
 			int hash = obj.GetHashCode();
-			if(!m_objMap.ContainsKey(hash)) {
+			if(m_objMap.ContainsKey(hash)) {
+				int rc = m_objRefMap[hash];
+				m_objRefMap[hash] = rc + 1;
+			} else {
 				m_objMap[hash] = obj;
+				m_objRefMap[hash] = 1;
+				m_objNameMap[hash] = typeName;
 			}
 		}
 
 		public void PushObject(object obj, string typeName, bool keepAlive = false) {
 			// register object
-			RegisterObject(obj);
+			RegisterObject(obj, typeName);
 
 			// actually we alwasy add this type to root, but if keepAlive is false, it will be removed
 			// from root next update. This mechanism is way like cocos2dx autorelease and its purpose is
@@ -398,7 +415,12 @@
 		private void DrainAutoReleasePool() {
 			if(m_autoReleasePool.Count > 0) {
 				foreach(int hash in m_autoReleasePool) {
-					LuaLib.tolua_remove_value_from_root(L, hash);
+					int rc = m_objRefMap[hash];
+					rc--;
+					m_objRefMap[hash] = rc;
+					if(rc <= 0) {
+						LuaLib.tolua_remove_value_from_root(L, hash);
+					}
 				}
 				m_autoReleasePool.Clear();
 			}

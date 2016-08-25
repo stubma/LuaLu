@@ -404,25 +404,6 @@ TOLUA_API int class_gc_event (lua_State* L)
     int top = lua_gettop(L);
     if (tolua_fast_isa(L,top,top-1, lua_upvalueindex(2))) /* make sure we collect correct type */
     {
-        /*fprintf(stderr, "Found type!\n");*/
-        /* get gc function */
-        lua_pushliteral(L,".collector"); // ud tolua_gc ptr mt mt .collector
-        lua_rawget(L,-2);           // ud tolua_gc ptr mt mt collector
-        if (lua_isfunction(L,-1)) {
-            /*fprintf(stderr, "Found .collector!\n");*/
-        } else {
-            lua_pop(L,1); // ud tolua_gc ptr mt
-            /*fprintf(stderr, "Using default cleanup\n");*/
-            lua_pushcfunction(L,tolua_default_collect); // ud tolua_gc ptr mt collector(default)
-        }
-
-        lua_pushvalue(L,1);         // ud tolua_gc refid mt collector ud
-        lua_call(L,1,0); // collector executed, ud tolua_gc refid mt
-
-        lua_pushinteger(L, refid); // ud tolua_gc refid mt refid
-        lua_pushnil(L);             // ud tolua_gc refid mt refid nil
-        lua_rawset(L,-5);           // ud tolua_gc(ptr->nil) refid mt
-        
         // remove refid type mapping
         lua_pushstring(L, TOLUA_REFID_TYPE_MAPPING);
         lua_rawget(L, LUA_REGISTRYINDEX);                               /* stack: refid_type */
@@ -458,6 +439,25 @@ TOLUA_API int class_gc_event (lua_State* L)
             lua_rawset(L, -3); // stack: mt ubox
             lua_pop(L, 2);
         }
+        
+        /*fprintf(stderr, "Found type!\n");*/
+        /* get gc function */
+        lua_pushliteral(L,".collector"); // ud tolua_gc ptr mt mt .collector
+        lua_rawget(L,-2);           // ud tolua_gc ptr mt mt collector
+        if (lua_isfunction(L,-1)) {
+            /*fprintf(stderr, "Found .collector!\n");*/
+        } else {
+            lua_pop(L,1); // ud tolua_gc ptr mt
+            /*fprintf(stderr, "Using default cleanup\n");*/
+            lua_pushcfunction(L,tolua_default_collect); // ud tolua_gc ptr mt collector(default)
+        }
+
+        lua_pushvalue(L,1);         // ud tolua_gc refid mt collector ud
+        lua_call(L,1,0); // collector executed, ud tolua_gc refid mt
+
+        lua_pushinteger(L, refid); // ud tolua_gc refid mt refid
+        lua_pushnil(L);             // ud tolua_gc refid mt refid nil
+        lua_rawset(L,-5);           // ud tolua_gc(ptr->nil) refid mt
     }
     lua_pop(L,3); // ud
     return 0;
