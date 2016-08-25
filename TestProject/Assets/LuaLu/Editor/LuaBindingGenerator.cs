@@ -52,7 +52,7 @@
 			s_types.Add(typeof(Rigidbody));
 			s_types.Add(typeof(Text));
 			s_types.Add(typeof(Input));
-			s_types.Add(typeof(Collider));
+			s_types.Add(typeof(BoxCollider));
 
 			// filter types
 			for(int i = s_types.Count - 1; i >= 0; i--) {

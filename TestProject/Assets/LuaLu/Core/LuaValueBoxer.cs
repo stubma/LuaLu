@@ -63,7 +63,6 @@
 			   tn == "sbyte" ||
 			   tn == "short" ||
 			   tn == "ushort" ||
-			   tn == "bool" ||
 			   tn == "int" ||
 			   tn == "uint" ||
 			   tn == "decimal" ||
@@ -77,9 +76,24 @@
 					ok = false;
 				}
 
-				// to integer than convert
+				// to integer then convert
 				if(ok) {
 					ret = (T)Convert.ChangeType(LuaLib.tolua_tointeger(L, lo, 0), t);
+				} else {
+					ret = default(T);
+				}
+			} else if(tn == "bool") {
+				// top should be a boolean
+				if(!LuaLib.tolua_isboolean(L, lo, 0, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// to boolean then convert
+				if(ok) {
+					ret = (T)Convert.ChangeType(LuaLib.tolua_toboolean(L, lo, 0), t);
 				} else {
 					ret = default(T);
 				}
@@ -353,9 +367,11 @@
 			}
 		}
 
-		public static void list_to_luaval(IntPtr L, IEnumerable inValue) {
-			// new table for array value
-			LuaLib.lua_newtable(L);
+		public static void list_to_luaval(IntPtr L, IEnumerable inValue, bool flat = false) {
+			// new table for array value, if not flat
+			if(!flat) {
+				LuaLib.lua_newtable(L);
+			}
 
 			// validate
 			if(IntPtr.Zero == L || null == inValue)
@@ -364,96 +380,59 @@
 			// push every element
 			int indexTable = 1;
 			IEnumerator e = inValue.GetEnumerator();
-			while(e.Current != null) {
+			while(e.MoveNext()) {
 				// get type
 				Type t = e.Current.GetType();
 				string tn = t.GetNormalizedName();
 
+				// if not flat, assign a table index
+				if(!flat) {
+					LuaLib.lua_pushnumber(L, indexTable);
+				}
+
 				// convert
 				if(tn == "byte") {
-					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushinteger(L, Convert.ToByte(e.Current));
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(tn == "sbyte") {
-					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushinteger(L, Convert.ToSByte(e.Current));
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(tn == "char") {
-					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushstring(L, Convert.ToChar(e.Current).ToString());
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(tn == "short") {
-					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushinteger(L, Convert.ToInt16(e.Current));
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(tn == "ushort") {
-					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushinteger(L, Convert.ToUInt16(e.Current));
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(tn == "bool") {
-					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushboolean(L, Convert.ToBoolean(e.Current));
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(tn == "int" || tn == "decimal") {
-					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushinteger(L, Convert.ToInt32(e.Current));
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(tn == "uint") {
-					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushinteger(L, (int)Convert.ToUInt32(e.Current));
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(tn == "long") {
-					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushinteger(L, (int)Convert.ToInt64(e.Current));
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(tn == "ulong") {
 					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushinteger(L, (int)Convert.ToUInt64(e.Current));
 					LuaLib.lua_rawset(L, -3);
 					++indexTable;
 				} else if(tn == "float" || tn == "double") {
-					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushnumber(L, Convert.ToDouble(e.Current));
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(tn == "string") {
-					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushstring(L, (string)e.Current);
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(t.IsEnum) {
-					LuaLib.lua_pushnumber(L, indexTable);
 					LuaLib.lua_pushinteger(L, (int)e.Current);
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(t.IsList() && t.IsEnumerable()) {
-					LuaLib.lua_pushnumber(L, indexTable);
 					list_to_luaval(L, e.Current as IEnumerable);
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else if(t.IsDictionary()) {
-					LuaLib.lua_pushnumber(L, indexTable);
 					dictionary_to_luaval(L, (IDictionary)e.Current);
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
 				} else {
-					LuaLib.lua_pushnumber(L, indexTable);
 					object_to_luaval(L, tn, e.Current);
+				}
+
+				// if not flat, add to table
+				if(!flat) {
 					LuaLib.lua_rawset(L, -3);
 					++indexTable;
 				}
-
-				// next
-				e.MoveNext();
 			}
 		}
 
@@ -467,7 +446,7 @@
 
 			// push
 			IDictionaryEnumerator e = dict.GetEnumerator();
-			while(e.Current != null) {
+			while(e.MoveNext()) {
 				// get key type
 				Type kt = e.Key.GetType();
 				string ktn = kt.GetNormalizedName();
@@ -499,7 +478,6 @@
 					strKey = (string)e.Key;
 				} else {
 					// not supported key type
-					e.MoveNext();
 					continue;
 				}
 
@@ -562,9 +540,6 @@
 					object_to_luaval(L, vtn, e.Value);
 					LuaLib.lua_rawset(L, -3);
 				}
-
-				// next
-				e.MoveNext();
 			}
 		}
 

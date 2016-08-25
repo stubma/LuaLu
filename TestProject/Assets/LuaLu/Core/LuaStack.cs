@@ -655,7 +655,7 @@
 
 			// push args
 			if(args != null) {
-				PushArray(args);
+				PushArray(args, true);
 				argc += args.Length;
 			}
 
@@ -712,8 +712,8 @@
 			LuaLib.lua_pushnil(L);
 		}
 			
-		public void PushArray(Array array) {
-			LuaValueBoxer.list_to_luaval(L, array);
+		public void PushArray(Array array, bool flat = false) {
+			LuaValueBoxer.list_to_luaval(L, array, flat);
 		}
 
 		public void PushDictionary(Dictionary<string, object> dict) {

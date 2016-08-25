@@ -3,14 +3,15 @@ import("UnityEngine")
 PlayerController = class("PlayerController", function() return LuaLu.LuaComponent.new() end)
 
 function PlayerController:Start()
-  self.countText = GameObject.Find("CountText")
+  self.countText = GameObject.Find("CountText"):GetComponent("Text")
   self.speed = 10
   self.rb = self:GetComponent("Rigidbody")
   self.count = 0
+  self:setCountText()
 end
 
 function PlayerController:setCountText()
-  self.countText.text = "Count:" .. count
+  self.countText.text = "Count:" .. self.count
 end
 
 function PlayerController:FixedUpdate()
