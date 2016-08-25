@@ -21,7 +21,10 @@
 				if (path.Length != 0) {
 					// save a template lua file
 					string filename = Path.GetFileNameWithoutExtension(path);
-					string buffer = string.Format("{0} = class(\"{0}\", function() return LuaLu.LuaComponent.new() end)\n", filename);
+					string buffer = "";
+					buffer += "import(\"UnityEngine\")\n";
+					buffer += "\n";
+					buffer += string.Format("{0} = class(\"{0}\", function() return LuaLu.LuaComponent.new() end)\n", filename);
 					buffer += "\n";
 					buffer += string.Format("function {0}:Start()\n", filename);
 					buffer += "end\n";
