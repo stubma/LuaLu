@@ -607,6 +607,7 @@
 
 			// check func
 			if(LuaLib.lua_isnil(L, -1) || !LuaLib.lua_isfunction(L, -1)) {
+				LuaLib.lua_pop(L, 2);
 				return 0;
 			}
 
