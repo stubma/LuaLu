@@ -13,8 +13,9 @@ public static class ExtensionType {
 	}
 
 	public static Type GetType(string name) {
-		if(name.StartsWith("UnityEngine.")) {
-			return Type.GetType(name + ", UnityEngine");
+		if(name.StartsWith("UnityEngine.") || name.StartsWith("UnityEditor")) {
+			string ns = name.Substring(0, name.LastIndexOf("."));
+			return Type.GetType(name + ", " + ns);
 		} else {
 			return Type.GetType(name);
 		}
