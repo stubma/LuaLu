@@ -1,13 +1,5 @@
 FirstLua = class("FirstLua", function() return LuaLu.LuaComponent.new() end)
 
-function FirstLua:testMethod()
-  print("from test method")
-end
-
-function FirstLua.staticMethod()
-  print("from firstlua static method")
-end
-
 function FirstLua:Start()
   local s1 = UnityEngine.Vector3.new(1, 1, 1)
   local s2 = UnityEngine.Vector3.new(1, 1, 1)
