@@ -83,6 +83,32 @@ TOLUA_API void tolua_stack_dump(lua_State* L, const char* label)
                 sprintf(buf, "  [%02d] number %g", i, lua_tonumber(L, i));
                 unity_log(buf);
                 break;
+            case LUA_TUSERDATA:
+            {
+                int refid = tolua_tousertype(L, i);
+                const char* type = NULL;
+                if(refid != 0) {
+                    // try to get type name
+                    lua_pushstring(L, TOLUA_REFID_TYPE_MAPPING);
+                    lua_rawget(L, LUA_REGISTRYINDEX);                               /* stack: refid_type */
+                    lua_pushinteger(L, refid);                                      /* stack: refid_type refid */
+                    lua_rawget(L, -2);                                              /* stack: refid_type type */
+                    if(!lua_isnil(L, -1)) {
+                        type = lua_tostring(L, -1);
+                    }
+                    lua_pop(L, 2);
+                }
+
+                // print user data type
+                if(type) {
+                    sprintf(buf, "  [%02d] userdata %s(%d)", i, type, refid);
+                } else {
+                    sprintf(buf, "  [%02d] userdata corrupted!!", i);
+                }
+                unity_log(buf);
+
+                break;
+            }
             default:
                 sprintf(buf, "  [%02d] %s", i, lua_typename(L, t));
                 unity_log(buf);
