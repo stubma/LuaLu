@@ -376,7 +376,6 @@
 					buffer += GenerateBoxReturnValue(ft, "\t\t\t");
 
 					// method end
-					buffer += "\t\t\treturn 1;\n";
 					buffer += "\t\t}\n\n";
 				}
 
@@ -497,7 +496,6 @@
 					buffer += GenerateBoxReturnValue(getter, "\t\t\t");
 
 					// method end
-					buffer += "\t\t\treturn 1;\n";
 					buffer += "\t\t}\n\n";
 				}
 
@@ -892,7 +890,6 @@
 
 			// push returned value
 			buffer += GenerateBoxReturnValue(t, indent);
-			buffer += indent + "return 1;\n";
 
 			// return
 			return buffer;
@@ -987,7 +984,6 @@
 
 			// push returned value
 			buffer += GenerateBoxReturnValue(callM, indent);
-			buffer += indent + "return 1;\n";
 
 			// return
 			return buffer;
@@ -996,10 +992,12 @@
 		private static string GenerateBoxReturnValue(Type returnType, string indent) {
 			string rtn = returnType.GetNormalizedName();
 			string buffer = "";
+			int retured = 1;
 
 			// convert to lua value
 			if(returnType.IsVoid()) {
 				// do not generate for void return
+				retured = 0;
 			} else if(returnType.IsArray) {
 				Type et = returnType.GetElementType();
 				string etn = et.GetNormalizedName();
@@ -1007,6 +1005,9 @@
 			} else {
 				buffer += string.Format(indent + "LuaValueBoxer.type_to_luaval<{0}>(L, ret);\n", rtn);
 			}
+
+			// returned value count
+			buffer += indent + string.Format("return {0};\n", retured);
 
 			// return
 			return buffer;
