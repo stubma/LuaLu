@@ -1,5 +1,6 @@
 ﻿namespace LuaLu {
 	using UnityEngine;
+	using UnityEngine.UI;
 	using System.Collections;
 	using System.Collections.Generic;
 	using UnityEditor;
@@ -48,6 +49,10 @@
 			s_types.Add(typeof(Transform));
 			s_types.Add(typeof(Time));
 			s_types.Add(typeof(Vector3));
+			s_types.Add(typeof(Rigidbody));
+			s_types.Add(typeof(Text));
+			s_types.Add(typeof(Input));
+			s_types.Add(typeof(Collider));
 
 			// filter types
 			for(int i = s_types.Count - 1; i >= 0; i--) {
@@ -989,8 +994,7 @@
 			for(int i = 0; i < pList.Length; i++) {
 				if(pList[i].IsOut) {
 					buffer += "out ";
-				}
-				if(pList[i].ParameterType.IsByRef) {
+				} else if(pList[i].ParameterType.IsByRef) {
 					buffer += "ref ";
 				}
 				buffer += string.Format("arg{0}", i);

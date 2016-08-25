@@ -23,12 +23,16 @@
 		private int m_callFromLua;
 
 		// hash -> object, hold native object in case it is recycled
-		public Dictionary<int, object> m_objMap;
-		private Dictionary<int, int> m_objRefMap;
+		private Dictionary<object, int> m_objRefIdMap;
+		private Dictionary<int, object> m_refIdObjMap;
+		private Dictionary<int, int> m_objRefCountMap;
 		private Dictionary<int, string> m_objNameMap;
 
 		// hash of object which should be released next update
 		private Dictionary<int, int> m_autoReleasePool;
+
+		// unique increasing id for object
+		private static int s_nextRefId;
 
 		// lua asset bundle list
 		private static List<string> s_luaAssetBundleNames;
@@ -56,6 +60,7 @@
 			s_luaAssetBundleNames = new List<string>();
 			s_bundledLuaFiles = new Dictionary<string, List<string>>();
 			s_stackMap = new Dictionary<IntPtr, LuaStack>();
+			s_nextRefId = 1;
 
 			// load lua asset bundle names and load lua file list in bundles
 			TextAsset t = Resources.Load<TextAsset>(LuaConst.LUA_ASSET_BUNDLE_LIST_FILE);
@@ -121,9 +126,10 @@
 
 		public LuaStack() {
 			// init member
-			m_objMap = new Dictionary<int, object>();
-			m_objRefMap = new Dictionary<int, int>();
+			m_refIdObjMap = new Dictionary<int, object>();
+			m_objRefCountMap = new Dictionary<int, int>();
 			m_objNameMap = new Dictionary<int, string>();
+			m_objRefIdMap = new Dictionary<object, int>();
 			m_autoReleasePool = new Dictionary<int, int>();
 			m_callFromLua = 0;
 
@@ -345,80 +351,77 @@
 		}
 
 		public object FindObject(int hash) {
-			if(m_objMap.ContainsKey(hash)) {
-				return m_objMap[hash];
+			if(m_refIdObjMap.ContainsKey(hash)) {
+				return m_refIdObjMap[hash];
 			} else {
 				return null;
 			}
 		}
 
-		public void RemoveObject(int hash) {
-			if(m_objRefMap[hash] > 0) {
+		public void RemoveObject(int refId) {
+			if(m_objRefCountMap[refId] > 0) {
 				// sometimes, lua side perform a gc to collect userdata, then
 				// native side want to refer this object again, to recover from
 				// such situation, we push this object again to re-establish data
 				// struct in lua side, and abort removing
-				string typeName = m_objNameMap[hash];
-				LuaLib.tolua_pushusertype(L, hash, typeName, true);
+				string typeName = m_objNameMap[refId];
+				LuaLib.tolua_pushusertype(L, refId, typeName, true);
 				LuaLib.lua_pop(L, 1);
 			} else {
-				m_objMap.Remove(hash);
-				m_objRefMap.Remove(hash);
-				m_objNameMap.Remove(hash);
+				object obj = m_refIdObjMap[refId];
+				m_objRefIdMap.Remove(obj);
+				m_refIdObjMap.Remove(refId);
+				m_objRefCountMap.Remove(refId);
+				m_objNameMap.Remove(refId);
 			}
 		}
 
-		public void RegisterObject(object obj, string typeName) {
-			int hash = obj.GetHashCode();
-			if(m_objMap.ContainsKey(hash)) {
-				int rc = m_objRefMap[hash];
-				m_objRefMap[hash] = rc + 1;
+		public int RegisterObject(object obj, string typeName) {
+			// if obj is not in ref id map, then allocate a ref id to object
+			// we can't use hashcode, because hashcode may duplicated
+			int refId = 0;
+			if(!m_objRefIdMap.ContainsKey(obj)) {
+				refId = s_nextRefId++;
+				m_objRefIdMap[obj] = refId;
 			} else {
-				m_objMap[hash] = obj;
-				m_objRefMap[hash] = 1;
-				m_objNameMap[hash] = typeName;
+				refId = m_objRefIdMap[obj];
 			}
+
+			// now map it by ref id
+			if(m_refIdObjMap.ContainsKey(refId)) {
+				int rc = m_objRefCountMap[refId];
+				m_objRefCountMap[refId] = rc + 1;
+			} else {
+				m_refIdObjMap[refId] = obj;
+				m_objRefCountMap[refId] = 1;
+				m_objNameMap[refId] = typeName;
+			}
+
+			// return ref id of this object
+			return refId;
 		}
 
 		public void PushObject(object obj, string typeName, bool keepAlive = false) {
 			// register object
-			RegisterObject(obj, typeName);
+			int refId = RegisterObject(obj, typeName);
 
 			// actually we alwasy add this type to root, but if keepAlive is false, it will be removed
 			// from root next update. This mechanism is way like cocos2dx autorelease and its purpose is
 			// preventing it to be collected in current event loop
-			int refId = obj.GetHashCode();
 			LuaLib.tolua_pushusertype(L, refId, typeName, true);
 			if(!keepAlive) {
 				AutoRelease(refId);
 			}
 		}
 
-		public void ReplaceObject(int oldRefId, object newObj) {
-			// new ref id
-			int newRefId = newObj.GetHashCode();
-
+		public void ReplaceObject(int refId, object newObj) {
 			// replace map
-			if(m_objMap.ContainsKey(oldRefId)) {
-				int rc = m_objRefMap[oldRefId];
-				string name = m_objNameMap[oldRefId];
-				m_objMap.Remove(oldRefId);
-				m_objNameMap.Remove(oldRefId);
-				m_objRefMap.Remove(oldRefId);
-				m_objMap[newRefId] = newObj;
-				m_objRefMap[newRefId] = rc;
-				m_objNameMap[newRefId] = name;
+			if(m_refIdObjMap.ContainsKey(refId)) {
+				object oldObj = m_refIdObjMap[refId];
+				m_objRefIdMap.Remove(oldObj);
+				m_objRefIdMap[newObj] = refId;
+				m_refIdObjMap[refId] = newObj;
 			}
-
-			// replace autorelease pool
-			if(m_autoReleasePool.ContainsKey(oldRefId)) {
-				int ar = m_autoReleasePool[oldRefId];
-				m_autoReleasePool.Remove(oldRefId);
-				m_autoReleasePool[newRefId] = ar;
-			}
-
-			// replace it in lua side
-			LuaLib.tolua_replaceref(L, oldRefId, newRefId);
 		}
 
 		/// <summary>
@@ -447,9 +450,9 @@
 		private void DrainAutoReleasePool() {
 			if(m_autoReleasePool.Count > 0) {
 				foreach(int hash in m_autoReleasePool.Keys) {
-					int rc = m_objRefMap[hash];
+					int rc = m_objRefCountMap[hash];
 					rc -= m_autoReleasePool[hash];
-					m_objRefMap[hash] = rc;
+					m_objRefCountMap[hash] = rc;
 					if(rc <= 0) {
 						LuaLib.tolua_remove_value_from_root(L, hash);
 					}
@@ -770,20 +773,6 @@
 			buffer += string.Format("for k,v in pairs({0}) do\nt[k] = v\nend\n", luaType); // copy fields from class to native object
 			buffer += string.Format("t.class = {0}\n", luaType); // assign class to instance
 			ExecuteString(buffer);
-		}
-	}
-
-	public struct Ref<T> {
-		private readonly Func<T> getter;
-
-		public Ref(int refId, LuaStack L) {
-			getter = () => (T)L.m_objMap[refId];
-		}
-
-		public T Value {
-			get { 
-				return getter();
-			}
 		}
 	}
 }

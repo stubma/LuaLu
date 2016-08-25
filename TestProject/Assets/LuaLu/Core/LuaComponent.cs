@@ -3,6 +3,7 @@
 	using System.Collections;
 	using LuaInterface;
 	using System.IO;
+	using System;
 
 	/// <summary>
 	/// a lua component which indirect c# calling to lua side. Every component
@@ -102,6 +103,17 @@
 			L.ExecuteObjectFunction(this, "Update");
 		}
 
+		void FixedUpdate () {
+			// if not valid, return
+			if(!m_valid) {
+				return;
+			}
+
+			// run lua side Update
+			LuaStack L = LuaStack.SharedInstance();
+			L.ExecuteObjectFunction(this, "FixedUpdate");
+		}
+
 		void LateUpdate() {
 			// stack late update
 			LuaStack L = LuaStack.SharedInstance();
@@ -114,6 +126,17 @@
 
 			// run lua side LateUpdate
 			L.ExecuteObjectFunction(this, "LateUpdate");
+		}
+
+		void OnTriggerEnter(Collider other) {
+			// if not valid, return
+			if(!m_valid) {
+				return;
+			}
+
+			// run lua side Update
+			LuaStack L = LuaStack.SharedInstance();
+			L.ExecuteObjectFunction(this, "OnTriggerEnter", new object[] { other });
 		}
 	}
 }

@@ -5,6 +5,7 @@
 	using System.Collections.Generic;
 	using System.IO;
 	using System;
+	using System.Reflection;
 
 	public class LuaMenu : ScriptableObject {
 		[MenuItem("Lua/Generate Unity Lua Binding", false, 1)]  
