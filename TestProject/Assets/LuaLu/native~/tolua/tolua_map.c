@@ -15,7 +15,7 @@
 #include "tolua++.h"
 #include "tolua_event.h"
 #include "lauxlib.h"
-
+#include "unity_log.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -343,25 +343,40 @@ TOLUA_API int tolua_default_collect (lua_State* tolua_S)
     return 0;
 }
 
+// lo index should be a userdata
+TOLUA_API int tolua_unregister_gc (lua_State* L, int lo) {
+    int success = 1;
+    int refid = *(int*)lua_touserdata(L,lo);
+    lua_pushstring(L,"tolua_gc"); // tolua_gc_key
+    lua_rawget(L,LUA_REGISTRYINDEX); // tolua_gc
+    lua_pushinteger(L,refid); // tolua_gc refid
+    lua_pushnil(L); // tolua_gc refid nil
+    lua_rawset(L, -3); // tolua_gc
+    lua_pop(L, 1);
+    return success;
+}
+
 /* Do clone
 */
 TOLUA_API int tolua_register_gc (lua_State* L, int lo)
 {
     int success = 1;
-    int refid = *(int*)lua_touserdata(L,lo);
-    lua_pushstring(L,"tolua_gc"); // ud tolua_gc_key
-    lua_rawget(L,LUA_REGISTRYINDEX); // ud tolua_gc
-    lua_pushinteger(L,refid); // ud tolua_gc ptr
-    lua_rawget(L,-2); // ud tolua_gc gc
-    if (!lua_isnil(L,-1)) /* make sure that object is not already owned */
-        success = 0;
-    else
-    {
-        lua_pushinteger(L,refid); // ud tolua_gc nil ptr
-        lua_getmetatable(L,lo); // ud tolua_gc nil ptr mt
-        lua_rawset(L,-4); // ud tolua_gc(ptr->mt) nil
+    if(lo < 0) {
+        lo = lua_gettop(L) + lo + 1;
     }
-    lua_pop(L,2); // ud
+    int refid = *(int*)lua_touserdata(L,lo);
+    lua_pushstring(L,"tolua_gc"); // tolua_gc_key
+    lua_rawget(L,LUA_REGISTRYINDEX); // tolua_gc
+    lua_pushinteger(L,refid); // tolua_gc refid
+    lua_rawget(L,-2); // tolua_gc gc
+    if (!lua_isnil(L,-1)) {/* make sure that object is not already owned */
+        success = 0;
+    } else {
+        lua_pushinteger(L,refid); // tolua_gc nil ptr
+        lua_getmetatable(L,lo); // tolua_gc nil ptr mt
+        lua_rawset(L,-4); // tolua_gc(ptr->mt) nil
+    }
+    lua_pop(L,2);
     return success;
 }
 

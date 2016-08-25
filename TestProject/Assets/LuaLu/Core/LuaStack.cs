@@ -23,12 +23,12 @@
 		private int m_callFromLua;
 
 		// hash -> object, hold native object in case it is recycled
-		private Dictionary<int, object> m_objMap;
+		public Dictionary<int, object> m_objMap;
 		private Dictionary<int, int> m_objRefMap;
 		private Dictionary<int, string> m_objNameMap;
 
 		// hash of object which should be released next update
-		private List<int> m_autoReleasePool;
+		private Dictionary<int, int> m_autoReleasePool;
 
 		// lua asset bundle list
 		private static List<string> s_luaAssetBundleNames;
@@ -124,7 +124,7 @@
 			m_objMap = new Dictionary<int, object>();
 			m_objRefMap = new Dictionary<int, int>();
 			m_objNameMap = new Dictionary<int, string>();
-			m_autoReleasePool = new List<int>();
+			m_autoReleasePool = new Dictionary<int, int>();
 			m_callFromLua = 0;
 
 			// set log function
@@ -394,12 +394,44 @@
 			}
 		}
 
+		public void ReplaceObject(int oldRefId, object newObj) {
+			// new ref id
+			int newRefId = newObj.GetHashCode();
+
+			// replace map
+			if(m_objMap.ContainsKey(oldRefId)) {
+				int rc = m_objRefMap[oldRefId];
+				string name = m_objNameMap[oldRefId];
+				m_objMap.Remove(oldRefId);
+				m_objNameMap.Remove(oldRefId);
+				m_objRefMap.Remove(oldRefId);
+				m_objMap[newRefId] = newObj;
+				m_objRefMap[newRefId] = rc;
+				m_objNameMap[newRefId] = name;
+			}
+
+			// replace autorelease pool
+			if(m_autoReleasePool.ContainsKey(oldRefId)) {
+				int ar = m_autoReleasePool[oldRefId];
+				m_autoReleasePool.Remove(oldRefId);
+				m_autoReleasePool[newRefId] = ar;
+			}
+
+			// replace it in lua side
+			LuaLib.tolua_replaceref(L, oldRefId, newRefId);
+		}
+
 		/// <summary>
 		/// record a object need to be auto released next update
 		/// </summary>
 		/// <param name="hash">object hash</param>
 		public void AutoRelease(int hash) {
-			m_autoReleasePool.Add(hash);
+			if(m_autoReleasePool.ContainsKey(hash)) {
+				int ar = m_autoReleasePool[hash];
+				m_autoReleasePool[hash] = ar + 1;
+			} else {
+				m_autoReleasePool[hash] = 1;
+			}
 		}
 
 		/// <summary>
@@ -414,9 +446,9 @@
 		/// </summary>
 		private void DrainAutoReleasePool() {
 			if(m_autoReleasePool.Count > 0) {
-				foreach(int hash in m_autoReleasePool) {
+				foreach(int hash in m_autoReleasePool.Keys) {
 					int rc = m_objRefMap[hash];
-					rc--;
+					rc -= m_autoReleasePool[hash];
 					m_objRefMap[hash] = rc;
 					if(rc <= 0) {
 						LuaLib.tolua_remove_value_from_root(L, hash);
@@ -738,6 +770,20 @@
 			buffer += string.Format("for k,v in pairs({0}) do\nt[k] = v\nend\n", luaType); // copy fields from class to native object
 			buffer += string.Format("t.class = {0}\n", luaType); // assign class to instance
 			ExecuteString(buffer);
+		}
+	}
+
+	public struct Ref<T> {
+		private readonly Func<T> getter;
+
+		public Ref(int refId, LuaStack L) {
+			getter = () => (T)L.m_objMap[refId];
+		}
+
+		public T Value {
+			get { 
+				return getter();
+			}
 		}
 	}
 }

@@ -715,6 +715,9 @@
 		public static extern int tolua_register_gc(IntPtr L, int lo);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern int tolua_unregister_gc(IntPtr L, int lo);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int tolua_default_collect(IntPtr L);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
@@ -761,6 +764,9 @@
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void tolua_pushuserdata(IntPtr L, IntPtr value);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_replaceref(IntPtr L, int oldRefId, int newRefId);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void tolua_pushusertype(IntPtr L, int refid, string type, bool addToRoot);

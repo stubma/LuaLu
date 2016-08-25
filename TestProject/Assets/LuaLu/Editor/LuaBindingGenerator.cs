@@ -423,11 +423,20 @@
 					} else {
 						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_type<{0}>(L, 2, out ret, \"{1}\");\n", ftn, sn);
 					}
+
+					// set field
 					buffer += "\t\t\tif(ok) {\n";
 					buffer += string.Format("\t\t\t\t{0}.{1} = ret;\n", fi.IsStatic ? tn : "obj", fin);
+
+					// if value type, need replace old
+					if(!fi.IsStatic && t.IsValueType) {
+						buffer += "\t\t\t\tLuaStack.FromState(L).ReplaceObject(refId, obj);\n";
+					}
+
+					// close set field
 					buffer += "\t\t\t}\n\n";
 
-					// method end
+					// close setter
 					buffer += "\t\t\treturn 0;\n";
 					buffer += "\t\t}\n\n";
 				}
@@ -546,11 +555,20 @@
 					} else {
 						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_type<{0}>(L, 2, out ret, \"{1}\");\n", ptn, fn);
 					}
+
+					// set property
 					buffer += "\t\t\tif(ok) {\n";
 					buffer += string.Format("\t\t\t\t{0}.{1} = ret;\n", setter.IsStatic ? tn : "obj", pn);
+
+					// if value type, need replace old obj
+					if(!setter.IsStatic && t.IsValueType) {
+						buffer += "\t\t\t\tLuaStack.FromState(L).ReplaceObject(refId, obj);\n";
+					}
+
+					// close set property
 					buffer += "\t\t\t}\n\n";
 
-					// method end
+					// close setter
 					buffer += "\t\t\treturn 0;\n";
 					buffer += "\t\t}\n\n";
 				}

@@ -88,6 +88,7 @@ TOLUA_API void tolua_open (lua_State* L);
 
 TOLUA_API void* tolua_copy (lua_State* L, void* value, unsigned int size);
 TOLUA_API int tolua_register_gc (lua_State* L, int lo);
+TOLUA_API int tolua_unregister_gc (lua_State* L, int lo);
 TOLUA_API int tolua_default_collect (lua_State* tolua_S);
 
 TOLUA_API void tolua_usertype (lua_State* L, const char* type);
@@ -109,7 +110,7 @@ TOLUA_API void tolua_pushnumber (lua_State* L, lua_Number value);
 TOLUA_API void tolua_pushstring (lua_State* L, const char* value);
 TOLUA_API void tolua_pushuserdata (lua_State* L, void* value);
 TOLUA_API void tolua_pushusertype (lua_State* L, int refid, const char* type, int addToRoot);
-    
+TOLUA_API void tolua_replaceref(lua_State* L, int oldRefId, int newRefId);
 TOLUA_API void tolua_add_value_to_root (lua_State* L, int refid);
 TOLUA_API void tolua_remove_value_from_root (lua_State* L, int refid);
 
