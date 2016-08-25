@@ -1,5 +1,17 @@
 string = string or {}
 
+local function getUTF8Bytes(c)
+    local count = 1
+    if c >= 128 then
+        c = bit.lshift(c, 1)
+        repeat
+            count = count + 1
+            c = bit.lshift(c, 1)
+        until(c <= 128)
+    end
+    return count
+end
+
 -- split a string by a separator, and returns a table contains all parts of it
 function string.split(s, sep)
     local parts = {}
@@ -10,7 +22,7 @@ function string.split(s, sep)
     while i <= len do
         -- get char and check utf8
         local c = string.byte(s, i)
-        local charLen = CCUtils:getUTF8Bytes(c)
+        local charLen = getUTF8Bytes(c)
 
         -- if c is separator char
         if charLen == 1 and c == sepByte then
