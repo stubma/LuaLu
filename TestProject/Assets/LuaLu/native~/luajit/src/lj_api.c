@@ -219,6 +219,15 @@ LUALIB_API void luaL_checkany(lua_State *L, int idx)
     lj_err_arg(L, idx, LJ_ERR_NOVAL);
 }
 
+LUA_API const char *lua_typelname(lua_State *L, int t, size_t* len)
+{
+  const char* s = lua_typename(L, t);
+  if(len) {
+    *len = strlen(s);
+  }
+  return s;
+}
+
 LUA_API const char *lua_typename(lua_State *L, int t)
 {
   UNUSED(L);
