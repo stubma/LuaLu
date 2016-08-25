@@ -247,9 +247,10 @@ static int class_newindex_event (lua_State* L)
                 lua_rawget(L,-2);                     /* stack: t k v mt tset func */
                 if (lua_iscfunction(L,-1))
                 {
-                    lua_pushvalue(L,1);
-                    lua_pushvalue(L,3);
-                    lua_call(L,2,0);
+                    lua_pushvalue(L,1); // t k v mt tset func t
+                    lua_pushvalue(L,3); // t k v mt tset func t v
+                    lua_call(L,2,0); // t k v mt tset
+                    lua_pop(L, 2); // t k v
                     return 0;
                 }
                 lua_pop(L,1);                          /* stack: t k v mt tset */
