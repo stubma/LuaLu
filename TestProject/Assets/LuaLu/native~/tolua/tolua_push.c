@@ -59,6 +59,16 @@ TOLUA_API void tolua_pushusertype (lua_State* L, int refid, const char* type, in
             lua_pop(L, 1);
             return;
         }
+        
+        // refid => type
+        lua_pushstring(L, TOLUA_REFID_TYPE_MAPPING);
+        lua_rawget(L, LUA_REGISTRYINDEX);                           /* stack: refid_type */
+        lua_pushinteger(L, refid);                                  /* stack: refid_type refid */
+        lua_pushstring(L, type);                     /* stack: refid_type refid type */
+        lua_rawset(L, -3);                /* refid_type[refid] = type, stack: refid_type */
+        lua_pop(L, 1);
+        
+        // get ubox, or get global ubox if not found in metatable
         lua_pushstring(L,"tolua_ubox");
         lua_rawget(L,-2);                                           /* stack: mt ubox */
         if (lua_isnil(L, -1)) {
@@ -67,9 +77,12 @@ TOLUA_API void tolua_pushusertype (lua_State* L, int refid, const char* type, in
             lua_rawget(L, LUA_REGISTRYINDEX);
         };
         
+        // refid => ud
         lua_pushinteger(L,refid);                             /* stack: mt ubox key<refid> */
         lua_rawget(L,-2);                                           /* stack: mt ubox ubox[refid] */
         
+        // if ud is not here, create new
+        // if ud is here, check if need cast to specific type
         if (lua_isnil(L,-1))
         {
             lua_pop(L,1);                                           /* stack: mt ubox */

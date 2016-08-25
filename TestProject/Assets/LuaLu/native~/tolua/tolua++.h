@@ -36,7 +36,8 @@ extern "C" {
 #define TOLUA_PROPERTY_TYPE(p)
     
 #define TOLUA_VALUE_ROOT "tolua_value_root"
-
+#define TOLUA_REFID_TYPE_MAPPING "tolua_refid_type_mapping"
+    
 typedef int lua_Object;
 
 #include "lua.h"

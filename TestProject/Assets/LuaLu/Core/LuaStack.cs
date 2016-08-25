@@ -353,15 +353,7 @@
 		}
 
 		public void RemoveObject(int hash) {
-			bool istransform = m_objMap[hash].GetType() == typeof(Transform);
-			if(istransform) {
-				Debug.Log("remove transform: " + hash);
-			}
-			LuaLib.toluafix_remove_object_by_refid(LuaStack.SharedInstance().GetLuaState(), hash);
 			m_objMap.Remove(hash);
-			if(istransform) {
-				Debug.Log(string.Format("transform removed, lua top: {0}", LuaLib.lua_gettop(L)));
-			}
 		}
 
 		public void RegisterObject(object obj) {
@@ -372,17 +364,14 @@
 		}
 
 		public void PushObject(object obj, string typeName, bool keepAlive = false) {
-			// is object registered in manager, if not, it is first time to push to lua side
-			bool isRegistered = IsRegistered(obj);
-			if(!isRegistered) {
-				RegisterObject(obj);
-			}
+			// register object
+			RegisterObject(obj);
 
 			// actually we alwasy add this type to root, but if keepAlive is false, it will be removed
 			// from root next update. This mechanism is way like cocos2dx autorelease and its purpose is
 			// preventing it to be collected in current event loop
 			int refId = obj.GetHashCode();
-			LuaLib.toluafix_pushusertype_object(L, refId, !isRegistered, typeName, true);
+			LuaLib.tolua_pushusertype(L, refId, typeName, true);
 			if(!keepAlive) {
 				AutoRelease(refId);
 			}
@@ -469,14 +458,6 @@
 			bool ret = LuaLib.lua_rawequal(L, -1, -2);
 			LuaLib.lua_pop(L, 2);
 			return ret;
-		}
-
-		/// <summary>
-		/// Remove CCObject from lua state
-		/// </summary>
-		/// <param name="obj">object</param>
-		public void RemoveScriptSideObject(object obj) {
-			LuaLib.toluafix_remove_object_by_refid(L, obj.GetHashCode());
 		}
 
 		/// <summary>

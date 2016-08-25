@@ -13,7 +13,7 @@
 */
 
 #include <stdio.h>
-
+#include "unity_log.h"
 #include "tolua++.h"
 
 /* Store int peer
@@ -392,19 +392,16 @@ static int class_gc_event (lua_State* L)
 
 TOLUA_API int class_gc_event (lua_State* L)
 {
+    // get ref id
     int refid = *(int*)lua_touserdata(L,1);
-    int top;
-    /*fprintf(stderr, "collecting: looking at %p\n", u);*/
-    /*
-    lua_pushstring(L,"tolua_gc");
-    lua_rawget(L,LUA_REGISTRYINDEX);
-    */
+    
+    // get metatable of type and super type
     lua_pushvalue(L, lua_upvalueindex(1)); // ud tolua_gc
     lua_pushinteger(L, refid); // ud tolua_gc refid
     lua_rawget(L,-2);            // ud tolua_gc mt
     lua_getmetatable(L,1);       // ud tolua_gc mt mt
-    /*fprintf(stderr, "checking type\n");*/
-    top = lua_gettop(L);
+
+    int top = lua_gettop(L);
     if (tolua_fast_isa(L,top,top-1, lua_upvalueindex(2))) /* make sure we collect correct type */
     {
         /*fprintf(stderr, "Found type!\n");*/
@@ -419,12 +416,48 @@ TOLUA_API int class_gc_event (lua_State* L)
             lua_pushcfunction(L,tolua_default_collect); // ud tolua_gc ptr mt collector(default)
         }
 
-        lua_pushvalue(L,1);         // ud tolua_gc ptr mt collector ud
-        lua_call(L,1,0); // collector executed, ud tolua_gc ptr mt
+        lua_pushvalue(L,1);         // ud tolua_gc refid mt collector ud
+        lua_call(L,1,0); // collector executed, ud tolua_gc refid mt
 
-        lua_pushinteger(L, refid); // ud tolua_gc ptr mt ptr
-        lua_pushnil(L);             // ud tolua_gc ptr mt ptr nil
-        lua_rawset(L,-5);           // ud tolua_gc(ptr->nil) ptr mt
+        lua_pushinteger(L, refid); // ud tolua_gc refid mt refid
+        lua_pushnil(L);             // ud tolua_gc refid mt refid nil
+        lua_rawset(L,-5);           // ud tolua_gc(ptr->nil) refid mt
+        
+        // remove refid type mapping
+        lua_pushstring(L, TOLUA_REFID_TYPE_MAPPING);
+        lua_rawget(L, LUA_REGISTRYINDEX);                               /* stack: refid_type */
+        lua_pushinteger(L, refid);                                      /* stack: refid_type refid */
+        lua_rawget(L, -2);                                              /* stack: refid_type type */
+        if (lua_isnil(L, -1)) {
+            lua_pop(L, 2);
+            char buf[256];
+            sprintf(buf, "[LUA ERROR] remove Object with NULL type, refid: %d", refid);
+            unity_log(buf);
+        } else {
+            const char* type = lua_tostring(L, -1);
+            lua_pop(L, 1);                                                  /* stack: refid_type */
+            lua_pushinteger(L, refid);     // refid_type refid
+            lua_pushnil(L); /* stack: refid_type refid nil */
+            lua_rawset(L, -3); // refid_type
+            lua_pop(L, 1);
+            
+            // get ubox
+            luaL_getmetatable(L, type);                                     /* stack: mt */
+            lua_pushstring(L, "tolua_ubox");                                /* stack: mt key */
+            lua_rawget(L, -2);                                              /* stack: mt ubox */
+            if (lua_isnil(L, -1)) {
+                // use global ubox
+                lua_pop(L, 1);                                              /* stack: mt */
+                lua_pushstring(L, "tolua_ubox");                            /* stack: mt key */
+                lua_rawget(L, LUA_REGISTRYINDEX);                           /* stack: mt ubox */
+            }
+            
+            // remove ud from ubox
+            lua_pushinteger(L, refid);                                  /* stack: mt ubox refid */
+            lua_pushnil(L); // mt ubox refid nil
+            lua_rawset(L, -3); // stack: mt ubox
+            lua_pop(L, 2);
+        }
     }
     lua_pop(L,3); // ud
     return 0;

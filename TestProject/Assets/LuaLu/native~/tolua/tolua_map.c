@@ -249,6 +249,11 @@ TOLUA_API void tolua_open (lua_State* L)
         lua_pushstring(L, TOLUA_VALUE_ROOT);
         lua_newtable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
+        
+        // refid => type mapping
+        lua_pushstring(L, TOLUA_REFID_TYPE_MAPPING);
+        lua_newtable(L);
+        lua_rawset(L, LUA_REGISTRYINDEX);
 
 #ifndef LUA_VERSION_NUM /* only prior to lua 5.1 */
         /* create peer object table */

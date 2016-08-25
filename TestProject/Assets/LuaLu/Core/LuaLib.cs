@@ -807,12 +807,6 @@
 		public static extern void toluafix_open(IntPtr L);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int toluafix_pushusertype_object(IntPtr L, int refid, bool firstPush, string vtype, bool addToRoot);
-
-		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int toluafix_remove_object_by_refid(IntPtr L, int refid);
-
-		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int toluafix_ref_function(IntPtr L, int lo, int def);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
