@@ -11,9 +11,16 @@
 	public class LuaBindingGenerator {
 		private static List<string> INCLUDE_NAMESPACES;
 
+		// weird method need to be excluded, otherwise get error when build
+		private static List<string> EXCLUDE_METHODS;
+
 		static LuaBindingGenerator() {
 			INCLUDE_NAMESPACES = new List<string> {
 				"System"
+			};
+			EXCLUDE_METHODS = new List<string> {
+				"OnRebuildRequested",
+				"IsJoystickPreconfigured"
 			};
 		}
 
@@ -185,14 +192,14 @@
 			// filter generic methods, property setter/getter, operator
 			List<MethodInfo> publicMethods = new List<MethodInfo>();
 			Array.ForEach<MethodInfo>(methods, m => {
-				if(!m.IsGenericMethod && !m.IsObsolete()) {
+				if(!m.IsGenericMethod && !m.IsObsolete() && !EXCLUDE_METHODS.Contains(m.Name)) {
 					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_") && !m.Name.StartsWith("op_")) {
 						publicMethods.Add(m);
 					}
 				}
 			});
 			Array.ForEach<MethodInfo>(staticMethods, m => {
-				if(!m.IsGenericMethod && !m.IsObsolete()) {
+				if(!m.IsGenericMethod && !m.IsObsolete() && !EXCLUDE_METHODS.Contains(m.Name)) {
 					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_") && !m.Name.StartsWith("op_")) {
 						publicMethods.Add(m);
 					}
