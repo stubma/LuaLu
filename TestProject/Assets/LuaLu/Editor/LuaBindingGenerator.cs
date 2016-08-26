@@ -9,10 +9,14 @@
 	using System.Reflection;
 
 	public class LuaBindingGenerator {
+		// namespace to find classes
 		private static List<string> INCLUDE_NAMESPACES;
 
 		// weird method need to be excluded, otherwise get error when build
 		private static List<string> EXCLUDE_METHODS;
+
+		// support operator overload
+		private static Dictionary<string, string> SUPPORTED_OPERATORS;
 
 		static LuaBindingGenerator() {
 			INCLUDE_NAMESPACES = new List<string> {
@@ -21,6 +25,17 @@
 			EXCLUDE_METHODS = new List<string> {
 				"OnRebuildRequested",
 				"IsJoystickPreconfigured"
+			};
+			SUPPORTED_OPERATORS = new Dictionary<string, string> {
+				{ "Addition", "__add" },
+				{ "Subtraction", "__sub" },
+				{ "UnaryNegation", "__unm" },
+				{ "Multiply", "__mul" },
+				{ "Division", "__div" },
+				{ "Equality", "__eq" },
+				{ "LessThan", "__lt" },
+				{ "LessThanOrEqual", "__le" },
+				{ "Modulus", "__mod" }
 			};
 		}
 
@@ -193,15 +208,31 @@
 			List<MethodInfo> publicMethods = new List<MethodInfo>();
 			Array.ForEach<MethodInfo>(methods, m => {
 				if(!m.IsGenericMethod && !m.IsObsolete() && !EXCLUDE_METHODS.Contains(m.Name)) {
-					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_") && !m.Name.StartsWith("op_")) {
-						publicMethods.Add(m);
+					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_")) {
+						// special check for operator overload
+						if(m.Name.StartsWith("op_")) {
+							string op = m.Name.Substring(3);
+							if(SUPPORTED_OPERATORS.ContainsKey(op)) {
+								publicMethods.Add(m);;
+							}
+						} else {
+							publicMethods.Add(m);
+						}
 					}
 				}
 			});
 			Array.ForEach<MethodInfo>(staticMethods, m => {
 				if(!m.IsGenericMethod && !m.IsObsolete() && !EXCLUDE_METHODS.Contains(m.Name)) {
-					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_") && !m.Name.StartsWith("op_")) {
-						publicMethods.Add(m);
+					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_")) {
+						// special check for operator overload
+						if(m.Name.StartsWith("op_")) {
+							string op = m.Name.Substring(3);
+							if(SUPPORTED_OPERATORS.ContainsKey(op)) {
+								publicMethods.Add(m);;
+							}
+						} else {
+							publicMethods.Add(m);
+						}
 					}
 				}
 			});
@@ -725,7 +756,13 @@
 		}
 
 		private static string GeneratePublicMethod(Type t, List<MethodInfo> mList) {
+			// decide method name
 			string mn = mList[0].Name;
+			if(mn.StartsWith("op_")) {
+				string op = mn.Substring(3);
+			}
+
+			// other info
 			string tfn = t.FullName;
 			string buffer = "";
 			string tfnUnderscore = tfn.Replace(".", "_");

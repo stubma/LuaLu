@@ -7,7 +7,7 @@
 	using System;
 	using System.Reflection;
 
-	public class LuaMenu : ScriptableObject {
+	public class LuaMenu {
 		[MenuItem("Lua/Generate Unity Lua Binding", false, 1)]  
 		static void MenuGenerateUnityLuaBinding() {
 			LuaBindingGenerator.GenerateUnityLuaBinding();
