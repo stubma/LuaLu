@@ -19,6 +19,9 @@
 *.pidb
 *.booproj
 *.svd
+*.xcworkspace
+*.vcxproj.user
+xcuserdata
 
 # Unity3D generated meta files
 *.pidb.meta
