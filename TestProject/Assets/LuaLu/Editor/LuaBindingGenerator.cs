@@ -17,6 +17,8 @@
 
 		// support operator overload
 		private static Dictionary<string, string> SUPPORTED_OPERATORS;
+		private static Dictionary<string, string> OPERATOR_STRINGS;
+		private static Dictionary<string, bool> OPERATOR_UNARY;
 
 		static LuaBindingGenerator() {
 			INCLUDE_NAMESPACES = new List<string> {
@@ -36,6 +38,28 @@
 				{ "LessThan", "__lt" },
 				{ "LessThanOrEqual", "__le" },
 				{ "Modulus", "__mod" }
+			};
+			OPERATOR_STRINGS = new Dictionary<string, string> {
+				{ "__add", "+" },
+				{ "__sub", "-" },
+				{ "__unm", "-" },
+				{ "__mul", "*" },
+				{ "__div", "/" },
+				{ "__eq", "==" },
+				{ "__lt", "<" },
+				{ "__le", "<=" },
+				{ "__mod", "%" }
+			};
+			OPERATOR_UNARY = new Dictionary<string, bool> {
+				{ "__add", false },
+				{ "__sub", false },
+				{ "__unm", true },
+				{ "__mul", false },
+				{ "__div", false },
+				{ "__eq", false },
+				{ "__lt", false },
+				{ "__le", false },
+				{ "__mod", false }
 			};
 		}
 
@@ -283,7 +307,12 @@
 			if(ctors.Length > 0) {
 				buffer += "\t\t\tLuaLib.tolua_function(L, \"new\", new LuaFunction(__Constructor__));\n";
 			}
-			foreach(string mn in publicMethodMap.Keys) {
+			foreach(string _ in publicMethodMap.Keys) {
+				string mn = _;
+				if(mn.StartsWith("op_")) {
+					string op = mn.Substring(3);
+					mn = SUPPORTED_OPERATORS[op];
+				}
 				buffer += string.Format("\t\t\tLuaLib.tolua_function(L, \"{0}\", new LuaFunction({0}));\n", mn);
 			}
 			foreach(PropertyInfo pi in props) {
@@ -756,10 +785,11 @@
 		}
 
 		private static string GeneratePublicMethod(Type t, List<MethodInfo> mList) {
-			// decide method name
+			// decide method name, if operator, need a conversion
 			string mn = mList[0].Name;
 			if(mn.StartsWith("op_")) {
 				string op = mn.Substring(3);
+				mn = SUPPORTED_OPERATORS[op];
 			}
 
 			// other info
@@ -965,7 +995,16 @@
 		}
 
 		private static string GenerateMethodInvocation(Type t, MethodInfo callM, int paramCount, string indent) {
+			// if operator, should conversion name
 			string mn = callM.Name;
+			bool isOperator = false;
+			if(mn.StartsWith("op_")) {
+				string op = mn.Substring(3);
+				mn = SUPPORTED_OPERATORS[op];
+				isOperator = true;
+			}
+
+			// other info
 			string tn = t.Name;
 			string tfn = t.FullName;
 			string tfnUnderscore = tfn.Replace(".", "_");
@@ -1034,23 +1073,35 @@
 			if(rtn != "System.Void") {
 				buffer += string.Format("{0} ret = ", rtn);
 			}
-			if(callM.IsStatic) {
-				buffer += string.Format("{0}.{1}(", tfn, mn);
+			if(isOperator) {
+				// for operator
+				bool unary = OPERATOR_UNARY[mn];
+				string opStr = OPERATOR_STRINGS[mn];
+				if(unary) {
+					buffer += opStr + "arg0;\n";
+				} else {
+					buffer += "arg0 " + opStr + " arg1;\n";
+				}
 			} else {
-				buffer += string.Format("obj.{0}(", mn);
-			}
-			for(int i = 0; i < pList.Length; i++) {
-				if(pList[i].IsOut) {
-					buffer += "out ";
-				} else if(pList[i].ParameterType.IsByRef) {
-					buffer += "ref ";
+				// for normal method
+				if(callM.IsStatic) {
+					buffer += string.Format("{0}.{1}(", tfn, mn);
+				} else {
+					buffer += string.Format("obj.{0}(", mn);
 				}
-				buffer += string.Format("arg{0}", i);
-				if(i < pList.Length - 1) {
-					buffer += ", ";
+				for(int i = 0; i < pList.Length; i++) {
+					if(pList[i].IsOut) {
+						buffer += "out ";
+					} else if(pList[i].ParameterType.IsByRef) {
+						buffer += "ref ";
+					}
+					buffer += string.Format("arg{0}", i);
+					if(i < pList.Length - 1) {
+						buffer += ", ";
+					}
 				}
+				buffer += ");\n";
 			}
-			buffer += ");\n";
 
 			// push returned value
 			buffer += GenerateBoxReturnValue(callM, indent);
