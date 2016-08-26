@@ -8,6 +8,16 @@ What is this
 
 This is a Unity3D Lua plugin, it is still in active development but basically you can run it now. It is my learning project also and I want it be the best of unity lua plugins. Welcome to use it.
 
+当前状况
+===
+
+lua绑定生成器已经基本完成, 但是还没有生成所有的绑定, 目前只是把demo需要用到的类的绑定都生成了, 目前的demo已经全部通过lua脚本运行了, 在osx, ios, editor环境下测试通过, android还没测试过. 
+
+Progress
+===
+
+The lua binding generator is basically done but it only generate classes demo uses, not all. Now the demo project runs with lua script, tested in editor, ios and osx, works fine. Android is not tested yet.
+
 如何安装
 ===
 
@@ -21,12 +31,12 @@ Just copy Assets/LuaLu to your project Assets folder, do NOT rename, keep the fo
 如何使用
 ===
 
-拷贝完后在unity中出现Lua菜单, 选择```Generate Unity Lua Binding```生成unity类的绑定, 生成的绑定脚本在Assets/Scripts/LuaBinding下, 准备工作就这么多, 剩下的就是写你的lua脚本了. <font color=red>注意绑定生成器还没有全部完成, 我现在就生成了几个主要的类用来测试, 你可以跑跑现在的TestProject</font>
+拷贝完后在unity中出现Lua菜单, 选择```Generate Unity Lua Binding```生成unity类的绑定, 生成的绑定脚本在Assets/Scripts/LuaBinding下, 准备工作就这么多, 剩下的就是写你的lua脚本了. 
 
 How to use
 ===
 
-After coping LuaLu, you should see Lua menu in unity editor, select ```Generate Unity Lua Binding``` menu item to generate unity class lua binding, and it's all. You can write your lua for unity now! <font color=red>Note: the binding generator is not fully completed, I just generate several classes for testing, you can run TestProject to see what I have done</font>
+After coping LuaLu, you should see Lua menu in unity editor, select ```Generate Unity Lua Binding``` menu item to generate unity class lua binding, and it's all. You can write your lua for unity now! 
 
 用户指南
 ===
@@ -42,7 +52,7 @@ After coping LuaLu, you should see Lua menu in unity editor, select ```Generate 
 Guide
 ===
 
-2. Create lua and attach to game object
+1. Create lua and attach to game object
 ---
 
 1. select a game object
