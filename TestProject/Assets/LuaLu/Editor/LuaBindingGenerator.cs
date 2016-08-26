@@ -894,7 +894,9 @@
 				buffer += "\n";
 				buffer += indent + "// if conversion is not ok, print error and return\n";
 				buffer += indent + "if(!ok) {\n";
+				buffer += indent.Substring(1) + "#if DEBUG\n";
 				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"invalid arguments in function '{0}'\", ref err);\n", fn);
+				buffer += indent.Substring(1) + "#endif\n";
 				buffer += indent + "\treturn 0;\n";
 				buffer += indent + "}\n\n";
 			}
@@ -952,7 +954,9 @@
 				buffer += "\n";
 				buffer += indent + "// if conversion is not ok, print error and return\n";
 				buffer += indent + "if(!ok) {\n";
+				buffer += indent.Substring(1) + "#if DEBUG\n";
 				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"invalid arguments in function '{0}'\", ref err);\n", fn);
+				buffer += indent.Substring(1) + "#endif\n";
 				buffer += indent + "\treturn 0;\n";
 				buffer += indent + "}\n\n";
 			}
