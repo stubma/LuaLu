@@ -69,7 +69,7 @@
 			   tn == "long" ||
 			   tn == "ulong") {
 				// top should be a number
-				if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
+				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
 					#if DEBUG
 					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
 					#endif
@@ -84,7 +84,7 @@
 				}
 			} else if(tn == "bool") {
 				// top should be a boolean
-				if(!LuaLib.tolua_isboolean(L, lo, 0, ref tolua_err)) {
+				if(!LuaLib.tolua_isboolean(L, lo, ref tolua_err)) {
 					#if DEBUG
 					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
 					#endif
@@ -99,7 +99,7 @@
 				}
 			} else if(tn == "char" || tn == "string") {
 				// top should be a string
-				if(!LuaLib.tolua_isstring(L, lo, 0, ref tolua_err)) {
+				if(!LuaLib.tolua_isstring(L, lo, ref tolua_err)) {
 					#if DEBUG
 					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
 					#endif
@@ -114,7 +114,7 @@
 				}
 			} else if(tn == "float" || tn == "double") {
 				// top should be a number
-				if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
+				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
 					#if DEBUG
 					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
 					#endif
@@ -129,7 +129,7 @@
 				}
 			} else if(t.IsEnum) {
 				// top should be a number
-				if(!LuaLib.tolua_isnumber(L, lo, 0, ref tolua_err)) {
+				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
 					#if DEBUG
 					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
 					#endif
@@ -181,7 +181,7 @@
 
 			// top should be a table
 			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
+			if(!LuaLib.tolua_istable(L, lo, ref tolua_err)) {
 				#if DEBUG
 				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
 				#endif
@@ -239,7 +239,7 @@
 
 			// top should be a table
 			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
+			if(!LuaLib.tolua_istable(L, lo, ref tolua_err)) {
 				#if DEBUG
 				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
 				#endif
@@ -303,7 +303,7 @@
 
 			// top should be a table
 			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, 0, ref tolua_err)) {
+			if(!LuaLib.tolua_istable(L, lo, ref tolua_err)) {
 				#if DEBUG
 				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
 				#endif

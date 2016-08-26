@@ -59,30 +59,31 @@ TOLUA_API const char* tolua_typename (lua_State* L, int lo);
 TOLUA_API const char* tolua_typelname (lua_State* L, int lo, size_t* len);
 TOLUA_API void tolua_error (lua_State* L, const char* msg, tolua_Error* err);
 TOLUA_API int tolua_isnoobj (lua_State* L, int lo, tolua_Error* err);
-TOLUA_API int tolua_isfunction(lua_State* L, int lo, int def, tolua_Error* err);
-TOLUA_API int tolua_isvalue (lua_State* L, int lo, int def, tolua_Error* err);
+TOLUA_API int tolua_isfunction(lua_State* L, int lo, tolua_Error* err);
+TOLUA_API int tolua_isvalue (lua_State* L, int lo, tolua_Error* err);
 TOLUA_API int tolua_isvaluenil (lua_State* L, int lo, tolua_Error* err);
-TOLUA_API int tolua_isboolean (lua_State* L, int lo, int def, tolua_Error* err);
-TOLUA_API int tolua_isnumber (lua_State* L, int lo, int def, tolua_Error* err);
-TOLUA_API int tolua_isstring (lua_State* L, int lo, int def, tolua_Error* err);
-TOLUA_API int tolua_istable (lua_State* L, int lo, int def, tolua_Error* err);
-TOLUA_API int tolua_isusertable (lua_State* L, int lo, const char* type, int def, tolua_Error* err);
-TOLUA_API int tolua_isuserdata (lua_State* L, int lo, int def, tolua_Error* err);
-TOLUA_API int tolua_isusertype (lua_State* L, int lo, const char* type, int def, tolua_Error* err);
+TOLUA_API int tolua_isboolean (lua_State* L, int lo, tolua_Error* err);
+TOLUA_API int tolua_isnumber (lua_State* L, int lo, tolua_Error* err);
+TOLUA_API int tolua_isstring (lua_State* L, int lo, tolua_Error* err);
+TOLUA_API int tolua_istable (lua_State* L, int lo, tolua_Error* err);
+TOLUA_API int tolua_isusertable (lua_State* L, int lo, const char* type, tolua_Error* err);
+TOLUA_API int tolua_isuserdata (lua_State* L, int lo, tolua_Error* err);
+TOLUA_API int tolua_isusertype (lua_State* L, int lo, const char* type, tolua_Error* err);
+TOLUA_API int tolua_checkusertype (lua_State* L, int lo, const char* type);
 TOLUA_API int tolua_isvaluearray
-(lua_State* L, int lo, int dim, int def, tolua_Error* err);
+(lua_State* L, int lo, int dim, tolua_Error* err);
 TOLUA_API int tolua_isbooleanarray
-(lua_State* L, int lo, int dim, int def, tolua_Error* err);
+(lua_State* L, int lo, int dim, tolua_Error* err);
 TOLUA_API int tolua_isnumberarray
-(lua_State* L, int lo, int dim, int def, tolua_Error* err);
+(lua_State* L, int lo, int dim, tolua_Error* err);
 TOLUA_API int tolua_isstringarray
-(lua_State* L, int lo, int dim, int def, tolua_Error* err);
+(lua_State* L, int lo, int dim, tolua_Error* err);
 TOLUA_API int tolua_istablearray
-(lua_State* L, int lo, int dim, int def, tolua_Error* err);
+(lua_State* L, int lo, int dim, tolua_Error* err);
 TOLUA_API int tolua_isuserdataarray
-(lua_State* L, int lo, int dim, int def, tolua_Error* err);
+(lua_State* L, int lo, int dim, tolua_Error* err);
 TOLUA_API int tolua_isusertypearray
-(lua_State* L, int lo, const char* type, int dim, int def, tolua_Error* err);
+(lua_State* L, int lo, const char* type, int dim, tolua_Error* err);
 
 TOLUA_API void tolua_open (lua_State* L);
 

@@ -655,55 +655,58 @@
 		public static extern bool tolua_isnoobj(IntPtr L, int lo, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isfunction(IntPtr L, int lo, int def, ref tolua_Error err);
+		public static extern bool tolua_isfunction(IntPtr L, int lo, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isvalue(IntPtr L, int lo, int def, ref tolua_Error err);
+		public static extern bool tolua_isvalue(IntPtr L, int lo, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern bool tolua_isvaluenil(IntPtr L, int lo, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isboolean(IntPtr L, int lo, int def, ref tolua_Error err);
+		public static extern bool tolua_isboolean(IntPtr L, int lo, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isnumber(IntPtr L, int lo, int def, ref tolua_Error err);
+		public static extern bool tolua_isnumber(IntPtr L, int lo, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isstring(IntPtr L, int lo, int def, ref tolua_Error err);
+		public static extern bool tolua_isstring(IntPtr L, int lo, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_istable(IntPtr L, int lo, int def, ref tolua_Error err);
+		public static extern bool tolua_istable(IntPtr L, int lo, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isusertable(IntPtr L, int lo, string type, int def, ref tolua_Error err);
+		public static extern bool tolua_isusertable(IntPtr L, int lo, string type, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isuserdata(IntPtr L, int lo, int def, ref tolua_Error err);
+		public static extern bool tolua_isuserdata(IntPtr L, int lo, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isusertype(IntPtr L, int lo, string type, int def, ref tolua_Error err);
+		public static extern bool tolua_isusertype(IntPtr L, int lo, string type, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isvaluearray(IntPtr L, int lo, int dim, int def, ref tolua_Error err);
+		public static extern bool tolua_checkusertype(IntPtr L, int lo, string type);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isbooleanarray(IntPtr L, int lo, int dim, int def, ref tolua_Error err);
+		public static extern bool tolua_isvaluearray(IntPtr L, int lo, int dim, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isnumberarray(IntPtr L, int lo, int dim, int def, ref tolua_Error err);
+		public static extern bool tolua_isbooleanarray(IntPtr L, int lo, int dim, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isstringarray(IntPtr L, int lo, int dim, int def, ref tolua_Error err);
+		public static extern bool tolua_isnumberarray(IntPtr L, int lo, int dim, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_istablearray(IntPtr L, int lo, int dim, int def, ref tolua_Error err);
+		public static extern bool tolua_isstringarray(IntPtr L, int lo, int dim, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isuserdataarray(IntPtr L, int lo, int dim, int def, ref tolua_Error err);
+		public static extern bool tolua_istablearray(IntPtr L, int lo, int dim, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool tolua_isusertypearray(IntPtr L, int lo, string type, int dim, int def, ref tolua_Error err);
+		public static extern bool tolua_isuserdataarray(IntPtr L, int lo, int dim, ref tolua_Error err);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern bool tolua_isusertypearray(IntPtr L, int lo, string type, int dim, ref tolua_Error err);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void tolua_open(IntPtr L);

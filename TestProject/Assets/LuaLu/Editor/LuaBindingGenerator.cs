@@ -425,7 +425,7 @@
 					if(!fi.IsStatic) {
 						buffer += "\t\t\t// caller type check\n";
 						buffer += "\t\t#if DEBUG\n";
-						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tn);
 						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", gn);
 						buffer += "\t\t\t\treturn 0;\n";
 						buffer += "\t\t\t}\n";
@@ -461,7 +461,7 @@
 					if(!fi.IsStatic) {
 						buffer += "\t\t\t// caller type check\n";
 						buffer += "\t\t#if DEBUG\n";
-						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tn);
 						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", sn);
 						buffer += "\t\t\t\treturn 0;\n";
 						buffer += "\t\t\t}\n";
@@ -554,7 +554,7 @@
 						// err object
 						buffer += "\t\t\t// caller type check\n";
 						buffer += "\t\t#if DEBUG\n";
-						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tn);
 						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
 						buffer += "\t\t\t\treturn 0;\n";
 						buffer += "\t\t\t}\n";
@@ -593,7 +593,7 @@
 						// err object
 						buffer += "\t\t\t// caller type check\n";
 						buffer += "\t\t#if DEBUG\n";
-						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tn);
+						buffer += string.Format("\t\t\tif(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tn);
 						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
 						buffer += "\t\t\t\treturn 0;\n";
 						buffer += "\t\t\t}\n";
@@ -701,7 +701,7 @@
 					// get lua types
 					buffer += "\t\t\t\t// get lua parameter types\n";
 					buffer += "\t\t\t\tint[] luaTypes;\n";
-					buffer += "\t\t\t\tLuaValueBoxer.GetLuaParameterTypes(L, out luaTypes);\n";
+					buffer += "\t\t\t\tLuaValueBoxer.GetLuaParameterTypes(L, out luaTypes, true);\n";
 
 					// native types
 					buffer += "\n";
@@ -846,6 +846,9 @@
 					buffer += "\t\t\t\tLuaValueBoxer.GetLuaParameterTypes(L, out luaTypes, false);\n";
 					buffer += "\t\t\t\tLuaValueBoxer.GetLuaParameterTypes(L, out staticLuaTypes, true);\n";
 
+					// check first arg if it is user type
+					buffer += string.Format("\t\t\t\tbool mayBeThis = LuaLib.tolua_checkusertype(L, 1, \"{0}\");\n", tfn);
+
 					// native types
 					buffer += "\n";
 					buffer += "\t\t\t\t// native types\n";
@@ -884,7 +887,7 @@
 						if(ml[i].IsStatic) {
 							buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, staticLuaTypes, nativeTypes{0}, true)) {{\n", i);
 						} else {
-							buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, false)) {{\n", i);
+							buffer += string.Format("if(mayBeThis && LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, false)) {{\n", i);
 						}
 
 						// only one method, so it is simple, just pick the only one
@@ -900,7 +903,7 @@
 						if(ml[i].IsStatic) {
 							buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, staticLuaTypes, nativeTypes{0}, true, true)) {{\n", i);
 						} else {
-							buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, false, true)) {{\n", i);
+							buffer += string.Format("if(mayBeThis && LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, false, true)) {{\n", i);
 						}
 
 						// only one method, so it is simple, just pick the only one
@@ -1052,7 +1055,7 @@
 			if(!callM.IsStatic) {
 				buffer += indent + "// caller type check\n";
 				buffer += indent.Substring(1) + "#if DEBUG\n";
-				buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", 0, ref err)) {{\n", tfn);
+				buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tfn);
 				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
 				buffer += indent + "\treturn 0;\n";
 				buffer += indent + "}\n";

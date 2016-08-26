@@ -154,7 +154,7 @@ static int tolua_bnd_isa(lua_State* L) {
     tolua_Error err;
     const char* type = tolua_tostring(L, 2, NULL);
     lua_pop(L, 1);
-    return tolua_isusertype(L, 1, type, 0, &err);
+    return tolua_isusertype(L, 1, type, &err);
 }
 
 /* Type casting

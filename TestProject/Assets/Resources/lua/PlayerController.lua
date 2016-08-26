@@ -5,7 +5,7 @@ PlayerController = class("PlayerController", function() return LuaLu.LuaComponen
 function PlayerController:Start()
   self.countText = GameObject.Find("CountText"):GetComponent("Text")
   self.speed = 10
-  self.rb = self:GetComponent("Rigidbody")
+  self.rb = self:GetComponent(typeof(Rigidbody))
   self.count = 0
   self:setCountText()
 end
