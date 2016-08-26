@@ -49,7 +49,7 @@ function import(pkg)
     -- copy the package imported
     for k,v in pairs(t) do
         if e[k] ~= nil then
-            u3d.log("env key '" .. k .. "' exists, will be overrided by new import"
+            u3d.log("env key '" .. k .. "' exists, will be overrided by new import")
         end
         e[k] = v
     end
