@@ -582,7 +582,7 @@
 		/// <returns>value if the function returns a number, or zero if the function returns other type value</returns>
 		/// <param name="numArgs">number of parameters</param>
 		/// <param name="collector">if the function returns non-number type, can set a collector to convert returned value</param>
-		public int ExecuteFunction(int numArgs, Action<IntPtr> collector = null) {
+		public int ExecuteFunction(int numArgs, Action<IntPtr, int> collector = null) {
 			int functionIndex = -(numArgs + 1);
 			if(!LuaLib.lua_isfunction(L, functionIndex)) {
 				Debug.Log(string.Format("value at stack [{0}] is not function", functionIndex));
@@ -601,8 +601,10 @@
 			}
 
 			int error = 0;
+			int oldTop = LuaLib.lua_gettop(L);
 			++m_callFromLua;
-			error = LuaLib.lua_pcall(L, numArgs, 1, traceback);                  /* L: ... [G] ret */
+			error = LuaLib.lua_pcall(L, numArgs, LuaLib.LUA_MULTRET, traceback);                  /* L: ... [G] ret */
+			int nresult = LuaLib.lua_gettop(L) - oldTop + numArgs + 1;
 			--m_callFromLua;
 			if(error != 0) {
 				if(traceback == 0) {
@@ -617,7 +619,7 @@
 			// get return value
 			int ret = 0;
 			if(collector != null) {
-				collector(L);
+				collector(L, nresult);
 			} else if(LuaLib.lua_isnumber(L, -1)) {
 				ret = (int)LuaLib.lua_tointeger(L, -1);
 			} else if(LuaLib.lua_isboolean(L, -1)) {
@@ -625,7 +627,7 @@
 			}
 
 			// remove return value from stack
-			LuaLib.lua_pop(L, 1);                                                /* L: ... [G] */
+			LuaLib.lua_pop(L, nresult); /* L: ... [G] */
 
 			if(traceback != 0) {
 				LuaLib.lua_pop(L, 1); // remove __G__TRACKBACK__ from stack      /* L: ... */
@@ -634,7 +636,7 @@
 			return ret;
 		}
 
-		public int ExecuteObjectFunction(object obj, string funcName, Array args = null, bool isStatic = false, Action<IntPtr> collector = null) {
+		public int ExecuteObjectFunction(object obj, string funcName, Array args = null, bool isStatic = false, Action<IntPtr, int> collector = null) {
 			// get func
 			PushObject(obj, obj.GetType().GetNormalizedName());
 			PushString(funcName);
@@ -734,7 +736,7 @@
 			LuaLib.lua_pop(L, count);
 		}
 
-		public int ExecuteFunctionByHandler(int nHandler, int numArgs, Action<IntPtr> collector = null) {
+		public int ExecuteFunctionByHandler(int nHandler, int numArgs, Action<IntPtr, int> collector = null) {
 			int ret = 0;
 			if(PushFunctionByHandler(nHandler)) {                                /* L: ... arg1 arg2 ... func */
 				if(numArgs > 0) {
@@ -746,7 +748,7 @@
 			return ret;
 		}
 
-		public bool handleAssert(string msg) {
+		public bool HandleAssert(string msg) {
 			if(m_callFromLua == 0)
 				return false;
 			LuaLib.lua_pushstring(L, string.Format("ASSERT FAILED ON LUA EXECUTE: {0}", msg != null ? msg : "unknown"));

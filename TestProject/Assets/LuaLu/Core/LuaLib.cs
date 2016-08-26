@@ -102,7 +102,7 @@
 	#endif
 	public class LuaLib {
 		// option for multiple returns in `lua_pcall' and `lua_call'
-		public static int LUA_MULTRET = -1;
+		public const int LUA_MULTRET = -1;
 
 		// tolua no peer
 		public const int tolua_NOPEER = (int)LuaIndex.LUA_REGISTRYINDEX;
