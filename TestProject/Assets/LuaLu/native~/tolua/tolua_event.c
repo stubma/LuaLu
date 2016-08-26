@@ -163,6 +163,7 @@ static int class_index_event (lua_State* L)
         }
 #endif
         lua_settop(L,2);                        /* stack: obj key */
+
         /* Try metatables */
         lua_pushvalue(L,1);                     /* stack: obj key obj */
         while (lua_getmetatable(L,-1))
@@ -172,10 +173,12 @@ static int class_index_event (lua_State* L)
             // try to get it from metatable
             lua_pushvalue(L,2);                    /* stack: obj key mt key */
             lua_rawget(L,-2);                      /* stack: obj key mt value */
-            if (!lua_isnil(L,-1))
+            if (!lua_isnil(L,-1)) {
+                lua_remove(L, -2); // obj key value
                 return 1;
-            else
-                lua_pop(L,1);
+            } else {
+                lua_pop(L,1); // obj key mt
+            }
             
             /* try C/C++ variable */
             lua_pushstring(L,".get");
@@ -215,9 +218,7 @@ static int class_index_event (lua_State* L)
         lua_settop(L,2);
         lua_pushnil(L);
         return 1;
-    }
-    else if (t== LUA_TTABLE)
-    {
+    } else if(t == LUA_TTABLE) {
         module_index_event(L);
         return 1;
     }

@@ -185,14 +185,14 @@
 			// filter generic methods, property setter/getter, operator
 			List<MethodInfo> publicMethods = new List<MethodInfo>();
 			Array.ForEach<MethodInfo>(methods, m => {
-				if(!m.IsGenericMethod && !m.IsObsolete() && !m.IsHideBySig) {
+				if(!m.IsGenericMethod && !m.IsObsolete()) {
 					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_") && !m.Name.StartsWith("op_")) {
 						publicMethods.Add(m);
 					}
 				}
 			});
 			Array.ForEach<MethodInfo>(staticMethods, m => {
-				if(!m.IsGenericMethod && !m.IsObsolete() && !m.IsHideBySig) {
+				if(!m.IsGenericMethod && !m.IsObsolete()) {
 					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_") && !m.Name.StartsWith("op_")) {
 						publicMethods.Add(m);
 					}
