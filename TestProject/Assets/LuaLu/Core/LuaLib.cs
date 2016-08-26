@@ -800,9 +800,6 @@
 		public static extern void tolua_dobuffer(IntPtr L, byte[] B, uint size, string name);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int class_gc_event(IntPtr L);
-
-		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int tolua_fast_isa(IntPtr L, int mt_indexa, int mt_indexb, int super_index);
 
 		////////////////////////////////////////////
