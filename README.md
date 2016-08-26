@@ -46,7 +46,7 @@ After coping LuaLu, you should see Lua menu in unity editor, select ```Generate 
 1. 选择一个游戏对象
 2. 在inspector中点击```Add Component```, 选择添加一个Lua/Lua Script组件, 这个组件的实现类是LuaComponent.cs
 3. 添加了这个组件后会立刻弹出一个文件对话框, 提示你创建一个新lua文件, 请注意, lua文件必须放在Assets/Resources下
-4. 完成后, project视图里会显示新创建的lua文件, 你可以开始编辑了, 可以在unity的设置里找到"LuaLu"面板, 里面可以设置lua文件的默认编辑器. 目前有三个选项: 系统缺省, ZeroBraneStudio, 自定义. ZeroBraneStudio可以在github里搜. 之所以做这个设置是考虑以后给不同的编辑器添加代码提示, 首先会给ZeroBraneStudio做.
+4. 完成后, project视图里会显示新创建的lua文件, 你可以开始编辑了, 可以在unity的设置里找到"LuaLu"面板, 里面可以设置lua文件的默认编辑器. 之所以做这个设置是考虑以后给不同的编辑器添加代码提示, 首先会给Sublime Text做.
 5. LuaComponent会把MonoBehaviour的事件都导入到绑定的lua里, 这样你就可以完全用lua脚本操作游戏对象了. 具体看看TestProject就明白了, LuaComponent一般情况下不需要去修改, 它只是起一个初始化和桥接作用.
 
 Guide
@@ -58,5 +58,5 @@ Guide
 1. select a game object
 2. click ```Add Component``` button in inspector, select to add "Lua/Lua Script" component. The component implemention is LuaComponent.cs
 3. it will pops up a file dialog, choose a directory to save your new lua file, NOTE: the lua file must be saved in Assets/Resources folder
-4. now you can edit lua file, there is a LuaLu section in unity preference, you can set favorite lua editor here, currently it only has three options. You can search ZeroBraneStudio in github. I will add code assistant for ZeroBraneStudio first.
+4. now you can edit lua file, there is a LuaLu section in unity preference, you can set favorite lua editor here, currently it only has three options. I will add code assistant for Sublime Text first.
 5. LuaComponent will redirect MonoBehaviour messages to lua side so you can operate game object in lua now. Take a glance at TestProject for a quick understanding. LuaComponent only does some initialization and bridge work so you hardly need to modify it.
