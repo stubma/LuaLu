@@ -137,14 +137,6 @@ static  int lua_isusertable (lua_State* L, int lo, const char* type)
     if (lua_isstring(L,-1))
     {
         r = strcmp(lua_tostring(L,-1),type)==0;
-        if (!r)
-        {
-            /* try const */
-            lua_pushstring(L,"const ");
-            lua_insert(L,-2);
-            lua_concat(L,2);
-            r = lua_isstring(L,-1) && strcmp(lua_tostring(L,-1),type)==0;
-        }
     }
     lua_pop(L, 1);
     return r;

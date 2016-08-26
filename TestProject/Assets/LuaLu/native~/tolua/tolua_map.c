@@ -386,12 +386,8 @@ TOLUA_API int tolua_register_gc (lua_State* L, int lo)
 */
 TOLUA_API void tolua_usertype (lua_State* L, const char* type)
 {
-    char ctype[128] = "const ";
-    strncat(ctype,type,120);
-
-    /* create both metatables */
-    if (tolua_newmetatable(L,ctype) && tolua_newmetatable(L,type))
-        mapsuper(L,type,ctype);             /* 'type' is also a 'const type' */
+    /* create metatables */
+    tolua_newmetatable(L,type);
 }
 
 
@@ -485,19 +481,9 @@ static void push_collector(lua_State* L, const char* type, lua_CFunction col) {
 */
 TOLUA_API void tolua_class (lua_State* L, const char* name, const char* base, lua_CFunction col)
 {
-    char cname[128] = "const ";
-    char cbase[128] = "const ";
-    strncat(cname,name,120);
-    strncat(cbase,base,120);
-
     mapinheritance(L,name,base);
-    mapinheritance(L,cname,name);
-
-    mapsuper(L,cname,cbase);
     mapsuper(L,name,base);
-
     push_collector(L, name, col);
-    push_collector(L, cname, col);
     
     const char* dot = strrchr(name, '.');
     const char* sname = name;
@@ -515,13 +501,6 @@ TOLUA_API void tolua_class (lua_State* L, const char* name, const char* base, lu
     * (not for now)
     */
 TOLUA_API void tolua_addbase(lua_State* L, char* name, char* base) {
-
-    char cname[128] = "const ";
-    char cbase[128] = "const ";
-    strncat(cname,name,120);
-    strncat(cbase,base,120);
-
-    mapsuper(L,cname,cbase);
     mapsuper(L,name,base);
 };
 
