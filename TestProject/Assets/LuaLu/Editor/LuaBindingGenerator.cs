@@ -20,7 +20,15 @@
 		private static Dictionary<string, string> OPERATOR_STRINGS;
 		private static Dictionary<string, bool> OPERATOR_UNARY;
 
+		// types to be generated
+		static List<Type> s_types;
+
+		// delegate types encountered
+		static List<Type> s_delegates;
+
 		static LuaBindingGenerator() {
+			s_types = new List<Type>();
+			s_delegates = new List<Type>();
 			INCLUDE_NAMESPACES = new List<string> {
 				"System",
 				"UnityEngine",
@@ -65,34 +73,52 @@
 			};
 		}
 
-		// types to be generated
-		static List<Type> s_types;
-
 		public static void GenerateUnityLuaBinding() {
 			// find types in wanted namespace
-			s_types = new List<Type>();
-			Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-			foreach(Assembly asm in assemblies) {
-				Type[] types = asm.GetExportedTypes();
-				foreach(Type t in types) {
-					if(INCLUDE_NAMESPACES.Contains(t.Namespace)) {
-						if(!t.IsGenericType && !t.IsObsolete() && !t.IsEnum) {
-							s_types.Add(t);
-						}
-					}
-				}
-			}
+//			Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+//			foreach(Assembly asm in assemblies) {
+//				Type[] types = asm.GetExportedTypes();
+//				foreach(Type t in types) {
+//					if(INCLUDE_NAMESPACES.Contains(t.Namespace)) {
+//						if(!t.IsGenericType && !t.IsObsolete() && !t.IsEnum && !t.IsCustomDelegateType() && !t.HasGenericBaseType() && !t.IsPrimitive) {
+//							s_types.Add(t);
+//						}
+//					}
+//				}
+//			}
 
 			// ensure folder exist
 			if(!Directory.Exists(LuaConst.GENERATED_LUA_BINDING_PREFIX)) {
 				Directory.CreateDirectory(LuaConst.GENERATED_LUA_BINDING_PREFIX);
 			}
 
-			// start generate
+			// test code
+			s_types.Add(typeof(System.Object));
+			s_types.Add(typeof(Component));
+			s_types.Add(typeof(Type));
+			s_types.Add(typeof(LuaComponent));
+			s_types.Add(typeof(GameObject));
+			s_types.Add(typeof(Transform));
+			s_types.Add(typeof(Time));
+			s_types.Add(typeof(Vector3));
+			s_types.Add(typeof(Rigidbody));
+			s_types.Add(typeof(Text));
+			s_types.Add(typeof(Input));
+			s_types.Add(typeof(BoxCollider));
+			s_types.Add(typeof(MulticastDelegate));
+
+			// start generate all classes
 			GenerateTypesLuaBinding();
 
+			// start generate delegate wrapper
+			GenerateLuaDelegateWrapper();
+
 			// clean
-			s_types = null;
+			s_types.Clear();
+			s_delegates.Clear();
+
+			// refresh
+			AssetDatabase.Refresh();
 		}
 
 		private static void GenerateTypesLuaBinding() {
@@ -101,16 +127,11 @@
 
 			// generate every type
 			s_types.ForEach(t => { 
-				Debug.Log("Start to generate type: " + t.FullName);
 				GenerateOneTypeLuaBinding(t);
-				Debug.Log(t.FullName + " Done");
 			});
 
 			// generate register class
 			GenerateRegisterAll();
-
-			// refresh
-			AssetDatabase.Refresh();
 		}
 
 		private static List<Type> SortTypes() {
@@ -157,7 +178,7 @@
 			buffer += "\t\t\tLuaLib.tolua_module(L, null, 0);\n";
 			buffer += "\t\t\tLuaLib.tolua_beginmodule(L, null);\n";
 			foreach(Type t in s_types) {
-				string tfn = t.FullName;
+				string tfn = t.GetNormalizedName();
 				string tClass = "lua_unity_" + tfn.Replace(".", "_") + "_auto";
 				buffer += string.Format("\t\t\t{0}.__Register__(L);\n", tClass);
 			}
@@ -173,8 +194,9 @@
 		}
 
 		private static void GenerateOneTypeLuaBinding(Type t) {
+			// get info
 			string tn = t.Name;
-			string tfn = t.FullName;
+			string tfn = t.GetNormalizedName();
 			string[] nsList = tfn.Split(new Char[] { '.' });
 			Type bt = t.BaseType;
 			string btfn = bt != null ? bt.FullName : "";
@@ -213,7 +235,8 @@
 			List<MethodInfo> publicMethods = new List<MethodInfo>();
 			Array.ForEach<MethodInfo>(methods, m => {
 				if(!m.IsGenericMethod && !m.IsObsolete() && !EXCLUDE_METHODS.Contains(m.Name)) {
-					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_")) {
+					// get_ and set_ are field/property, add_ and remove_ are events
+					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")) {
 						// special check for operator overload
 						if(m.Name.StartsWith("op_")) {
 							string op = m.Name.Substring(3);
@@ -228,7 +251,7 @@
 			});
 			Array.ForEach<MethodInfo>(staticMethods, m => {
 				if(!m.IsGenericMethod && !m.IsObsolete() && !EXCLUDE_METHODS.Contains(m.Name)) {
-					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_")) {
+					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")) {
 						// special check for operator overload
 						if(m.Name.StartsWith("op_")) {
 							string op = m.Name.Substring(3);
@@ -632,7 +655,7 @@
 		}
 
 		private static string GenerateConstructor(Type t, ConstructorInfo[] mList) {
-			string tfn = t.FullName;
+			string tfn = t.GetNormalizedName();
 			string buffer = "";
 			string tfnUnderscore = tfn.Replace(".", "_");
 			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
@@ -774,7 +797,7 @@
 			}
 
 			// other info
-			string tfn = t.FullName;
+			string tfn = t.GetNormalizedName();
 			string buffer = "";
 			string tfnUnderscore = tfn.Replace(".", "_");
 			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
@@ -920,7 +943,7 @@
 		private static string GenerateConstructorInvocation(Type t, ConstructorInfo callM, int paramCount, bool paramTypeCheck) {
 			string mn = callM.Name;
 			string tn = t.Name;
-			string tfn = t.FullName;
+			string tfn = t.GetNormalizedName();
 			string tfnUnderscore = tfn.Replace(".", "_");
 			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
 			string fn = clazz + "." + mn;
@@ -990,7 +1013,7 @@
 
 			// other info
 			string tn = t.Name;
-			string tfn = t.FullName;
+			string tfn = t.GetNormalizedName();
 			string tfnUnderscore = tfn.Replace(".", "_");
 			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
 			string fn = clazz + "." + mn;
@@ -1054,7 +1077,7 @@
 			// call function
 			buffer += indent + "// call function\n";
 			buffer += indent;
-			if(rtn != "System.Void") {
+			if(rtn != "void") {
 				buffer += string.Format("{0} ret = ", rtn);
 			}
 			if(isOperator) {
@@ -1100,7 +1123,7 @@
 			int retured = 1;
 
 			// convert to lua value
-			if(returnType.IsVoid()) {
+			if(rtn == "void") {
 				// do not generate for void return
 				retured = 0;
 			} else if(returnType.IsArray) {
@@ -1148,12 +1171,252 @@
 				buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_list<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
 			} else if(pt.IsDictionary()) {
 				buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_dictionary<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
+			} else if(pt.IsCustomDelegateType()) {
+				// add this delegate type
+				if(!s_delegates.Contains(pt)) {
+					s_delegates.Add(pt);
+				}
+
+				// create lua delegate wrapper for it
+				buffer += indent + string.Format("LuaDelegateWrapper w{0} = new LuaDelegateWrapper(L, {1});\n", argIndex, argIndex + (isStatic ? 1 : 2));
+				buffer += indent + string.Format("arg{0} = new {1}(w{0}.delegate_{2});\n", argIndex, ptn, ptn.Replace(".", "_"));
 			} else {
 				buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_type<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
 			}
 
 			// return
 			return buffer;
+		}
+
+		private static void GenerateLuaDelegateWrapper() {
+			// info
+			string clazz = "LuaDelegateWrapper";
+			string path = LuaConst.GENERATED_LUA_BINDING_PREFIX + clazz + ".cs";
+			string buffer = "";
+			string indent = "";
+
+			// namespace begin
+			buffer += indent + "namespace LuaLu {\n";
+			indent += "\t";
+			buffer += indent + "using System;\n";
+			buffer += indent + "using System.IO;\n";
+			buffer += indent + "using System.Collections;\n";
+			buffer += indent + "using System.Collections.Generic;\n";
+			buffer += indent + "using UnityEngine;\n";
+			buffer += indent + "using LuaInterface;\n\n";
+
+			// class begin
+			buffer += indent + string.Format("public class {0} : IDisposable {{\n", clazz);
+
+			// fields
+			indent += "\t";
+			buffer += indent + "// object if delegate method is on a user type object\n";
+			buffer += indent + "private object targetObj;\n\n";
+			buffer += indent + "// object name if has object\n";
+			buffer += indent + "private string targetObjTypeName;\n\n";
+			buffer += indent + "// table handler if delegate method is in a user table\n";
+			buffer += indent + "private int targetTable;\n\n";
+			buffer += indent + "// delegate lua function handler\n";
+			buffer += indent + "private int funcHandler;\n\n";
+			buffer += indent + "// lua state\n";
+			buffer += indent + "private IntPtr L;\n\n";
+
+			// constructor begin
+			buffer += indent + string.Format("public {0}(IntPtr L, int lo) {{\n", clazz);
+
+			// save lua state
+			indent += "\t";
+			buffer += indent + "// save lua state\n";
+			buffer += indent + "this.L = L;\n\n";
+
+			// get lua function target and handler
+			buffer += indent + "// lua delegate info should packed in a table, with key 'target' and 'handler'\n";
+			buffer += indent + "if(LuaLib.lua_istable(L, lo)) {\n";
+			indent += "\t";
+			buffer += indent + "// get target, it may be usertype or table\n";
+			buffer += indent + "LuaLib.lua_pushstring(L, \"target\");\n";
+			buffer += indent + "LuaLib.lua_gettable(L, lo);\n";
+			buffer += indent + "if(LuaLib.tolua_checkusertype(L, -1, \"System.Object\")) {\n";
+			indent += "\t";
+			buffer += indent + "targetObjTypeName = LuaLib.tolua_typename(L, -1);\n";
+			buffer += indent + "LuaValueBoxer.luaval_to_type<System.Object>(L, -1, out targetObj);\n";
+			indent = indent.Substring(1);
+			buffer += indent + "} else if(LuaLib.lua_istable(L, -1)) {\n";
+			indent += "\t";
+			buffer += indent + "targetTable = LuaLib.toluafix_ref_table(L, -1, 0);\n";
+			indent = indent.Substring(1);
+			buffer += indent + "}\n";
+			buffer += indent + "LuaLib.lua_pop(L, 1);\n";
+			buffer += "\n";
+			buffer += indent + "// get function handler\n";
+			buffer += indent + "LuaLib.lua_pushstring(L, \"handler\");\n";
+			buffer += indent + "LuaLib.lua_gettable(L, lo);\n";
+			buffer += indent + "funcHandler = LuaLib.lua_isnil(L, -1) ? 0 : LuaLib.toluafix_ref_function(L, -1, 0);\n";
+			buffer += indent + "LuaLib.lua_pop(L, 1);\n";
+			indent = indent.Substring(1);
+			buffer += indent + "}\n";
+
+			// constructor end
+			indent = indent.Substring(1);
+			buffer += indent + "}\n\n";
+
+			// dispose start
+			buffer += indent + "public void Dispose() {\n";
+
+			// release table ref
+			indent += "\t";
+			buffer += indent + "if(targetTable > 0) {\n";
+			indent += "\t";
+			buffer += indent + "LuaLib.toluafix_remove_table_by_refid(L, targetTable);\n";
+			buffer += indent + "targetTable = 0;\n";
+			indent = indent.Substring(1);
+			buffer += indent + "}\n";
+
+			// release function ref
+			buffer += indent + "if(funcHandler > 0) {\n";
+			indent += "\t";
+			buffer += indent + "LuaLib.toluafix_remove_function_by_refid(L, funcHandler);\n";
+			buffer += indent + "funcHandler = 0;\n";
+			indent = indent.Substring(1);
+			buffer += indent + "}\n";
+
+			// dispose end
+			indent = indent.Substring(1);
+			buffer += indent + "}\n";
+
+			// generate delegate redirector
+			foreach(Type t in s_delegates) {
+				// info
+				string tn = t.GetNormalizedName();
+				string fn = "delegate_" + tn.Replace(".", "_");
+				MethodInfo m = t.GetMethod("Invoke");
+				Type rt = m.ReturnType;
+				string rtn = rt.GetNormalizedName();
+				ParameterInfo[] pList = m.GetParameters();
+
+				// method start, without args
+				buffer += "\n";
+				buffer += indent + string.Format("public {0} {1}(", rtn, fn);
+				for(int i = 0; i < pList.Length; i++) {
+					Type pt = pList[i].ParameterType;
+					string ptn = pt.GetNormalizedName();
+					buffer += string.Format("{0} arg{1}", ptn, i);
+					if(i < pList.Length - 1) {
+						buffer += ", ";
+					}
+				}
+
+				// args end
+				buffer += ") {\n";
+
+				// value to be returned
+				indent += "\t";
+				if(rtn != "void") {
+					buffer += indent + "// value to be returned\n";
+					buffer += indent + string.Format("{0} ret = default({0});\n\n", rtn);
+				}
+
+				// call function, push function first
+				buffer += indent + "// if func handler is set, deliver it to it\n";
+				buffer += indent + "int argc = 0;\n";
+				buffer += indent + "if(funcHandler > 0) {\n";
+				indent += "\t";
+				buffer += indent + "// push function\n";
+				buffer += indent + "LuaLib.toluafix_get_function_by_refid(L, funcHandler);\n\n";
+
+				// push target if not null, it can be null if static method
+				buffer += indent + "// push target\n";
+				buffer += indent + "LuaStack s = LuaStack.FromState(L);\n";
+				buffer += indent + "if(targetObj != null) {\n";
+				indent += "\t";
+				buffer += indent + "s.PushObject(targetObj, targetObjTypeName);\n";
+				buffer += indent + "argc++;\n";
+				indent = indent.Substring(1);
+				buffer += indent + "} else if(targetTable > 0) {\n";
+				indent += "\t";
+				buffer += indent + "LuaLib.toluafix_get_table_by_refid(L, targetTable);\n";
+				buffer += indent + "argc++;\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+
+				// push arguments
+				if(pList.Length > 0) {
+					buffer += "\n";
+					buffer += indent + "// push arguments\n";
+					buffer += indent + string.Format("argc += {0};\n", pList.Length);
+					for(int i = 0; i < pList.Length; i++) {
+						Type pt = pList[i].ParameterType;
+						string ptn = pt.GetNormalizedName();
+						if(pt.IsArray) {
+							Type et = pt.GetElementType();
+							string etn = et.GetNormalizedName();
+							buffer += string.Format(indent + "LuaValueBoxer.array_to_luaval<{0}>(L, arg{1});\n", etn, i);
+						} else {
+							buffer += string.Format(indent + "LuaValueBoxer.type_to_luaval<{0}>(L, arg{1});\n", ptn, i);
+						}
+					}
+				}
+
+				// execute
+				buffer += "\n";
+				buffer += indent + "// execute function\n";
+				buffer += indent + "s.ExecuteFunction(argc";
+				if(rtn == "void") {
+					buffer += ");\n";
+				} else {
+					// lamba start
+					buffer += ", (state, nresult) => {\n";
+					indent += "\t";
+
+					// check return type
+					if(rt.IsArray) {
+						Type et = rt.GetElementType();
+						string etn = et.GetNormalizedName();
+						if(et.IsArray) {
+							// TODO more than one dimension array? not supported yet
+						} else {
+							buffer += string.Format(indent + "LuaValueBoxer.luaval_to_array<{0}>(state, -1, out ret);\n", etn);
+						}
+					} else if(rt.IsList()) {
+						buffer += string.Format(indent + "LuaValueBoxer.luaval_to_list<{0}>(state, -1, out ret);\n", rtn);
+					} else if(rt.IsDictionary()) {
+						buffer += string.Format(indent + "LuaValueBoxer.luaval_to_dictionary<{0}>(state, -1, out ret);\n", rtn);
+					} else if(rt.IsCustomDelegateType()) {
+						// create lua delegate wrapper for it
+						buffer += indent + "LuaDelegateWrapper w = new LuaDelegateWrapper(state, -1);\n";
+						buffer += indent + string.Format("ret = new {0}(w.delegate_{1});\n", rtn, rtn.Replace(".", "_"));
+					} else {
+						buffer += string.Format(indent + "LuaValueBoxer.luaval_to_type<{0}>(state, -1, out ret);\n", rtn);
+					}
+
+					// lamba end
+					indent = indent.Substring(1);
+					buffer += indent + "});\n";
+				}
+
+				// call function end
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+
+				// return
+				if(rtn != "void") {
+					buffer += indent + "return ret;\n";
+				}
+
+				// method end
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+			}
+
+			// class end
+			indent = indent.Substring(1);
+			buffer += indent + "}\n";
+
+			// namespace end
+			buffer += "}\n";
+
+			// write to file
+			File.WriteAllText(path, buffer);
 		}
 	}
 }

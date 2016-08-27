@@ -34,6 +34,10 @@
 			return fn;
 		}
 
+		public delegate void TestDelegate(int i);
+		public void TestDelegateMethod(TestDelegate d) {
+		}
+
 		static LuaComponent() {
 			s_fileIndex = 1;
 		}
@@ -52,7 +56,6 @@
 			} else {
 				m_valid = true;
 			}
-
 		}
 
 		void Awake() {

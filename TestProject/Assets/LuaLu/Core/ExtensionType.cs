@@ -16,6 +16,10 @@ public static class ExtensionType {
 		return typeof(Delegate).IsAssignableFrom(t);
 	}
 
+	public static bool IsCustomDelegateType(this Type t) {
+		return t.IsDelegate() && t != typeof(Delegate) && t != typeof(MulticastDelegate);
+	}
+
 	public static Type GetType(string name) {
 		if(name.StartsWith("UnityEngine.") || name.StartsWith("UnityEditor")) {
 			string ns = name.Substring(0, name.LastIndexOf("."));
@@ -25,12 +29,18 @@ public static class ExtensionType {
 		}
 	}
 
-	public static bool IsVoid(this Type t) {
-		return t == typeof(void);
-	}
-
 	public static bool IsList(this Type t) {
 		return typeof(IList).IsAssignableFrom(t);
+	}
+
+	public static bool HasGenericBaseType(this Type t) {
+		if(t.IsGenericType) {
+			return true;
+		} else if(t.BaseType == null) {
+			return false;
+		} else {
+			return t.BaseType.HasGenericBaseType();
+		}
 	}
 
 	public static string GetNormalizedName(this Type t) {

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 public static class ExtensionString {
 	private static Dictionary<string, string> TYPE_MAPPING = new Dictionary<string, string> {
+		{ "System.Void", "void" },
 		{ "System.Single", "float" },
 		{ "System.String", "string" },
 		{ "System.Int32", "int" },

@@ -418,6 +418,9 @@
 					LuaLib.lua_pushnumber(L, Convert.ToDouble(e.Current));
 				} else if(tn == "string") {
 					LuaLib.lua_pushstring(L, (string)e.Current);
+				} else if(tn == "void") {
+					// impossible
+					Debug.Assert(false, "void type in in list, that should not be possible");
 				} else if(t.IsEnum) {
 					LuaLib.lua_pushinteger(L, (int)e.Current);
 				} else if(t.IsArray) {
@@ -518,6 +521,9 @@
 					LuaLib.lua_pushnumber(L, Convert.ToDouble(e.Value));
 				} else if(vtn == "string") {
 					LuaLib.lua_pushstring(L, (string)e.Value);
+				} else if(vtn == "void") {
+					// impossible
+					Debug.Assert(false, "void type in in list, that should not be possible");
 				} else if(vt.IsEnum) {
 					LuaLib.lua_pushinteger(L, (int)e.Value);
 				} else if(vt.IsArray) {
@@ -564,7 +570,7 @@
 				LuaLib.lua_pushnumber(L, Convert.ToDouble(v));
 			} else if(tn == "string") {
 				LuaLib.lua_pushstring(L, Convert.ToString(v));
-			} else if(t.IsVoid()) {
+			} else if(tn == "void") {
 				// do nothing for void
 			} else if(t.IsEnum) {
 				LuaLib.lua_pushinteger(L, Convert.ToInt32(v));
@@ -664,7 +670,7 @@
 						}
 					} else if(luaType == (int)LuaTypes.LUA_TTABLE) {
 						Type t = ExtensionType.GetType(tfn);
-						if(!t.IsList() && !t.IsDictionary()) {
+						if(!t.IsList() && !t.IsDictionary() && !t.IsCustomDelegateType()) {
 							matched = false;
 							break;
 						}
