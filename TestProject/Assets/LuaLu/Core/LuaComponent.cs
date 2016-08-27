@@ -80,7 +80,9 @@
 				L.BindInstanceToLuaClass(this, clazz);
 
 				// run lua side method
+				#if !UNITY_EDITOR
 				L.ExecuteObjectFunction(this, "Awake");
+				#endif
 			}
 		}
 
@@ -343,28 +345,6 @@
 			// run lua side method
 			LuaStack L = LuaStack.SharedInstance();
 			L.ExecuteObjectFunction(this, "OnDisconnectedFromServer", new object[] { info });
-		}
-
-		void OnDrawGizmos() {
-			// if not valid, return
-			if(!m_valid) {
-				return;
-			}
-
-			// run lua side method
-			LuaStack L = LuaStack.SharedInstance();
-			L.ExecuteObjectFunction(this, "OnDrawGizmos");
-		}
-
-	 	void OnDrawGizmosSelected() {
-			// if not valid, return
-			if(!m_valid) {
-				return;
-			}
-
-			// run lua side method
-			LuaStack L = LuaStack.SharedInstance();
-			L.ExecuteObjectFunction(this, "OnDrawGizmosSelected");
 		}
 
 		void OnEnable() {
