@@ -27,6 +27,7 @@
 		private Dictionary<int, object> m_refIdObjMap;
 		private Dictionary<int, int> m_objRefCountMap;
 		private Dictionary<int, string> m_objNameMap;
+		private Dictionary<int, bool> m_keepAliveObjs;
 
 		// hash of object which should be released next update
 		private Dictionary<int, int> m_autoReleasePool;
@@ -131,6 +132,7 @@
 			m_objNameMap = new Dictionary<int, string>();
 			m_objRefIdMap = new Dictionary<object, int>();
 			m_autoReleasePool = new Dictionary<int, int>();
+			m_keepAliveObjs = new Dictionary<int, bool>();
 			m_callFromLua = 0;
 
 			// set log function
@@ -358,7 +360,7 @@
 			}
 		}
 
-		public void RemoveObject(int refId) {
+		void RemoveObject(int refId) {
 			if(m_objRefCountMap[refId] > 0) {
 				// sometimes, lua side perform a gc to collect userdata, then
 				// native side want to refer this object again, to recover from
@@ -376,7 +378,7 @@
 			}
 		}
 
-		public int RegisterObject(object obj, string typeName) {
+		int RegisterObject(object obj, string typeName) {
 			// if obj is not in ref id map, then allocate a ref id to object
 			// we can't use hashcode, because hashcode may duplicated
 			int refId = 0;
@@ -389,8 +391,13 @@
 
 			// now map it by ref id
 			if(m_refIdObjMap.ContainsKey(refId)) {
-				int rc = m_objRefCountMap[refId];
-				m_objRefCountMap[refId] = rc + 1;
+				// if this object is kept alive, set it ref count to 1 always
+				if(m_keepAliveObjs.ContainsKey(refId)) {
+					m_objRefCountMap[refId] = 1;
+				} else {
+					int rc = m_objRefCountMap[refId];
+					m_objRefCountMap[refId] = rc + 1;
+				}
 			} else {
 				m_refIdObjMap[refId] = obj;
 				m_objRefCountMap[refId] = 1;
@@ -401,9 +408,22 @@
 			return refId;
 		}
 
+		/// <summary>
+		/// Push an object onto lua stack
+		/// </summary>
+		/// <param name="obj">Object to be push</param>
+		/// <param name="typeName">object type name</param>
+		/// <param name="keepAlive">If set to <c>true</c>, the object will always keep retain count 1 so that
+		/// lua side info will not be recycled. Until you call <c>ReleaseObject</c> it will not be removed from
+		/// lua side.</param>
 		public void PushObject(object obj, string typeName, bool keepAlive = false) {
 			// register object
 			int refId = RegisterObject(obj, typeName);
+
+			// if object is pushed before with keepAlive flag set, then it should be always kept alive
+			if(m_keepAliveObjs.ContainsKey(refId)) {
+				keepAlive = true;
+			}
 
 			// actually we alwasy add this type to root, but if keepAlive is false, it will be removed
 			// from root next update. This mechanism is way like cocos2dx autorelease and its purpose is
@@ -411,6 +431,23 @@
 			LuaLib.tolua_pushusertype(L, refId, typeName, true);
 			if(!keepAlive) {
 				AutoRelease(refId);
+			} else {
+				m_keepAliveObjs[refId] = true;
+			}
+		}
+
+		/// <summary>
+		/// Release a object which is kept alive. If an object is not kept alive, this
+		/// method does nothing
+		/// </summary>
+		/// <param name="obj">Object to be cancelled from keep alive state</param>
+		public void ReleaseObject(object obj) {
+			if(m_objRefIdMap.ContainsKey(obj)) {
+				int refId = m_objRefIdMap[obj];
+				if(m_keepAliveObjs.ContainsKey(refId)) {
+					m_keepAliveObjs.Remove(refId);
+					AutoRelease(refId);
+				}
 			}
 		}
 
@@ -428,7 +465,7 @@
 		/// record a object need to be auto released next update
 		/// </summary>
 		/// <param name="hash">object hash</param>
-		public void AutoRelease(int hash) {
+		void AutoRelease(int hash) {
 			if(m_autoReleasePool.ContainsKey(hash)) {
 				int ar = m_autoReleasePool[hash];
 				m_autoReleasePool[hash] = ar + 1;

@@ -420,6 +420,9 @@
 					LuaLib.lua_pushstring(L, (string)e.Current);
 				} else if(t.IsEnum) {
 					LuaLib.lua_pushinteger(L, (int)e.Current);
+				} else if(t.IsArray) {
+					Array a = (Array)e.Current;
+					list_to_luaval(L, a as IEnumerable);
 				} else if(t.IsList() && t.IsEnumerable()) {
 					list_to_luaval(L, e.Current as IEnumerable);
 				} else if(t.IsDictionary()) {
@@ -493,53 +496,43 @@
 				string vtn = vt.GetNormalizedName();
 				if(vtn == "byte") {
 					LuaLib.lua_pushinteger(L, Convert.ToByte(e.Value));
-					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "sbyte") {
 					LuaLib.lua_pushinteger(L, Convert.ToSByte(e.Value));
-					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "char") {
 					LuaLib.lua_pushstring(L, Convert.ToChar(e.Value).ToString());
-					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "short") {
 					LuaLib.lua_pushinteger(L, Convert.ToInt16(e.Value));
-					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "ushort") {
 					LuaLib.lua_pushinteger(L, Convert.ToUInt16(e.Value));
-					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "bool") {
 					LuaLib.lua_pushboolean(L, Convert.ToBoolean(e.Value));
-					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "int" || vtn == "decimal") {
 					LuaLib.lua_pushinteger(L, Convert.ToInt32(e.Value));
-					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "uint") {
 					LuaLib.lua_pushinteger(L, (int)Convert.ToUInt32(e.Value));
-					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "long") {
 					LuaLib.lua_pushinteger(L, (int)Convert.ToInt64(e.Value));
-					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "ulong") {
 					LuaLib.lua_pushinteger(L, (int)Convert.ToUInt64(e.Value));
-					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "float" || vtn == "double") {
 					LuaLib.lua_pushnumber(L, Convert.ToDouble(e.Value));
-					LuaLib.lua_rawset(L, -3);
 				} else if(vtn == "string") {
 					LuaLib.lua_pushstring(L, (string)e.Value);
-					LuaLib.lua_rawset(L, -3);
 				} else if(vt.IsEnum) {
 					LuaLib.lua_pushinteger(L, (int)e.Value);
-					LuaLib.lua_rawset(L, -3);
+				} else if(vt.IsArray) {
+					Array a = (Array)e.Value;
+					list_to_luaval(L, a as IEnumerable);
 				} else if(vt.IsList() && vt.IsEnumerable()) {
 					list_to_luaval(L, e.Value as IEnumerable);
-					LuaLib.lua_rawset(L, -3);
 				} else if(vt.IsDictionary()) {
 					dictionary_to_luaval(L, e.Value as IDictionary);
-					LuaLib.lua_rawset(L, -3);
 				} else {
 					object_to_luaval(L, vtn, e.Value);
-					LuaLib.lua_rawset(L, -3);
 				}
+
+				// set to dict
+				LuaLib.lua_rawset(L, -3);
 			}
 		}
 
@@ -575,6 +568,9 @@
 				// do nothing for void
 			} else if(t.IsEnum) {
 				LuaLib.lua_pushinteger(L, Convert.ToInt32(v));
+			} else if(t.IsArray) {
+				Array a = v as Array;
+				list_to_luaval(L, a as IEnumerable);
 			} else if(t.IsList() && t.IsEnumerable()) {
 				list_to_luaval(L, v as IEnumerable);
 			} else if(t.IsDictionary()) {

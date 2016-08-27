@@ -22,7 +22,9 @@
 
 		static LuaBindingGenerator() {
 			INCLUDE_NAMESPACES = new List<string> {
-				"System"
+				"System",
+				"UnityEngine",
+				"UnityEngine.UI"
 			};
 			EXCLUDE_METHODS = new List<string> {
 				"OnRebuildRequested",
@@ -67,14 +69,15 @@
 		static List<Type> s_types;
 
 		public static void GenerateUnityLuaBinding() {
+			// find types in wanted namespace
+			s_types = new List<Type>();
 			Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
 			foreach(Assembly asm in assemblies) {
 				Type[] types = asm.GetExportedTypes();
 				foreach(Type t in types) {
 					if(INCLUDE_NAMESPACES.Contains(t.Namespace)) {
-						if(t.IsGenericType) {
-							// TODO
-						} else {
+						if(!t.IsGenericType && !t.IsObsolete() && !t.IsEnum) {
+							s_types.Add(t);
 						}
 					}
 				}
@@ -83,28 +86,6 @@
 			// ensure folder exist
 			if(!Directory.Exists(LuaConst.GENERATED_LUA_BINDING_PREFIX)) {
 				Directory.CreateDirectory(LuaConst.GENERATED_LUA_BINDING_PREFIX);
-			}
-
-			// test code
-			s_types = new List<Type>();
-			s_types.Add(typeof(System.Object));
-			s_types.Add(typeof(Component));
-			s_types.Add(typeof(Type));
-			s_types.Add(typeof(LuaComponent));
-			s_types.Add(typeof(GameObject));
-			s_types.Add(typeof(Transform));
-			s_types.Add(typeof(Time));
-			s_types.Add(typeof(Vector3));
-			s_types.Add(typeof(Rigidbody));
-			s_types.Add(typeof(Text));
-			s_types.Add(typeof(Input));
-			s_types.Add(typeof(BoxCollider));
-
-			// filter types
-			for(int i = s_types.Count - 1; i >= 0; i--) {
-				if(s_types[i].IsObsolete()) {
-					s_types.RemoveAt(i);
-				}
 			}
 
 			// start generate

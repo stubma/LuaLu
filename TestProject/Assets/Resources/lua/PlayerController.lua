@@ -1,4 +1,5 @@
 import("UnityEngine")
+import("UnityEngine.Object")
 
 PlayerController = class("PlayerController", function() return LuaLu.LuaComponent.new() end)
 
@@ -27,7 +28,7 @@ end
 function PlayerController:OnTriggerEnter(other)
 	if other.gameObject.tag == "PickUp" then
 		self.count = self.count + 1
-		other.gameObject:SetActive(false)
+		Destroy(other.gameObject)
 		self:setCountText()
 	end
 end
