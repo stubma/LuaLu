@@ -83,7 +83,11 @@
 				L.BindInstanceToLuaClass(this, clazz);
 
 				// run lua side method
-				#if !UNITY_EDITOR
+				#if UNITY_EDITOR
+				if(Application.isPlaying) {
+					L.ExecuteObjectFunction(this, "Awake");
+				}
+				#else
 				L.ExecuteObjectFunction(this, "Awake");
 				#endif
 			}
