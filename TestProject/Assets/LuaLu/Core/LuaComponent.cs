@@ -78,6 +78,9 @@
 				// the class name must be same as lua file name
 				string clazz = Path.GetFileNameWithoutExtension(m_luaFile);
 				L.BindInstanceToLuaClass(this, clazz);
+
+				// run lua side Start
+				L.ExecuteObjectFunction(this, "Awake");
 			}
 		}
 
