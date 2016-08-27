@@ -12,6 +12,10 @@ public static class ExtensionType {
 		return typeof(IEnumerable).IsAssignableFrom(t);
 	}
 
+	public static bool IsDelegate(this Type t) {
+		return typeof(Delegate).IsAssignableFrom(t);
+	}
+
 	public static Type GetType(string name) {
 		if(name.StartsWith("UnityEngine.") || name.StartsWith("UnityEditor")) {
 			string ns = name.Substring(0, name.LastIndexOf("."));
