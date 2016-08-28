@@ -124,7 +124,8 @@
 
 			// filter types
 			types.ForEach(t => {
-				if(!t.IsGenericType && 
+				if(INCLUDE_NAMESPACES.Contains(t.Namespace) &&
+					!t.IsGenericType && 
 					!t.IsObsolete() &&
 					!t.IsEnum && 
 					!t.IsCustomDelegateType() && 
