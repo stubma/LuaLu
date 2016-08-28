@@ -45,9 +45,14 @@ public static class ExtensionType {
 
 	public static string GetNormalizedName(this Type t) {
 		if(t.IsArray) {
-			t = t.GetElementType();
-			string str = GetNormalizedName(t);
-			str += "[]";
+			Type et = t.GetElementType();
+			string str = et.GetNormalizedName();
+			str += "[";
+			int rank = t.GetArrayRank();
+			for(int i = 1; i < rank; i++) {
+				str += ",";
+			}
+			str += "]";
 			return str;
 		} else if(t.IsGenericType) {
 			return t.GetGenericName();

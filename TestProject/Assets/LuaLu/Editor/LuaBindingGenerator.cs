@@ -18,6 +18,9 @@
 		// weird method need to be excluded, otherwise get error when build
 		private static List<string> EXCLUDE_METHODS;
 
+		// property excluded
+		private static List<string> EXCLUDE_PROPERTIES;
+
 		// support operator overload
 		private static Dictionary<string, string> SUPPORTED_OPERATORS;
 		private static Dictionary<string, string> OPERATOR_STRINGS;
@@ -38,13 +41,32 @@
 				"UnityEngine.UI"
 			};
 			EXCLUDE_CLASSES = new List<string> {
-				"System.String",
-				"System.Decimal"
+				"string",
+				"decimal",
+				"void",
+				"System.ArgIterator",
+				"System.Array",
+				"System.ComponentModel.TypeConverter",
+				"System.UriTypeConverter",
+				"System.Console",
+				"System.GopherStyleUriParser",
+				"System.LdapStyleUriParser",
+				"System.RuntimeTypeHandle",
+				"System.TypedReference",
+				"UnityEngine.MeshSubsetCombineUtility",
+				"UnityEngine.MeshSubsetCombineUtility.MeshInstance",
+				"UnityEngine.MeshSubsetCombineUtility.SubMeshInstance",
+				"UnityEngine.TerrainData"
 			};
 			EXCLUDE_METHODS = new List<string> {
 				"OnRebuildRequested",
 				"IsJoystickPreconfigured",
-				"CreateComInstanceFrom"
+				"CreateComInstanceFrom",
+				"CreateDomain"
+			};
+			EXCLUDE_PROPERTIES = new List<string> {
+				"ApplicationTrust",
+				"SystemDirectory"
 			};
 			SUPPORTED_OPERATORS = new Dictionary<string, string> {
 				{ "Addition", "__add" },
@@ -83,27 +105,36 @@
 
 		public static void GenerateUnityLuaBinding() {
 			// find types in wanted namespace
+			List<Type> types = new List<Type>();
 			Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
 			foreach(Assembly asm in assemblies) {
-				Type[] types = asm.GetExportedTypes();
-				foreach(Type t in types) {
+				Type[] tArray = asm.GetExportedTypes();
+				foreach(Type t in tArray) {
 					if(INCLUDE_NAMESPACES.Contains(t.Namespace)) {
-						if(!t.IsGenericType && 
-							!t.IsObsolete() &&
-							!t.IsEnum && 
-							!t.IsCustomDelegateType() && 
-							!t.HasGenericBaseType() && 
-							!t.IsPrimitive &&
-							!t.Name.StartsWith("_") &&
-							!EXCLUDE_CLASSES.Contains(t.FullName)) {
-							s_types.Add(t);
-						}
+						types.Add(t);
 					}
 				}
 			}
 
 			// add lua component
-			s_types.Add(typeof(LuaComponent));
+			types.Add(typeof(LuaComponent));
+
+			// sort them
+			types = SortTypes(types);
+
+			// filter types
+			types.ForEach(t => {
+				if(!t.IsGenericType && 
+					!t.IsObsolete() &&
+					!t.IsEnum && 
+					!t.IsCustomDelegateType() && 
+					!t.HasGenericBaseType() && 
+					!t.IsPrimitive &&
+					!t.Name.StartsWith("_") &&
+					!EXCLUDE_CLASSES.Contains(t.GetNormalizedName())) {
+					s_types.Add(t);
+				}
+			});
 
 			// ensure folder exist
 			if(!Directory.Exists(LuaConst.GENERATED_LUA_BINDING_PREFIX)) {
@@ -123,6 +154,7 @@
 //			s_types.Add(typeof(Input));
 //			s_types.Add(typeof(BoxCollider));
 //			s_types.Add(typeof(MulticastDelegate));
+//			s_types.Add(typeof(Vector3));
 
 			// start generate all classes
 			GenerateTypesLuaBinding();
@@ -139,9 +171,6 @@
 		}
 
 		private static void GenerateTypesLuaBinding() {
-			// sort types
-			s_types = SortTypes();
-
 			// generate every type
 			s_types.ForEach(t => { 
 				GenerateOneTypeLuaBinding(t);
@@ -151,9 +180,9 @@
 			GenerateRegisterAll();
 		}
 
-		private static List<Type> SortTypes() {
+		private static List<Type> SortTypes(List<Type> types) {
 			List<Type> sortedTypes = new List<Type>();
-			foreach(Type t in s_types) {
+			foreach(Type t in types) {
 				List<Type> pList = SortParentTypes(t);
 				pList.ForEach(p => {
 					if(!sortedTypes.Contains(p)) {
@@ -255,7 +284,7 @@
 					!m.IsObsolete() && 
 					!EXCLUDE_METHODS.Contains(m.Name) && 
 					!m.Name.StartsWith("get_") && 
-					!m.Name.StartsWith("set_") && 
+					!m.Name.StartsWith("set_") &&
 					!m.Name.StartsWith("add_") && 
 					!m.Name.StartsWith("remove_")) {
 					// special check for operator overload
@@ -274,7 +303,7 @@
 					!m.IsObsolete() && 
 					!EXCLUDE_METHODS.Contains(m.Name) && 
 					!m.Name.StartsWith("get_") && 
-					!m.Name.StartsWith("set_") && 
+					!m.Name.StartsWith("set_") &&
 					!m.Name.StartsWith("add_") && 
 					!m.Name.StartsWith("remove_")) {
 					// special check for operator overload
@@ -308,11 +337,23 @@
 			}
 
 			// get properties
-			PropertyInfo[] props = t.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance);
+			List<PropertyInfo> props = new List<PropertyInfo>();
+			Array.ForEach<PropertyInfo>(t.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance),
+				p => {
+					if(!p.IsObsolete() && !EXCLUDE_PROPERTIES.Contains(p.Name)) {
+						props.Add(p);
+					}
+				});
 			buffer += GenerateProperties(t, props);
 
 			// static properties
-			PropertyInfo[] staticProps = t.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
+			List<PropertyInfo> staticProps = new List<PropertyInfo>();
+			Array.ForEach<PropertyInfo>(t.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static),
+				p => {
+					if(!p.IsObsolete() && !EXCLUDE_PROPERTIES.Contains(p.Name)) {
+						staticProps.Add(p);
+					}
+				});
 			buffer += GenerateProperties(t, staticProps);
 
 			// get fields
@@ -460,12 +501,14 @@
 						buffer += "\t\t#endif\n";
 						buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
 						buffer += string.Format("\t\t\t{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tn);
-						buffer += "\t\t#if DEBUG\n";
-						buffer += "\t\t\tif(obj == null) {\n";
-						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", gn);
-						buffer += "\t\t\t\treturn 0;\n";
-						buffer += "\t\t\t}\n";
-						buffer += "\t\t#endif\n\n";
+						if(!t.IsValueType) {
+							buffer += "\t\t#if DEBUG\n";
+							buffer += "\t\t\tif(obj == null) {\n";
+							buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", gn);
+							buffer += "\t\t\t\treturn 0;\n";
+							buffer += "\t\t\t}\n";
+							buffer += "\t\t#endif\n\n";
+						}
 					}
 
 					// call function
@@ -496,12 +539,14 @@
 						buffer += "\t\t#endif\n";
 						buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
 						buffer += string.Format("\t\t\t{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tn);
-						buffer += "\t\t#if DEBUG\n";
-						buffer += "\t\t\tif(obj == null) {\n";
-						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", sn);
-						buffer += "\t\t\t\treturn 0;\n";
-						buffer += "\t\t\t}\n";
-						buffer += "\t\t#endif\n\n";
+						if(!t.IsValueType) {
+							buffer += "\t\t#if DEBUG\n";
+							buffer += "\t\t\tif(obj == null) {\n";
+							buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", sn);
+							buffer += "\t\t\t\treturn 0;\n";
+							buffer += "\t\t\t}\n";
+							buffer += "\t\t#endif\n\n";
+						}
 					}
 
 					// find conversion by property type name
@@ -517,7 +562,11 @@
 							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_array<{0}>(L, 2, out ret, \"{1}\");\n", etn, sn);
 						}
 					} else if(ft.IsList()) {
-						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, 2, out ret, \"{1}\");\n", ftn, sn);
+						if(ftn == "System.Array") {
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list(L, 2, out ret, \"{0}\");\n", sn);
+						} else {
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, 2, out ret, \"{1}\");\n", ftn, sn);
+						}
 					} else if(ft.IsDictionary()) {
 						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<{0}>(L, 2, out ret, \"{1}\");\n", ftn, sn);
 					} else {
@@ -546,16 +595,11 @@
 			return buffer;
 		}
 
-		private static string GenerateProperties(Type t, PropertyInfo[] props) {
+		private static string GenerateProperties(Type t, List<PropertyInfo> props) {
 			string buffer = "";
 
 			// generate every property
 			foreach(PropertyInfo pi in props) {
-				// skip some
-				if(pi.IsObsolete()) {
-					continue;
-				}
-
 				// get info
 				MethodInfo getter = pi.GetGetMethod();
 				MethodInfo setter = pi.GetSetMethod();
@@ -589,12 +633,14 @@
 						buffer += "\t\t#endif\n";
 						buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
 						buffer += string.Format("\t\t\t{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tn);
-						buffer += "\t\t#if DEBUG\n";
-						buffer += "\t\t\tif(obj == null) {\n";
-						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", fn);
-						buffer += "\t\t\t\treturn 0;\n";
-						buffer += "\t\t\t}\n";
-						buffer += "\t\t#endif\n\n";
+						if(!t.IsValueType) {
+							buffer += "\t\t#if DEBUG\n";
+							buffer += "\t\t\tif(obj == null) {\n";
+							buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", fn);
+							buffer += "\t\t\t\treturn 0;\n";
+							buffer += "\t\t\t}\n";
+							buffer += "\t\t#endif\n\n";
+						}
 					}
 
 					// call function
@@ -628,12 +674,14 @@
 						buffer += "\t\t#endif\n";
 						buffer += "\t\t\tint refId = LuaLib.tolua_tousertype(L, 1);\n";
 						buffer += string.Format("\t\t\t{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tn);
-						buffer += "\t\t#if DEBUG\n";
-						buffer += "\t\t\tif(obj == null) {\n";
-						buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", fn);
-						buffer += "\t\t\t\treturn 0;\n";
-						buffer += "\t\t\t}\n";
-						buffer += "\t\t#endif\n\n";
+						if(!t.IsValueType) {
+							buffer += "\t\t#if DEBUG\n";
+							buffer += "\t\t\tif(obj == null) {\n";
+							buffer += string.Format("\t\t\t\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", fn);
+							buffer += "\t\t\t\treturn 0;\n";
+							buffer += "\t\t\t}\n";
+							buffer += "\t\t#endif\n\n";
+						}
 					}
 
 					// find conversion by property type name
@@ -649,7 +697,11 @@
 							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_array<{0}>(L, 2, out ret, \"{1}\");\n", etn, fn);
 						}
 					} else if(pt.IsList()) {
-						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, 2, out ret, \"{1}\");\n", ptn, fn);
+						if(ptn == "System.Array") {
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list(L, 2, out ret, \"{0}\");\n", fn);
+						} else {
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, 2, out ret, \"{1}\");\n", ptn, fn);
+						}
 					} else if(pt.IsDictionary()) {
 						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<{0}>(L, 2, out ret, \"{1}\");\n", ptn, fn);
 					} else {
@@ -1089,12 +1141,14 @@
 				buffer += indent.Substring(1) + "#endif\n";
 				buffer += indent + "int refId = LuaLib.tolua_tousertype(L, 1);\n";
 				buffer += string.Format(indent + "{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tfn);
-				buffer += indent.Substring(1) + "#if DEBUG\n";
-				buffer += indent + "if(obj == null) {\n";
-				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", fn);
-				buffer += indent + "\treturn 0;\n";
-				buffer += indent + "}\n";
-				buffer += indent.Substring(1) + "#endif\n\n";
+				if(!t.IsValueType) {
+					buffer += indent.Substring(1) + "#if DEBUG\n";
+					buffer += indent + "if(obj == null) {\n";
+					buffer += string.Format(indent + "\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", fn);
+					buffer += indent + "\treturn 0;\n";
+					buffer += indent + "}\n";
+					buffer += indent.Substring(1) + "#endif\n\n";
+				}
 			}
 
 			// call function
@@ -1192,7 +1246,11 @@
 					buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_array<{0}>(L, {1}, out arg{2}, \"{3}\");\n", etn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
 				}
 			} else if(pt.IsList()) {
-				buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_list<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
+				if(ptn == "System.Array") {
+					buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_list(L, {0}, out arg{1}, \"{2}\");\n", argIndex + (isStatic ? 1 : 2), argIndex, methodName);
+				} else {
+					buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_list<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
+				}
 			} else if(pt.IsDictionary()) {
 				buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_dictionary<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
 			} else if(pt.IsCustomDelegateType()) {
@@ -1402,7 +1460,11 @@
 							buffer += string.Format(indent + "LuaValueBoxer.luaval_to_array<{0}>(state, -1, out ret);\n", etn);
 						}
 					} else if(rt.IsList()) {
-						buffer += string.Format(indent + "LuaValueBoxer.luaval_to_list<{0}>(state, -1, out ret);\n", rtn);
+						if(rtn == "System.Array") {
+							buffer += indent + "LuaValueBoxer.luaval_to_list(L, -1, out ret);\n";
+						} else {
+							buffer += string.Format(indent + "LuaValueBoxer.luaval_to_list<{0}>(state, -1, out ret);\n", rtn);
+						}
 					} else if(rt.IsDictionary()) {
 						buffer += string.Format(indent + "LuaValueBoxer.luaval_to_dictionary<{0}>(state, -1, out ret);\n", rtn);
 					} else if(rt.IsCustomDelegateType()) {

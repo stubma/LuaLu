@@ -165,6 +165,66 @@
 			return ok;
 		}
 
+		public static bool luaval_to_list(IntPtr L, int lo, out Array ret, string funcName = "") {
+			// new
+			ret = null;
+
+			// validate
+			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
+				return false;
+			}
+
+			// convert negative index to positive
+			if(lo < 0) {
+				lo = LuaLib.lua_gettop(L) + lo + 1;
+			}
+
+			// top should be a table
+			bool ok = true;
+			if(!LuaLib.tolua_istable(L, lo, ref tolua_err)) {
+				#if DEBUG
+				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+				#endif
+				ok = false;
+			}
+
+			// fill elements
+			if(ok) {
+				int len = LuaLib.lua_objlen(L, lo);
+				ret = Array.CreateInstance(typeof(object), len);
+				IList list = ret as IList;
+				for(int i = 0; i < len; i++) {
+					LuaLib.lua_pushnumber(L, i + 1);
+					LuaLib.lua_gettable(L, lo);
+
+					// get value and push to list
+					int t = LuaLib.lua_type(L, -1);
+					if(t == (int)LuaTypes.LUA_TBOOLEAN) {
+						list.Add(LuaLib.tolua_toboolean(L, -1, 0));
+					} else if(t == (int)LuaTypes.LUA_TNUMBER) {
+						list.Add(LuaLib.tolua_tonumber(L, -1, 0));
+					} else if(t == (int)LuaTypes.LUA_TSTRING) {
+						list.Add(LuaLib.tolua_tostring(L, -1, ""));
+					} else if(t == (int)LuaTypes.LUA_TUSERDATA) {
+						string tn = LuaLib.tolua_typename(L, -1);
+						if(luaval_is_usertype(L, -1, tn)) {
+							// to obj
+							int refId = LuaLib.tolua_tousertype(L, -1);
+							object obj = LuaStack.FromState(L).FindObject(refId);
+							if(obj != null) {
+								list.Add(obj);
+							}
+						}
+					}
+
+					// pop value
+					LuaLib.lua_pop(L, 1);
+				}
+			}
+
+			return ok;
+		}
+
 		public static bool luaval_to_list<T>(IntPtr L, int lo, out T ret, string funcName = "") where T : IList, new() {
 			// new
 			ret = new T();
