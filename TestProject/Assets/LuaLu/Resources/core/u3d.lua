@@ -58,3 +58,12 @@ function typeof(t)
 	-- get type
 	return System.Type.GetType(n)
 end
+
+-- create a delegate wrapper for lua function
+function delegate(t, h)
+    if type(t) == "function" then
+        return { handler = t }
+    else
+        return { target = t, handler = h }
+    end
+end

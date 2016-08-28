@@ -1236,7 +1236,7 @@
 			buffer += indent + "// get target, it may be usertype or table\n";
 			buffer += indent + "LuaLib.lua_pushstring(L, \"target\");\n";
 			buffer += indent + "LuaLib.lua_gettable(L, lo);\n";
-			buffer += indent + "if(LuaLib.tolua_checkusertype(L, -1, \"System.Object\")) {\n";
+			buffer += indent + "if(!LuaLib.lua_isnil(L, -1) && LuaLib.tolua_checkusertype(L, -1, \"System.Object\")) {\n";
 			indent += "\t";
 			buffer += indent + "targetObjTypeName = LuaLib.tolua_typename(L, -1);\n";
 			buffer += indent + "LuaValueBoxer.luaval_to_type<System.Object>(L, -1, out targetObj);\n";
