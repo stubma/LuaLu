@@ -12,6 +12,9 @@
 		// namespace to find classes
 		private static List<string> INCLUDE_NAMESPACES;
 
+		// class excluded
+		private static List<string> EXCLUDE_CLASSES;
+
 		// weird method need to be excluded, otherwise get error when build
 		private static List<string> EXCLUDE_METHODS;
 
@@ -33,6 +36,10 @@
 				"System",
 				"UnityEngine",
 				"UnityEngine.UI"
+			};
+			EXCLUDE_CLASSES = new List<string> {
+				"System.String",
+				"System.Decimal"
 			};
 			EXCLUDE_METHODS = new List<string> {
 				"OnRebuildRequested",
@@ -80,12 +87,22 @@
 //				Type[] types = asm.GetExportedTypes();
 //				foreach(Type t in types) {
 //					if(INCLUDE_NAMESPACES.Contains(t.Namespace)) {
-//						if(!t.IsGenericType && !t.IsObsolete() && !t.IsEnum && !t.IsCustomDelegateType() && !t.HasGenericBaseType() && !t.IsPrimitive) {
+//						if(!t.IsGenericType && 
+//							!t.IsObsolete() &&
+//							!t.IsEnum && 
+//							!t.IsCustomDelegateType() && 
+//							!t.HasGenericBaseType() && 
+//							!t.IsPrimitive &&
+//							!t.Name.StartsWith("_") &&
+//							!EXCLUDE_CLASSES.Contains(t.FullName)) {
 //							s_types.Add(t);
 //						}
 //					}
 //				}
 //			}
+
+			// add lua component
+			s_types.Add(typeof(LuaComponent));
 
 			// ensure folder exist
 			if(!Directory.Exists(LuaConst.GENERATED_LUA_BINDING_PREFIX)) {
@@ -96,7 +113,6 @@
 			s_types.Add(typeof(System.Object));
 			s_types.Add(typeof(Component));
 			s_types.Add(typeof(Type));
-			s_types.Add(typeof(LuaComponent));
 			s_types.Add(typeof(GameObject));
 			s_types.Add(typeof(Transform));
 			s_types.Add(typeof(Time));
@@ -197,11 +213,11 @@
 			// get info
 			string tn = t.Name;
 			string tfn = t.GetNormalizedName();
+			string tfnUnderscore = t.GetNormalizedUnderscoreName();
 			string[] nsList = tfn.Split(new Char[] { '.' });
 			Type bt = t.BaseType;
 			string btfn = bt != null ? bt.FullName : "";
 			Array.Resize(ref nsList, nsList.Length - 1);
-			string tfnUnderscore = tfn.Replace(".", "_");
 			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
 			string path = LuaConst.GENERATED_LUA_BINDING_PREFIX + clazz + ".cs";
 			string buffer = "";
@@ -664,7 +680,7 @@
 		private static string GenerateConstructor(Type t, ConstructorInfo[] mList) {
 			string tfn = t.GetNormalizedName();
 			string buffer = "";
-			string tfnUnderscore = tfn.Replace(".", "_");
+			string tfnUnderscore = t.GetNormalizedUnderscoreName();
 			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
 			string fn = clazz + ".__Constructor__";
 
@@ -806,7 +822,7 @@
 			// other info
 			string tfn = t.GetNormalizedName();
 			string buffer = "";
-			string tfnUnderscore = tfn.Replace(".", "_");
+			string tfnUnderscore = t.GetNormalizedUnderscoreName();
 			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
 			string fn = clazz + "." + mn;
 
@@ -951,7 +967,7 @@
 			string mn = callM.Name;
 			string tn = t.Name;
 			string tfn = t.GetNormalizedName();
-			string tfnUnderscore = tfn.Replace(".", "_");
+			string tfnUnderscore = t.GetNormalizedUnderscoreName();
 			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
 			string fn = clazz + "." + mn;
 			string indent = paramTypeCheck ? "\t\t\t\t\t" : "\t\t\t\t";
@@ -1021,7 +1037,7 @@
 			// other info
 			string tn = t.Name;
 			string tfn = t.GetNormalizedName();
-			string tfnUnderscore = tfn.Replace(".", "_");
+			string tfnUnderscore = t.GetNormalizedUnderscoreName();
 			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
 			string fn = clazz + "." + mn;
 			string buffer = "";
@@ -1164,6 +1180,7 @@
 			string buffer = "";
 			Type pt = pi.ParameterType;
 			string ptn = pt.GetNormalizedName();
+			string ptnUnderscore = pt.GetNormalizedUnderscoreName();
 
 			// find conversion by parameter type name
 			if(pt.IsArray) {
@@ -1186,7 +1203,7 @@
 
 				// create lua delegate wrapper for it
 				buffer += indent + string.Format("LuaDelegateWrapper w{0} = new LuaDelegateWrapper(L, {1});\n", argIndex, argIndex + (isStatic ? 1 : 2));
-				buffer += indent + string.Format("arg{0} = new {1}(w{0}.delegate_{2});\n", argIndex, ptn, ptn.Replace(".", "_"));
+				buffer += indent + string.Format("arg{0} = new {1}(w{0}.delegate_{2});\n", argIndex, ptn, ptnUnderscore);
 			} else {
 				buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_type<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
 			}
@@ -1295,15 +1312,16 @@
 			foreach(Type t in s_delegates) {
 				// info
 				string tn = t.GetNormalizedName();
-				string fn = "delegate_" + tn.Replace(".", "_");
+				string tnUnderscore = t.GetNormalizedUnderscoreName();
 				MethodInfo m = t.GetMethod("Invoke");
 				Type rt = m.ReturnType;
 				string rtn = rt.GetNormalizedName();
+				string rtnUnderscore = rt.GetNormalizedUnderscoreName();
 				ParameterInfo[] pList = m.GetParameters();
 
 				// method start, without args
 				buffer += "\n";
-				buffer += indent + string.Format("public {0} {1}(", rtn, fn);
+				buffer += indent + string.Format("public {0} delegate_{1}(", rtn, tnUnderscore);
 				for(int i = 0; i < pList.Length; i++) {
 					Type pt = pList[i].ParameterType;
 					string ptn = pt.GetNormalizedName();
@@ -1391,7 +1409,7 @@
 					} else if(rt.IsCustomDelegateType()) {
 						// create lua delegate wrapper for it
 						buffer += indent + "LuaDelegateWrapper w = new LuaDelegateWrapper(state, -1);\n";
-						buffer += indent + string.Format("ret = new {0}(w.delegate_{1});\n", rtn, rtn.Replace(".", "_"));
+						buffer += indent + string.Format("ret = new {0}(w.delegate_{1});\n", rtn, rtnUnderscore);
 					} else {
 						buffer += string.Format(indent + "LuaValueBoxer.luaval_to_type<{0}>(state, -1, out ret);\n", rtn);
 					}

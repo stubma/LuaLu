@@ -2,6 +2,7 @@
 	using UnityEngine;
 	using System.Collections;
 	using LuaInterface;
+	using System.Reflection;
 	using System.IO;
 	using System;
 

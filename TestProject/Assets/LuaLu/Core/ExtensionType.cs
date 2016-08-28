@@ -56,6 +56,10 @@ public static class ExtensionType {
 		}
 	}
 
+	public static string GetNormalizedUnderscoreName(this Type t) {
+		return t.GetNormalizedName().Replace(".", "_").Replace("<", "_").Replace(">", "_").Replace("[]", "_array").Replace(",", "_");
+	}
+
 	public static string GetGenericName(this Type t) {
 		if(t.GetGenericArguments().Length == 0) {
 			return t.FullName.NormalizeTypeName();
