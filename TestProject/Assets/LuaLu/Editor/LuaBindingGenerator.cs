@@ -43,7 +43,8 @@
 			};
 			EXCLUDE_METHODS = new List<string> {
 				"OnRebuildRequested",
-				"IsJoystickPreconfigured"
+				"IsJoystickPreconfigured",
+				"CreateComInstanceFrom"
 			};
 			SUPPORTED_OPERATORS = new Dictionary<string, string> {
 				{ "Addition", "__add" },
@@ -82,24 +83,24 @@
 
 		public static void GenerateUnityLuaBinding() {
 			// find types in wanted namespace
-//			Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-//			foreach(Assembly asm in assemblies) {
-//				Type[] types = asm.GetExportedTypes();
-//				foreach(Type t in types) {
-//					if(INCLUDE_NAMESPACES.Contains(t.Namespace)) {
-//						if(!t.IsGenericType && 
-//							!t.IsObsolete() &&
-//							!t.IsEnum && 
-//							!t.IsCustomDelegateType() && 
-//							!t.HasGenericBaseType() && 
-//							!t.IsPrimitive &&
-//							!t.Name.StartsWith("_") &&
-//							!EXCLUDE_CLASSES.Contains(t.FullName)) {
-//							s_types.Add(t);
-//						}
-//					}
-//				}
-//			}
+			Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+			foreach(Assembly asm in assemblies) {
+				Type[] types = asm.GetExportedTypes();
+				foreach(Type t in types) {
+					if(INCLUDE_NAMESPACES.Contains(t.Namespace)) {
+						if(!t.IsGenericType && 
+							!t.IsObsolete() &&
+							!t.IsEnum && 
+							!t.IsCustomDelegateType() && 
+							!t.HasGenericBaseType() && 
+							!t.IsPrimitive &&
+							!t.Name.StartsWith("_") &&
+							!EXCLUDE_CLASSES.Contains(t.FullName)) {
+							s_types.Add(t);
+						}
+					}
+				}
+			}
 
 			// add lua component
 			s_types.Add(typeof(LuaComponent));
@@ -110,18 +111,18 @@
 			}
 
 			// test code
-			s_types.Add(typeof(System.Object));
-			s_types.Add(typeof(Component));
-			s_types.Add(typeof(Type));
-			s_types.Add(typeof(GameObject));
-			s_types.Add(typeof(Transform));
-			s_types.Add(typeof(Time));
-			s_types.Add(typeof(Vector3));
-			s_types.Add(typeof(Rigidbody));
-			s_types.Add(typeof(Text));
-			s_types.Add(typeof(Input));
-			s_types.Add(typeof(BoxCollider));
-			s_types.Add(typeof(MulticastDelegate));
+//			s_types.Add(typeof(System.Object));
+//			s_types.Add(typeof(Component));
+//			s_types.Add(typeof(Type));
+//			s_types.Add(typeof(GameObject));
+//			s_types.Add(typeof(Transform));
+//			s_types.Add(typeof(Time));
+//			s_types.Add(typeof(Vector3));
+//			s_types.Add(typeof(Rigidbody));
+//			s_types.Add(typeof(Text));
+//			s_types.Add(typeof(Input));
+//			s_types.Add(typeof(BoxCollider));
+//			s_types.Add(typeof(MulticastDelegate));
 
 			// start generate all classes
 			GenerateTypesLuaBinding();
@@ -678,7 +679,6 @@
 		}
 
 		private static string GenerateConstructor(Type t, ConstructorInfo[] mList) {
-			string tfn = t.GetNormalizedName();
 			string buffer = "";
 			string tfnUnderscore = t.GetNormalizedUnderscoreName();
 			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
@@ -1311,7 +1311,6 @@
 			// generate delegate redirector
 			foreach(Type t in s_delegates) {
 				// info
-				string tn = t.GetNormalizedName();
 				string tnUnderscore = t.GetNormalizedUnderscoreName();
 				MethodInfo m = t.GetMethod("Invoke");
 				Type rt = m.ReturnType;
