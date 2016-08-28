@@ -231,36 +231,43 @@
 			MethodInfo[] methods = t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance);
 			MethodInfo[] staticMethods = t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
 
-			// filter generic methods, property setter/getter, operator
+			// filter generic/obsolete methods, property setter/getter, operator, events
 			List<MethodInfo> publicMethods = new List<MethodInfo>();
 			Array.ForEach<MethodInfo>(methods, m => {
-				if(!m.IsGenericMethod && !m.IsObsolete() && !EXCLUDE_METHODS.Contains(m.Name)) {
-					// get_ and set_ are field/property, add_ and remove_ are events
-					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")) {
-						// special check for operator overload
-						if(m.Name.StartsWith("op_")) {
-							string op = m.Name.Substring(3);
-							if(SUPPORTED_OPERATORS.ContainsKey(op)) {
-								publicMethods.Add(m);;
-							}
-						} else {
-							publicMethods.Add(m);
+				if(!m.IsGenericMethod && 
+					!m.IsObsolete() && 
+					!EXCLUDE_METHODS.Contains(m.Name) && 
+					!m.Name.StartsWith("get_") && 
+					!m.Name.StartsWith("set_") && 
+					!m.Name.StartsWith("add_") && 
+					!m.Name.StartsWith("remove_")) {
+					// special check for operator overload
+					if(m.Name.StartsWith("op_")) {
+						string op = m.Name.Substring(3);
+						if(SUPPORTED_OPERATORS.ContainsKey(op)) {
+							publicMethods.Add(m);;
 						}
+					} else {
+						publicMethods.Add(m);
 					}
 				}
 			});
 			Array.ForEach<MethodInfo>(staticMethods, m => {
-				if(!m.IsGenericMethod && !m.IsObsolete() && !EXCLUDE_METHODS.Contains(m.Name)) {
-					if(!m.Name.StartsWith("get_") && !m.Name.StartsWith("set_") && !m.Name.StartsWith("add_") && !m.Name.StartsWith("remove_")) {
-						// special check for operator overload
-						if(m.Name.StartsWith("op_")) {
-							string op = m.Name.Substring(3);
-							if(SUPPORTED_OPERATORS.ContainsKey(op)) {
-								publicMethods.Add(m);;
-							}
-						} else {
-							publicMethods.Add(m);
+				if(!m.IsGenericMethod && 
+					!m.IsObsolete() && 
+					!EXCLUDE_METHODS.Contains(m.Name) && 
+					!m.Name.StartsWith("get_") && 
+					!m.Name.StartsWith("set_") && 
+					!m.Name.StartsWith("add_") && 
+					!m.Name.StartsWith("remove_")) {
+					// special check for operator overload
+					if(m.Name.StartsWith("op_")) {
+						string op = m.Name.Substring(3);
+						if(SUPPORTED_OPERATORS.ContainsKey(op)) {
+							publicMethods.Add(m);;
 						}
+					} else {
+						publicMethods.Add(m);
 					}
 				}
 			});
