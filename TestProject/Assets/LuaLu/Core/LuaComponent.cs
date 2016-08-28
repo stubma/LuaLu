@@ -136,6 +136,20 @@
 			L.ExecuteObjectFunction(this, "LateUpdate");
 		}
 
+		void OnDestroy() {
+			// if not valid, return
+			if(!m_valid) {
+				return;
+			}
+
+			// run lua side method
+			LuaStack L = LuaStack.SharedInstance();
+			L.ExecuteObjectFunction(this, "OnDestroy");
+
+			// release it because LuaComponent is a keep alive object
+			L.ReleaseObject(this);
+		}
+
 		void OnAnimatorIK(int layerIndex) {
 			// if not valid, return
 			if(!m_valid) {
@@ -312,20 +326,6 @@
 			// run lua side method
 			LuaStack L = LuaStack.SharedInstance();
 			L.ExecuteObjectFunction(this, "OnControllerColliderHit", new object[] { hit });
-		}
-
-		void OnDestroy() {
-			// if not valid, return
-			if(!m_valid) {
-				return;
-			}
-
-			// run lua side method
-			LuaStack L = LuaStack.SharedInstance();
-			L.ExecuteObjectFunction(this, "OnDestroy");
-
-			// release it because LuaComponent is a keep alive object
-			L.ReleaseObject(this);
 		}
 
 		void OnDisable() {
