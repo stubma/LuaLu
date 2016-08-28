@@ -195,8 +195,8 @@
 			buffer += "\t\t\tLuaLib.tolua_module(L, null, 0);\n";
 			buffer += "\t\t\tLuaLib.tolua_beginmodule(L, null);\n";
 			foreach(Type t in s_types) {
-				string tfn = t.GetNormalizedName();
-				string tClass = "lua_unity_" + tfn.Replace(".", "_") + "_auto";
+				string tfnUnderscore = t.GetNormalizedUnderscoreName();
+				string tClass = "lua_" + tfnUnderscore + "_binder";
 				buffer += string.Format("\t\t\t{0}.__Register__(L);\n", tClass);
 			}
 			buffer += "\t\t\tLuaLib.tolua_endmodule(L);\n";
@@ -219,7 +219,7 @@
 			Type bt = t.BaseType;
 			string btfn = bt != null ? bt.FullName : "";
 			Array.Resize(ref nsList, nsList.Length - 1);
-			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
+			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string path = LuaConst.GENERATED_LUA_BINDING_PREFIX + clazz + ".cs";
 			string buffer = "";
 
@@ -681,7 +681,7 @@
 		private static string GenerateConstructor(Type t, ConstructorInfo[] mList) {
 			string buffer = "";
 			string tfnUnderscore = t.GetNormalizedUnderscoreName();
-			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
+			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string fn = clazz + ".__Constructor__";
 
 			// constructor start
@@ -823,7 +823,7 @@
 			string tfn = t.GetNormalizedName();
 			string buffer = "";
 			string tfnUnderscore = t.GetNormalizedUnderscoreName();
-			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
+			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string fn = clazz + "." + mn;
 
 			// group method by parameter count, mind optional parameter
@@ -968,7 +968,7 @@
 			string tn = t.Name;
 			string tfn = t.GetNormalizedName();
 			string tfnUnderscore = t.GetNormalizedUnderscoreName();
-			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
+			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string fn = clazz + "." + mn;
 			string indent = paramTypeCheck ? "\t\t\t\t\t" : "\t\t\t\t";
 			string buffer = "";
@@ -1038,7 +1038,7 @@
 			string tn = t.Name;
 			string tfn = t.GetNormalizedName();
 			string tfnUnderscore = t.GetNormalizedUnderscoreName();
-			string clazz = "lua_unity_" + tfnUnderscore + "_auto";
+			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string fn = clazz + "." + mn;
 			string buffer = "";
 
