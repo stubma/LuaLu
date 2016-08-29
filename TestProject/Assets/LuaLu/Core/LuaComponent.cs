@@ -31,6 +31,9 @@
 
 		public delegate void TestDelegate(int i);
 		public event TestDelegate TestEvent;
+		public void test() {
+			TestEvent(33);
+		}
 
 		// generate default file name
 		static string DefaultFileName() {
