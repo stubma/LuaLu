@@ -1503,6 +1503,14 @@
 			buffer += indent + "// save lua state\n";
 			buffer += indent + "this.L = L;\n\n";
 
+			// if index is negative, convert it to positive
+			buffer += indent + "// ensure lo is positive\n";
+			buffer += indent + "if(lo < 0) {\n";
+			indent += "\t";
+			buffer += indent + "lo = LuaLib.lua_gettop(L) + lo + 1;\n";
+			indent = indent.Substring(1);
+			buffer += indent + "}\n\n";
+
 			// get lua function target and handler
 			buffer += indent + "// lua delegate info should packed in a table, with key 'target' and 'handler'\n";
 			buffer += indent + "if(LuaLib.lua_istable(L, lo)) {\n";
