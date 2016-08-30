@@ -30,7 +30,7 @@
 		public bool m_fileBound = false;
 
 		public delegate void TestDelegate(int i);
-		public event TestDelegate TestEvent;
+		public static event TestDelegate TestEvent;
 		public void test() {
 			TestEvent(33);
 		}

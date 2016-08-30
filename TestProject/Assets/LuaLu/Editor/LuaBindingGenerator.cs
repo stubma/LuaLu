@@ -540,7 +540,7 @@
 				string fn = clazz + ".add_" + en;
 				string indent = "\t\t";
 
-				// getter start
+				// add method start
 				buffer += indent + "[MonoPInvokeCallback(typeof(LuaFunction))]\n";
 				buffer += indent + string.Format("public static int add_{0}(IntPtr L) {{\n", en);
 
@@ -592,11 +592,11 @@
 				// no return value
 				buffer += indent + "return 0;\n";
 
-				// getter end
+				// add method end
 				indent = indent.Substring(1);
 				buffer += indent + "}\n\n";
 
-				// setter start
+				// remove method start
 				fn = clazz + ".remove_" + en;
 				buffer += indent + "[MonoPInvokeCallback(typeof(LuaFunction))]\n";
 				buffer += indent + string.Format("public static int remove_{0}(IntPtr L) {{\n", en);
@@ -631,25 +631,78 @@
 					buffer += indent.Substring(1) + "#endif\n\n";
 				}
 
-				// create lua delegate wrapper
-				buffer += indent + "// create lua delegate wrapper\n";
-				buffer += indent + "LuaDelegateWrapper w = new LuaDelegateWrapper(L, -1);\n";
-				buffer += indent + string.Format("{0} arg0 = new {0}(w.delegate_{1});\n\n", etn, etnUnderscore);
+				// get target
+				buffer += indent + "// lua delegate info should packed in a table, with key 'target' and 'handler'\n";
+				buffer += indent + "object targetObj = null;\n";
+				buffer += indent + "int targetTable = 0;\n";
+				buffer += indent + "int funcHandler = 0;\n";
+				buffer += indent + string.Format("if(LuaLib.lua_istable(L, {0})) {{\n", isStatic ? 1 : 2);
+				indent += "\t";
+				buffer += indent + "// get target, it may be usertype or table\n";
+				buffer += indent + "LuaLib.lua_pushstring(L, \"target\");\n";
+				buffer += indent + string.Format("LuaLib.lua_gettable(L, {0});\n", isStatic ? 1 : 2);
+				buffer += indent + "if(!LuaLib.lua_isnil(L, -1) && LuaLib.tolua_checkusertype(L, -1, \"System.Object\")) {\n";
+				indent += "\t";
+				buffer += indent + "LuaValueBoxer.luaval_to_type<System.Object>(L, -1, out targetObj);\n";
+				indent = indent.Substring(1);
+				buffer += indent + "} else if(LuaLib.lua_istable(L, -1)) {\n";
+				indent += "\t";
+				buffer += indent + "targetTable = LuaLib.toluafix_ref_table(L, -1, 0);\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				buffer += indent + "LuaLib.lua_pop(L, 1);\n\n";
 
-				// push this event as delegate type
-				buffer += indent + "// remove\n";
+				// get handler
+				buffer += indent + "// get function handler\n";
+				buffer += indent + "LuaLib.lua_pushstring(L, \"handler\");\n";
+				buffer += indent + string.Format("LuaLib.lua_gettable(L, {0});\n", isStatic ? 1 : 2);
+				buffer += indent + "funcHandler = LuaLib.lua_isnil(L, -1) ? 0 : LuaLib.toluafix_ref_function(L, -1, 0);\n";
+				buffer += indent + "LuaLib.lua_pop(L, 1);\n\n";
+
+				// get event invocation list by reflection
+				buffer += indent + "// get event invocation list by reflection\n";
 				if(isStatic) {
-					buffer += indent + string.Format("{0}.{1} -= arg0;\n", tfn, en);
+					buffer += indent + string.Format("Type t = typeof({0});\n", tfn);
 				} else {
-					buffer += indent + string.Format("obj.{0} -= arg0;\n", en);
+					buffer += indent + "Type t = obj.GetType();\n";
 				}
+				buffer += indent + string.Format("System.Reflection.FieldInfo fi = t.GetField(\"{0}\", System.Reflection.BindingFlags.{1} | System.Reflection.BindingFlags.NonPublic);\n", en, isStatic ? "Static" : "Instance");
+				buffer += indent + string.Format("object f = fi.GetValue({0});\n", isStatic ? "null" : "obj");
+				buffer += indent + "MulticastDelegate e = (MulticastDelegate)f;\n";
+				buffer += indent + "Delegate[] list = e.GetInvocationList();\n\n";
+
+				// find lua delegate wrapper
+				buffer += indent + "// find lua delegate wrapper and remove it\n";
+				buffer += indent + "foreach(Delegate d in list) {\n";
+				indent += "\t";
+				buffer += indent + "if(d.Target is LuaDelegateWrapper) {\n";
+				indent += "\t";
+				buffer += indent + "LuaDelegateWrapper ldw = (LuaDelegateWrapper)d.Target;\n";
+				buffer += indent + "if(ldw.Equals(targetObj, targetTable, funcHandler)) {\n";
+				indent += "\t";
+				if(isStatic) {
+					buffer += indent + string.Format("{0}.{1} -= ({2})d;\n", tfn, en, etn);
+				} else {
+					buffer += indent + string.Format("obj.{0} -= ({1})d;\n", en, etn);
+				}
+				buffer += indent + "break;\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+
+				// close argc if
 				indent = indent.Substring(1);
 				buffer += indent + "}\n";
 
 				// no return value
 				buffer += indent + "return 0;\n";
 
-				// setter end
+				// remove method end
 				indent = indent.Substring(1);
 				buffer += indent + "}\n\n";
 			}
@@ -1481,16 +1534,16 @@
 
 	public class LuaDelegateWrapper : IDisposable {
 		// object if delegate method is on a user type object
-		public object targetObj;
+		private object targetObj;
 
 		// object name if has object
 		private string targetObjTypeName;
 
 		// table handler if delegate method is in a user table
-		public int targetTable;
+		private int targetTable;
 
 		// delegate lua function handler
-		public int funcHandler;
+		private int funcHandler;
 
 		// lua state
 		private IntPtr L;
@@ -1523,9 +1576,45 @@
 				funcHandler = LuaLib.lua_isnil(L, -1) ? 0 : LuaLib.toluafix_ref_function(L, -1, 0);
 				LuaLib.lua_pop(L, 1);
 			}
+		}
+
+		public bool Equals(object obj, int t, int f) {
+			// check obj
+			if(obj != targetObj) {
+				return false;
+			}
+
+			// check table
+			if(t != 0 && targetTable != 0) {
+				LuaLib.toluafix_get_table_by_refid(L, t);
+				LuaLib.toluafix_get_table_by_refid(L, targetTable);
+				if(!LuaLib.lua_rawequal(L, -1, -2)) {
+					LuaLib.lua_pop(L, 2);
+					return false;
+				}
+				LuaLib.lua_pop(L, 2);
+			} else if(t != 0 || targetTable != 0) {
+				return false;
+			}
+
+			// check func
+			if(f != 0 && funcHandler != 0) {
+				LuaLib.toluafix_get_function_by_refid(L, f);
+				LuaLib.toluafix_get_function_by_refid(L, funcHandler);
+				if(!LuaLib.lua_rawequal(L, -1, -2)) {
+					LuaLib.lua_pop(L, 2);
+					return false;
+				}
+				LuaLib.lua_pop(L, 2);
+			} else if(f != 0 || funcHandler != 0) {
+				return false;
+			}
+
+			return true;
 		}";
 
 			// dispose
+			buffer += "\n\n";
 			buffer += 
 @"		public void Dispose() {
 			if(targetTable > 0) {
