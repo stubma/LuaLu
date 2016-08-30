@@ -37,7 +37,30 @@ function class(classname, super)
         end
     end
 
-    if super then
+    if super == nil or super.__ctype == nil or super.__ctype == U3D_INHERITED_FROM_LUA then
+        -- inherited from Lua Object
+        if super then
+            cls = clone(super)
+            cls.super = super
+        else
+            cls.super = {}
+        end
+
+        cls.ctor = function() end
+        cls.__cname = classname
+        cls.__ctype = U3D_INHERITED_FROM_LUA
+        cls.__index = cls
+
+        function cls.new(...)
+            local instance = setmetatable({}, cls)
+            instance.class = cls
+            
+            -- ctor
+            callCtor(instance, instance.super, ...)
+            instance:ctor(...)
+            return instance
+        end
+    else
         if super.__ctype == U3D_NATIVE_CLASS then
             -- set super as metatable
             setmetatable(cls, { __index = super })
@@ -68,29 +91,6 @@ function class(classname, super)
             
             -- ctor
             instance.class = cls
-            callCtor(instance, instance.super, ...)
-            instance:ctor(...)
-            return instance
-        end
-    else
-        -- inherited from Lua Object
-        if super then
-            cls = clone(super)
-            cls.super = super
-        else
-            cls.super = {}
-        end
-
-        cls.ctor = function() end
-        cls.__cname = classname
-        cls.__ctype = U3D_INHERITED_FROM_LUA
-        cls.__index = cls
-
-        function cls.new(...)
-            local instance = setmetatable({}, cls)
-            instance.class = cls
-            
-            -- ctor
             callCtor(instance, instance.super, ...)
             instance:ctor(...)
             return instance
