@@ -1467,80 +1467,63 @@
 			string clazz = "LuaDelegateWrapper";
 			string path = LuaConst.GENERATED_LUA_BINDING_PREFIX + clazz + ".cs";
 			string buffer = "";
-			string indent = "";
+			string indent = "\t\t";
 
-			// namespace begin
-			buffer += indent + "namespace LuaLu {\n";
-			indent += "\t";
-			buffer += indent + "using System;\n";
-			buffer += indent + "using System.IO;\n";
-			buffer += indent + "using System.Collections;\n";
-			buffer += indent + "using System.Collections.Generic;\n";
-			buffer += indent + "using UnityEngine;\n";
-			buffer += indent + "using LuaInterface;\n\n";
+			// namespace, members, constructor
+			buffer += 
+@"namespace LuaLu {
+	using System;
+	using System.IO;
+	using System.Collections;
+	using System.Collections.Generic;
+	using UnityEngine;
+	using LuaInterface;
 
-			// class begin
-			buffer += indent + string.Format("public class {0} : IDisposable {{\n", clazz);
+	public class LuaDelegateWrapper : IDisposable {
+		// object if delegate method is on a user type object
+		public object targetObj;
 
-			// fields
-			indent += "\t";
-			buffer += indent + "// object if delegate method is on a user type object\n";
-			buffer += indent + "private object targetObj;\n\n";
-			buffer += indent + "// object name if has object\n";
-			buffer += indent + "private string targetObjTypeName;\n\n";
-			buffer += indent + "// table handler if delegate method is in a user table\n";
-			buffer += indent + "private int targetTable;\n\n";
-			buffer += indent + "// delegate lua function handler\n";
-			buffer += indent + "private int funcHandler;\n\n";
-			buffer += indent + "// lua state\n";
-			buffer += indent + "private IntPtr L;\n\n";
+		// object name if has object
+		private string targetObjTypeName;
 
-			// constructor begin
-			buffer += indent + string.Format("public {0}(IntPtr L, int lo) {{\n", clazz);
+		// table handler if delegate method is in a user table
+		public int targetTable;
 
+		// delegate lua function handler
+		public int funcHandler;
+
+		// lua state
+		private IntPtr L;
+
+		public LuaDelegateWrapper(IntPtr L, int lo) {
 			// save lua state
-			indent += "\t";
-			buffer += indent + "// save lua state\n";
-			buffer += indent + "this.L = L;\n\n";
+			this.L = L;
 
-			// if index is negative, convert it to positive
-			buffer += indent + "// ensure lo is positive\n";
-			buffer += indent + "if(lo < 0) {\n";
-			indent += "\t";
-			buffer += indent + "lo = LuaLib.lua_gettop(L) + lo + 1;\n";
-			indent = indent.Substring(1);
-			buffer += indent + "}\n\n";
+			// ensure lo is positive\
+			if(lo < 0) {
+				lo = LuaLib.lua_gettop(L) + lo + 1;
+			}
 
-			// get lua function target and handler
-			buffer += indent + "// lua delegate info should packed in a table, with key 'target' and 'handler'\n";
-			buffer += indent + "if(LuaLib.lua_istable(L, lo)) {\n";
-			indent += "\t";
-			buffer += indent + "// get target, it may be usertype or table\n";
-			buffer += indent + "LuaLib.lua_pushstring(L, \"target\");\n";
-			buffer += indent + "LuaLib.lua_gettable(L, lo);\n";
-			buffer += indent + "if(!LuaLib.lua_isnil(L, -1) && LuaLib.tolua_checkusertype(L, -1, \"System.Object\")) {\n";
-			indent += "\t";
-			buffer += indent + "targetObjTypeName = LuaLib.tolua_typename(L, -1);\n";
-			buffer += indent + "LuaValueBoxer.luaval_to_type<System.Object>(L, -1, out targetObj);\n";
-			indent = indent.Substring(1);
-			buffer += indent + "} else if(LuaLib.lua_istable(L, -1)) {\n";
-			indent += "\t";
-			buffer += indent + "targetTable = LuaLib.toluafix_ref_table(L, -1, 0);\n";
-			indent = indent.Substring(1);
-			buffer += indent + "}\n";
-			buffer += indent + "LuaLib.lua_pop(L, 1);\n";
-			buffer += "\n";
-			buffer += indent + "// get function handler\n";
-			buffer += indent + "LuaLib.lua_pushstring(L, \"handler\");\n";
-			buffer += indent + "LuaLib.lua_gettable(L, lo);\n";
-			buffer += indent + "funcHandler = LuaLib.lua_isnil(L, -1) ? 0 : LuaLib.toluafix_ref_function(L, -1, 0);\n";
-			buffer += indent + "LuaLib.lua_pop(L, 1);\n";
-			indent = indent.Substring(1);
-			buffer += indent + "}\n";
+			// lua delegate info should packed in a table, with key 'target' and 'handler'
+			if(LuaLib.lua_istable(L, lo)) {
+				// get target, it may be usertype or table
+				LuaLib.lua_pushstring(L, ""target"");
+				LuaLib.lua_gettable(L, lo);
+				if(!LuaLib.lua_isnil(L, -1) && LuaLib.tolua_checkusertype(L, -1, ""System.Object"")) {
+					targetObjTypeName = LuaLib.tolua_typename(L, -1);
+					LuaValueBoxer.luaval_to_type<System.Object>(L, -1, out targetObj);
+				} else if(LuaLib.lua_istable(L, -1)) {
+					targetTable = LuaLib.toluafix_ref_table(L, -1, 0);
+					LuaLib.lua_pop(L, 1);
+				}
 
-			// constructor end
-			indent = indent.Substring(1);
-			buffer += indent + "}\n\n";
+				// get function handler
+				LuaLib.lua_pushstring(L, ""handler"");
+				LuaLib.lua_gettable(L, lo);
+				funcHandler = LuaLib.lua_isnil(L, -1) ? 0 : LuaLib.toluafix_ref_function(L, -1, 0);
+				LuaLib.lua_pop(L, 1);
+			}
+		}";
 
 			// dispose
 			buffer += 
