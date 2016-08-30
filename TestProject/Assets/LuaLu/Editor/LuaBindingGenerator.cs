@@ -120,7 +120,6 @@
 			types.Add(typeof(LuaComponent));
 
 			// XXX: test code
-			types.Add(typeof(LuaComponent.TestDelegate));
 			types.Add(typeof(System.Object));
 			types.Add(typeof(Component));
 			types.Add(typeof(Type));
