@@ -1542,29 +1542,22 @@
 			indent = indent.Substring(1);
 			buffer += indent + "}\n\n";
 
-			// dispose start
-			buffer += indent + "public void Dispose() {\n";
-
-			// release table ref
-			indent += "\t";
-			buffer += indent + "if(targetTable > 0) {\n";
-			indent += "\t";
-			buffer += indent + "LuaLib.toluafix_remove_table_by_refid(L, targetTable);\n";
-			buffer += indent + "targetTable = 0;\n";
-			indent = indent.Substring(1);
-			buffer += indent + "}\n";
-
-			// release function ref
-			buffer += indent + "if(funcHandler > 0) {\n";
-			indent += "\t";
-			buffer += indent + "LuaLib.toluafix_remove_function_by_refid(L, funcHandler);\n";
-			buffer += indent + "funcHandler = 0;\n";
-			indent = indent.Substring(1);
-			buffer += indent + "}\n";
-
-			// dispose end
-			indent = indent.Substring(1);
-			buffer += indent + "}\n";
+			// dispose
+			buffer += 
+@"		public void Dispose() {
+			if(targetTable > 0) {
+				LuaLib.toluafix_remove_table_by_refid(L, targetTable);
+				targetTable = 0;
+			}
+			if(funcHandler > 0) {
+				LuaLib.toluafix_remove_function_by_refid(L, funcHandler);
+				funcHandler = 0;
+			}
+			GC.SuppressFinalize(this);
+			GC.Collect();
+			GC.WaitForPendingFinalizers();
+		}
+";
 
 			// generate delegate redirector
 			foreach(Type t in s_delegates) {
