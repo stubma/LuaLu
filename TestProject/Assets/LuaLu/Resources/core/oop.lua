@@ -19,16 +19,11 @@ end
 
 -- declare a class, the super can be a function which returns a user type or
 -- a table. it will return class itself, which actually is a table too
-local U3D_INHERITED_FROM_C_SHARP_CLASS = 1
-local U3D_INHERITED_FROM_LUA = 2
+local U3D_NATIVE_CLASS = 1
+local U3D_INHERITED_FROM_NATIVE_CLASS = 2
+local U3D_INHERITED_FROM_LUA = 3
 function class(classname, super)
-    local superType = type(super)
     local cls = {}
-
-    if superType ~= "function" and superType ~= "table" then
-        superType = nil
-        super = nil
-    end
 
     -- call ctor in inheritance sequence
     function callCtor(instance, super, ...)
@@ -42,21 +37,27 @@ function class(classname, super)
         end
     end
 
-    if superType == "function" or (super and super.__ctype == U3D_INHERITED_FROM_C_SHARP_CLASS) then
-        if superType == "table" then
+    if super then
+        if super.__ctype == U3D_NATIVE_CLASS then
+            -- set super as metatable
+            setmetatable(cls, { __index = super })
+
+            -- set creator, native class should have new method
+            cls.__create = super.new
+            cls.super = super
+        elseif super.__ctype == U3D_INHERITED_FROM_NATIVE_CLASS then
             -- copy fields from super
             for k,v in pairs(super) do cls[k] = v end
             cls.__create = super.__create
-            cls.super    = super
-        else
-            cls.__create = super
+            cls.super = super
         end
 
+        -- constructor, class name, and class type
         cls.ctor = function() end
-        cls.dtor = function() end
         cls.__cname = classname
-        cls.__ctype = U3D_INHERITED_FROM_C_SHARP_CLASS
+        cls.__ctype = U3D_INHERITED_FROM_NATIVE_CLASS
 
+        -- new method for this class
         function cls.new(...)
             local instance = cls.__create(...)
             
@@ -81,7 +82,6 @@ function class(classname, super)
         end
 
         cls.ctor = function() end
-        cls.dtor = function() end
         cls.__cname = classname
         cls.__ctype = U3D_INHERITED_FROM_LUA
         cls.__index = cls

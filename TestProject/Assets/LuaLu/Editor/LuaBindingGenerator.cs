@@ -394,6 +394,9 @@
 			buffer += string.Format("\t\t\tLuaLib.tolua_class(L, \"{0}\", \"{1}\", new LuaFunction(LuaStack.LuaGC));\n", tfn, btfn);
 			buffer += string.Format("\t\t\tLuaLib.tolua_beginmodule(L, \"{0}\");\n", tn);
 
+			// class type, 1 means c sharp class
+			buffer += "\t\t\tLuaLib.tolua_constant(L, \"__ctype\", 1);\n";
+
 			// register constructor, except custom delegate type
 			if(!t.IsCustomDelegateType()) {
 				if(ctors.Length > 0) {

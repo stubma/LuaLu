@@ -29,12 +29,6 @@
 		// file name is set or not
 		public bool m_fileBound = false;
 
-		public delegate void TestDelegate(int i);
-		public static event TestDelegate TestEvent;
-		public void test() {
-			TestEvent(33);
-		}
-
 		// generate default file name
 		static string DefaultFileName() {
 			string fn = "Untitled" + s_fileIndex + ".lua";

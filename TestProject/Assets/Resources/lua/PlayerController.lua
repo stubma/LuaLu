@@ -1,7 +1,7 @@
 import("UnityEngine")
 import("UnityEngine.Object")
 
-PlayerController = class("PlayerController", function() return LuaLu.LuaComponent.new() end)
+PlayerController = class("PlayerController", LuaLu.LuaComponent)
 
 function PlayerController:Awake()
 	self.countText = GameObject.Find("CountText"):GetComponent("Text")
