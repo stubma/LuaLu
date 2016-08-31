@@ -133,6 +133,55 @@ NOTE:
 * 对于使用了Delegate作为参数的方法, 一样用delegate函数包装即可
 * delegate方法可以有1或者2个参数, 分别为target和handler, 如果不提供target, 则认为你是要用一个静态方法作为Delegate
 
+使用import简化代码
+---
+由于C#的类都有比较长的命名空间, 在lua端可以用import简化类名长度, 例如:
+
+```
+import("UnityEngine")
+local obj = GameObject.new("name")
+local obj2 = UnityEngine.GameObject.new("name") -- or you can still type full name
+```
+NOTE:
+
+* 如果两个命名空间中有同名的类, 则后import的会覆盖前面的, 例如:
+
+```
+import "UnityEngine"
+import "System"
+local obj = Object.new() -- it is a System.Object, not UnityEngine.Object
+```
+使用typeof得到System.Type
+---
+可以使用typeof得到类型对象, 例如
+
+```
+imoprt "UnityEngine"
+local t = typeof(GameObject)
+print(t.FullName)
+```
+NOTE:
+
+* typeof只是一个自定义的函数用来获得类型对象, 不要和lua自带的type函数搞混了. import, typeof, delegate都定义在```LuaLu/Resources/core/u3d.lua```中
+
+使用操作符重载
+---
+有些值类型, 比如Vector2/3/4, 这些类都重载了一些操作符, 这些操作符重载在lua端也可以使用, 例如:
+
+```
+import "UnityEngine"
+local v1 = Vector3.new(1, 1, 1)
+local v2 = Vector3.new(2, 3, 4)
+local v3 = v1 + v2
+local v4 = v1 * 2.4
+local v5 = v2 / 2
+```
+NOTE:
+
+* 由于lua支持的操作符重载数量有限, 所以某些重载就不能使用了. C#能在lua端使用的重载只有```+, -, *, /, %, <, >, <=, ==, !=```
+* 实际上lua端只支持```<, <=, !=```, 其它条件判断是通过这些实现的, 所以, 如果C#端重载了```==```和```!=```, 但是实现方式不一样那就有问题了, 不过这种情况应该不太可能吧...
+* 对于```*```和```/```, 注意值类型必须在前面, 也就说不要写成```local v4 = 2.4 * v1```
+
 Tutorial
 ===
 
