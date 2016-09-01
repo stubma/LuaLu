@@ -182,6 +182,31 @@ NOTE:
 * 实际上lua端只支持```<, <=, !=```, 其它条件判断是通过这些实现的, 所以, 如果C#端重载了```==```和```!=```, 但是实现方式不一样那就有问题了, 不过这种情况应该不太可能吧...
 * 对于```*```和```/```, 注意值类型必须在前面, 也就说不要写成```local v4 = 2.4 * v1```
 
+关于LuaComponent和对应的lua脚本
+---
+当你为一个GameObject添加了lua脚本后, 其实际上是为GameObject附加了一个LuaComponent, 而对应的lua文件初始具有如下的内容:
+
+```
+import("UnityEngine")
+
+YourClassName = class("YourClassName", LuaLu.LuaComponent)
+
+function YourClassName:ctor()
+end
+
+function YourClassName:Start()
+end
+
+function YourClassName:Update()
+end
+```
+NOTE:
+
+* lua文件必须位于Assets/Resources目录下, 但是实际上这些lua文件不会被打包到最终的app中, 因为unity并不支持lua扩展名的资源. 所以每当你对lua文件作出修改时, 一个对应的拷贝会生成在Assets/Generated/Resources下, 并追加了```.bytes```扩展名
+* lua文件名必须和类名一致, 如果lua文件名叫Test.lua, 则里面的类必须叫Test. 如果你移动了lua文件或者修改了文件名, LuaComponent会自动修改保持对lua文件的引用, 但是lua文件里面的类名目前还不能自动变化, 需要你手动修改一下
+* LuaComponent把MonoBehavior中的消息全部导入到了lua端, 如果你需要处理什么消息, 在lua文件中添加对应的方法即可
+* LuaComponent把自身实例与lua端进行了绑定, 所以你不需要对这个lua类调用new方法, 在LuaComponent的Awake方法中, 它调用了BindInstanceToLuaClass把自己和lua端连接了起来, 就好像你在lua端new过了一样, 在BindInstanceToLuaClass调用时, lua端的ctor被调用
+
 Tutorial
 ===
 
