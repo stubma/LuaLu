@@ -133,6 +133,7 @@
 			types.Add(typeof(BoxCollider));
 			types.Add(typeof(MulticastDelegate));
 			types.Add(typeof(Vector3));
+			types.Add(typeof(CameraType));
 
 			// sort them
 			types = SortTypes(types);
@@ -142,7 +143,6 @@
 				if((INCLUDE_NAMESPACES.Contains(t.Namespace) || t.Namespace == "LuaLu") &&
 					!t.IsGenericType && 
 					!t.IsObsolete() &&
-					!t.IsEnum && 
 					!t.HasGenericBaseType() && 
 					!t.IsPrimitive &&
 					!t.Name.StartsWith("_") &&
@@ -173,7 +173,11 @@
 		private static void GenerateTypesLuaBinding() {
 			// generate every type
 			s_types.ForEach(t => { 
-				GenerateOneTypeLuaBinding(t);
+				if(t.IsEnum) {
+					GenerateEnumLuaBinding(t);
+				} else {
+					GenerateClassLuaBinding(t);
+				}
 			});
 
 			// generate register class
@@ -239,7 +243,64 @@
 			File.WriteAllText(path, buffer);
 		}
 
-		private static void GenerateOneTypeLuaBinding(Type t) {
+		private static void GenerateEnumLuaBinding(Type t) {
+			// get info
+			string tn = t.Name;
+			string tfn = t.GetNormalizedName();
+			string tfnUnderscore = t.GetNormalizedUnderscoreName();
+			string[] nsList = tfn.Split(new Char[] { '.' });
+			Array.Resize(ref nsList, nsList.Length - 1);
+			string clazz = "lua_" + tfnUnderscore + "_binder";
+			string path = LuaConst.GENERATED_LUA_BINDING_PREFIX + clazz + ".cs";
+			string buffer = "";
+
+			// namepace and class start
+			buffer += "namespace LuaLu {\n";
+			buffer += "\tusing System;\n";
+			buffer += "\tusing System.IO;\n";
+			buffer += "\tusing System.Collections;\n";
+			buffer += "\tusing System.Collections.Generic;\n";
+			buffer += "\tusing UnityEngine;\n";
+			buffer += "\tusing LuaInterface;\n";
+			buffer += string.Format("\n\tpublic class {0} {{\n", clazz);
+
+			// register method
+			buffer += "\t\tpublic static int __Register__(IntPtr L) {\n";
+			buffer += string.Format("\t\t\tLuaLib.tolua_usertype(L, \"{0}\");\n", tfn);
+			foreach(string ns in nsList) {
+				buffer += string.Format("\t\t\tLuaLib.tolua_module(L, \"{0}\", 0);\n", ns);
+				buffer += string.Format("\t\t\tLuaLib.tolua_beginmodule(L, \"{0}\");\n", ns);
+			}
+			buffer += string.Format("\t\t\tLuaLib.tolua_class(L, \"{0}\", null, new LuaFunction(LuaStack.LuaGC));\n", tfn);
+			buffer += string.Format("\t\t\tLuaLib.tolua_beginmodule(L, \"{0}\");\n", tn);
+
+			// class type and name, 1 means c sharp class
+			buffer += "\t\t\tLuaLib.tolua_constant(L, \"__ctype\", 1);\n";
+			buffer += string.Format("\t\t\tLuaLib.tolua_constant_string(L, \"__cname\", \"{0}\");\n", tfn);
+
+			// get all enums
+			Array names = Enum.GetNames(t);
+			Array values = Enum.GetValues(t);
+			for(int i = 0; i < names.Length; i++) {
+				buffer += string.Format("\t\t\tLuaLib.tolua_constant(L, \"{0}\", {1});\n", names.GetValue(i), Convert.ChangeType(values.GetValue(i), typeof(int)));
+			}
+
+			// register method ends
+			buffer += "\t\t\tLuaLib.tolua_endmodule(L);\n";
+			for(int i = 0; i < nsList.Length; i++) {
+				buffer += "\t\t\tLuaLib.tolua_endmodule(L);\n";
+			}
+			buffer += "\t\t\treturn 1;\n";
+			buffer += "\t\t}\n";
+
+			// close class and namespace
+			buffer += "\t}\n}";
+
+			// write to file
+			File.WriteAllText(path, buffer);
+		}
+
+		private static void GenerateClassLuaBinding(Type t) {
 			// get info
 			string tn = t.Name;
 			string tfn = t.GetNormalizedName();
