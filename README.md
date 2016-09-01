@@ -1,4 +1,4 @@
-If you are an English speaker, please view <a href="#English">English Version</a>
+If you are an English speaker, please view <a href="#what-is-this">English Version</a>
 
 这是什么
 ===
@@ -199,7 +199,7 @@ NOTE:
 * ```LuaComponent```把```MonoBehavior中```的消息全部导入到了lua端, 如果你需要处理什么消息, 在lua文件中添加对应的方法即可
 * ```LuaComponent```把自身实例与lua端进行了绑定, 所以你不需要对这个lua类调用```new```方法, 在```LuaComponent```的```Awake```方法中, 它调用了```BindInstanceToLuaClass```把自己和lua端连接了起来, 就好像你在lua端new过了一样, 在```BindInstanceToLuaClass```调用时, lua端的```ctor```被调用
 
-<a id="English">What is this</a>
+What is this
 ===
 
 This is a Unity3D Lua plugin, it is still in active development but basically you can run it now. It is my learning project also and I want it be the best of unity lua plugins. Welcome to use it.
