@@ -538,6 +538,14 @@ TOLUA_API void tolua_constant (lua_State* L, const char* name, lua_Number value)
     lua_rawset(L,-3);
 }
 
+/* Map constant string
+ * It assigns a constant string into the current module (or class)
+ */
+TOLUA_API void tolua_constant_string (lua_State* L, const char* name, const char* value) {
+    lua_pushstring(L,name);
+    tolua_pushstring(L, value);
+    lua_rawset(L,-3);
+}
 
 /* Map variable
     * It assigns a variable into the current module (or class)

@@ -99,6 +99,7 @@ TOLUA_API void tolua_module (lua_State* L, const char* name, int hasvar);
 TOLUA_API void tolua_class (lua_State* L, const char* name, const char* base, lua_CFunction col);
 TOLUA_API void tolua_function (lua_State* L, const char* name, lua_CFunction func);
 TOLUA_API void tolua_constant (lua_State* L, const char* name, lua_Number value);
+TOLUA_API void tolua_constant_string (lua_State* L, const char* name, const char* value);
 TOLUA_API void tolua_variable (lua_State* L, const char* name, lua_CFunction get, lua_CFunction set);
 TOLUA_API void tolua_array (lua_State* L,const char* name, lua_CFunction get, lua_CFunction set);
 

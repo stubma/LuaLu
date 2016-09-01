@@ -25,18 +25,6 @@ local U3D_INHERITED_FROM_LUA = 3
 function class(classname, super)
     local cls = {}
 
-    -- call ctor in inheritance sequence
-    function callCtor(instance, super, ...)
-        if super ~= nil then
-            if super.super ~= nil then
-                callCtor(instance, super.super, ...)
-            end
-            if super.ctor ~= nil then
-                super.ctor(instance, ...)
-            end
-        end
-    end
-
     if super == nil or super.__ctype == nil or super.__ctype == U3D_INHERITED_FROM_LUA then
         -- inherited from Lua Object
         if super then
@@ -98,6 +86,18 @@ function class(classname, super)
     end
 
     return cls
+end
+
+-- call ctor in inheritance sequence
+function callCtor(instance, super, ...)
+    if super ~= nil then
+        if super.__ctype ~= U3D_NATIVE_CLASS and super.super ~= nil then
+            callCtor(instance, super.super, ...)
+        end
+        if super.ctor ~= nil then
+            super.ctor(instance, ...)
+        end
+    end
 end
 
 -- bridge accessor invocation to a bean member

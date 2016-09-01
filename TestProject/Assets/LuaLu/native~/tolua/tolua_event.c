@@ -63,31 +63,35 @@ static int module_index_event (lua_State* L)
     if (lua_istable(L,-1))
     {
         lua_pushvalue(L,2);  // t k tget k
-        lua_rawget(L,-2); // t k tget vget
+        lua_rawget(L, -2); // t k tget vget
+        lua_remove(L, -2); // t k vget
         if (lua_iscfunction(L,-1))
         {
-            lua_call(L,0,1);
+            lua_call(L,0,1);  // t k v
+            return 1;
+        } else if (lua_istable(L,-1)) {
             return 1;
         }
-        else if (lua_istable(L,-1))
-            return 1;
     }
+
     /* call old index meta event */
-    if (lua_getmetatable(L,1)) // t k tget mt
+    if (lua_getmetatable(L,1)) // t k mt
     {
-        lua_pushstring(L,"__index"); // t k tget mt __index_key
-        lua_rawget(L,-2); // t k tget mt __index
+        lua_pushstring(L,"__index"); // t k mt __index_key
+        lua_rawget(L,-2); // t k mt __index
         if (lua_isfunction(L,-1))
         {
-            lua_pushvalue(L,1); // t k tget mt __index t
-            lua_pushvalue(L,2); // t k tget mt __index t k
-            lua_call(L,2,1); // t k tget mt v
+            lua_pushvalue(L, -2); // t k mt __index mt
+            lua_pushvalue(L,2); // t k mt __index mt k
+            lua_remove(L, -4); // t k __index mt k
+            lua_call(L,2,1); // t k v
             return 1;
         }
         else if (lua_istable(L,-1))
         {
-            lua_pushvalue(L,2); // t k tget mt __index k
-            lua_gettable(L,-2); // t k tget mt v
+            lua_pushvalue(L,2); // t k mt __index k
+            lua_gettable(L,-2); // t k mt v
+            lua_remove(L, -2); // t k v
             return 1;
         }
     }

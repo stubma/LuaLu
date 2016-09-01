@@ -745,6 +745,9 @@
 		public static extern void tolua_constant(IntPtr L, string name, double value);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
+		public static extern void tolua_constant_string(IntPtr L, string name, string value);
+
+		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void tolua_variable(IntPtr L, string name, LuaFunction get, LuaFunction set);
 
 		[DllImport(LUALIB, CallingConvention = CallingConvention.Cdecl)]
