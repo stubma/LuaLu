@@ -1122,7 +1122,7 @@
 					buffer += string.Format("\t\t\t{0} ret = {1}.{2};\n", ptn, getter.IsStatic ? tn : "obj", pn);
 
 					// push returned value
-					buffer += GenerateBoxReturnValue(getter, "\t\t\t");
+					buffer += GenerateBoxReturnValue(getter.ReturnType, "\t\t\t");
 
 					// method end
 					buffer += "\t\t}\n\n";
@@ -1212,7 +1212,7 @@
 
 			// generate invocation wrapper
 			for(int i = 0; i < mList.Count; i++) {
-				buffer += GenerateConstructorInvocation(t, mList[i], i);
+				buffer += GenerateMethodInvocation(t, mList[i], i);
 			}
 
 			// constructor start
@@ -1425,7 +1425,7 @@
 			return buffer;
 		}
 
-		private static string GenerateMethodInvocation(Type t, MethodInfo callM, int mIndex) {
+		private static string GenerateMethodInvocation(Type t, MethodBase callM, int mIndex) {
 			// if operator, should conversion name
 			string mn = callM.Name;
 			bool isOperator = false;
@@ -1445,9 +1445,10 @@
 			string buffer = "";
 			ParameterInfo[] pList = callM.GetParameters();
 			int paramCount = pList.Length;
+			bool isStatic = callM.IsConstructor ? true : callM.IsStatic;
 
 			// invocation start
-			buffer += indent + string.Format("private static int call_{0}_{1}(IntPtr L) {{\n", mIndex, mn);
+			buffer += indent + string.Format("private static int call_{0}_{1}(IntPtr L) {{\n", mIndex, callM.IsConstructor ? "Constructor" : mn);
 
 			// argument handling
 			if(paramCount > 0) {
@@ -1465,7 +1466,7 @@
 				buffer += indent + "// convert lua value to desired arguments\n";
 				buffer += indent + "bool ok = true;\n";
 				for(int i = 0; i < pList.Length; i++) {
-					buffer += GenerateUnboxParameters(pList[i], i, tn + "." + mn, indent, callM.IsStatic);
+					buffer += GenerateUnboxParameters(pList[i], i, tn + "." + mn, indent, isStatic);
 				}
 
 				// check conversion
@@ -1481,11 +1482,11 @@
 			}
 
 			// get info of method to be called
-			Type rt = callM.ReturnType;
+			Type rt = callM.IsConstructor ? t : ((MethodInfo)callM).ReturnType;
 			string rtn = rt.GetNormalizedName();
 
 			// perform object type checking based on method type, static or not
-			if(!callM.IsStatic) {
+			if(!isStatic) {
 				indent += "\t";
 				buffer += indent + "// caller type check\n";
 				buffer += indent.Substring(1) + "#if DEBUG\n";
@@ -1509,7 +1510,7 @@
 
 			// call function
 			indent += "\t";
-			buffer += indent + "// call function\n";
+			buffer += indent + "// call\n";
 			buffer += indent;
 			if(rtn != "void") {
 				buffer += string.Format("{0} ret = ", rtn);
@@ -1524,8 +1525,9 @@
 					buffer += "arg0 " + opStr + " arg1;\n";
 				}
 			} else {
-				// for normal method
-				if(callM.IsStatic) {
+				if(callM.IsConstructor) {
+					buffer += string.Format("new {0}(", tfn);
+				} else if(isStatic) {
 					buffer += string.Format("{0}.{1}(", tfn, mn);
 				} else {
 					buffer += string.Format("obj.{0}(", mn);
@@ -1545,77 +1547,7 @@
 			}
 
 			// push returned value
-			buffer += GenerateBoxReturnValue(callM, indent);
-
-			// invocation end
-			indent = indent.Substring(1);
-			buffer += indent + "}\n\n";
-
-			// return
-			return buffer;
-		}
-
-		private static string GenerateConstructorInvocation(Type t, ConstructorInfo callM, int mIndex) {
-			string mn = callM.Name;
-			string tn = t.Name;
-			string tfn = t.GetNormalizedName();
-			string tfnUnderscore = t.GetNormalizedUnderscoreName();
-			string clazz = "lua_" + tfnUnderscore + "_binder";
-			string fn = clazz + "." + mn;
-			string indent = "\t\t";
-			string buffer = "";
-			ParameterInfo[] pList = callM.GetParameters();
-			int paramCount = pList.Length;
-
-			// invocation start
-			buffer += indent + string.Format("private static int call_{0}_Constructor(IntPtr L) {{\n", mIndex);
-
-			// argument handling
-			if(paramCount > 0) {
-				// argument declaration
-				indent += "\t";
-				buffer += indent + "// arguments declaration\n";
-				for(int i = 0; i < pList.Length; i++) {
-					Type pt = pList[i].ParameterType;
-					string ptn = pt.GetNormalizedName();
-					buffer += string.Format(indent + "{0} arg{1} = default({0});\n", ptn, i);
-				}
-
-				// argument conversion
-				buffer += "\n";
-				buffer += indent + "// convert lua value to desired arguments\n";
-				buffer += indent + "bool ok = true;\n";
-				for(int i = 0; i < pList.Length; i++) {
-					buffer += GenerateUnboxParameters(pList[i], i, tn + mn, indent, true);
-				}
-
-				// check conversion
-				buffer += "\n";
-				buffer += indent + "// if conversion is not ok, print error and return\n";
-				buffer += indent + "if(!ok) {\n";
-				buffer += indent.Substring(1) + "#if DEBUG\n";
-				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"invalid arguments in function '{0}'\", ref err);\n", fn);
-				buffer += indent.Substring(1) + "#endif\n";
-				buffer += indent + "\treturn 0;\n";
-				buffer += indent + "}\n\n";
-				indent = indent.Substring(1);
-			}
-
-			// call function
-			indent += "\t";
-			buffer += indent + "// call constructor\n";
-			buffer += indent;
-			buffer += string.Format("{0} ret = new {0}(", tfn);
-			for(int i = 0; i < pList.Length; i++) {
-				buffer += string.Format("arg{0}", i);
-				if(i < pList.Length - 1) {
-					buffer += ", ";
-				}
-			}
-			buffer += ");\n";
-
-			// push returned value
-			buffer += GenerateBoxReturnValue(t, indent);
+			buffer += GenerateBoxReturnValue(rt, indent);
 
 			// invocation end
 			indent = indent.Substring(1);
@@ -1647,11 +1579,6 @@
 
 			// return
 			return buffer;
-		}
-
-		private static string GenerateBoxReturnValue(MethodInfo m, string indent) {
-			Type rt = m.ReturnType;
-			return GenerateBoxReturnValue(rt, indent);
 		}
 
 		private static string GenerateUnboxParameters(ParameterInfo pi, int argIndex, string methodName, string indent, bool isStatic) {
