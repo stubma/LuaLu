@@ -36,11 +36,13 @@
 			return fn;
 		}
 
-		public void test(int i) {
+		public string test(int i) {
 			Debug.Log("call test int");
+			return "hahaa";
 		}
-		public void test(byte b) {
+		public int test(byte b) {
 			Debug.Log("call test byte");
+			return 33;
 		}
 		public void test(string s) {
 			Debug.Log("call test string");
