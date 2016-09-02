@@ -371,6 +371,86 @@
 			return ctors;
 		}
 
+		public static string GenerateOverloadMethodSignatures(Type t, Dictionary<string, List<MethodInfo>> publicMethodMap, List<ConstructorInfo> ctors) {
+			string buffer = "";
+			string tfn = t.GetNormalizedName();
+
+			// map start
+			buffer += "\t\t// overload method parameter signatures\n";
+			buffer += "\t\tstatic Dictionary<string, List<List<string>>> SIG = new Dictionary<string, List<List<string>>> {\n";
+
+			// for public methods
+			foreach(List<MethodInfo> mList in publicMethodMap.Values) {
+				if(mList.Count > 1) {
+					string mn = mList[0].Name;
+
+					// entry start
+					buffer += "\t\t\t{\n";
+					buffer += string.Format("\t\t\t\t\"{0}\",\n", mn);
+
+					// value list start
+					buffer += "\t\t\t\tnew List<List<string>> {\n";
+
+					// method arguments
+					for(int i = 0; i < mList.Count; i++) {
+						// method info
+						bool isStatic = mList[i].IsStatic;
+						ParameterInfo[] pList = mList[i].GetParameters();
+
+						// method arguments start
+						buffer += "\t\t\t\t\tnew List<string> { ";
+
+						// if not static, append type name
+						if(!isStatic) {
+							buffer += string.Format("\"{0}\"", tfn);
+							if(pList.Length > 0) {
+								buffer += ", ";
+							}
+						}
+
+						// method arguments
+						for(int j = 0; j < pList.Length; j++) {
+							// get parameter info
+							ParameterInfo pi = pList[j];
+							Type pt = pi.ParameterType;
+							string ptn = pt.FullName;
+							if(pt.IsGenericType) {
+								int gArgc = pt.GetGenericArguments().Length;
+								if(gArgc > 0) {
+									ptn = ptn.Substring(0, ptn.IndexOf('`')) + "`" + gArgc;
+								}
+							}
+
+							// append parameter name
+							buffer += string.Format("\"{0}{1}\"", pi.IsParams() ? "params " : "", ptn);
+							if(j < pList.Length - 1) {
+								buffer += ", ";
+							}
+						}
+
+						// method arguments end
+						buffer += " }";
+						if(i < mList.Count - 1) {
+							buffer += ",";
+						}
+						buffer += "\n";
+					}
+
+					// value list end
+					buffer += "\t\t\t\t}\n";
+
+					// entry end
+					buffer += "\t\t\t}, \n";
+				}
+			}
+
+			// map end
+			buffer += "\t\t};\n\n";
+
+			// return
+			return buffer;
+		}
+
 		private static void GenerateClassLuaBinding(Type t) {
 			// get info
 			string tn = t.Name;
@@ -399,11 +479,18 @@
 			buffer += "\t\tstatic tolua_Error err = new tolua_Error();\n";
 			buffer += "\t#endif\n\n";
 
+			// overload methods resolution help list
+			buffer += "\t\t// help list for overload resolution\n";
+			buffer += "\t\tstatic List<int> ORList = new List<int>();\n\n";
+
 			// get a map about methods which can be bound to lua
 			Dictionary<string, List<MethodInfo>> publicMethodMap = GetBindableMethods(t);
 
 			// get constructors which can be bound to lua
 			List<ConstructorInfo> ctors = GetBindableConstructors(t);
+
+			// generate parameter map for overload methods
+			buffer += GenerateOverloadMethodSignatures(t, publicMethodMap, ctors);
 
 			// we don't generate constructor for delegate type
 			if(!t.IsCustomDelegateType()) {

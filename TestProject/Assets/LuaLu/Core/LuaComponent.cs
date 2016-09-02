@@ -45,6 +45,9 @@
 		public void test(string s) {
 			Debug.Log("call test string");
 		}
+		public static void test(string s, int i) {
+			Debug.Log("call test static string");
+		}
 		public void test(object o) {
 			Debug.Log("call test obj");
 		}
