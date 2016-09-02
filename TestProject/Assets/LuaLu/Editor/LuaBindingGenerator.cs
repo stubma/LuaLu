@@ -120,20 +120,20 @@
 			types.Add(typeof(LuaComponent));
 
 			// XXX: test code
-			types.Add(typeof(System.Object));
-			types.Add(typeof(Component));
-			types.Add(typeof(Type));
-			types.Add(typeof(GameObject));
-			types.Add(typeof(Transform));
-			types.Add(typeof(Time));
-			types.Add(typeof(Vector3));
-			types.Add(typeof(Rigidbody));
-			types.Add(typeof(Text));
-			types.Add(typeof(Input));
-			types.Add(typeof(BoxCollider));
-			types.Add(typeof(MulticastDelegate));
-			types.Add(typeof(Vector3));
-			types.Add(typeof(CameraType));
+//			types.Add(typeof(System.Object));
+//			types.Add(typeof(Component));
+//			types.Add(typeof(Type));
+//			types.Add(typeof(GameObject));
+//			types.Add(typeof(Transform));
+//			types.Add(typeof(Time));
+//			types.Add(typeof(Vector3));
+//			types.Add(typeof(Rigidbody));
+//			types.Add(typeof(Text));
+//			types.Add(typeof(Input));
+//			types.Add(typeof(BoxCollider));
+//			types.Add(typeof(MulticastDelegate));
+//			types.Add(typeof(Vector3));
+//			types.Add(typeof(CameraType));
 
 			// sort them
 			types = SortTypes(types);
@@ -297,49 +297,14 @@
 			File.WriteAllText(path, buffer);
 		}
 
-		private static void GenerateClassLuaBinding(Type t) {
-			// get info
-			string tn = t.Name;
-			string tfn = t.GetNormalizedName();
-			string tfnUnderscore = t.GetNormalizedUnderscoreName();
-			string[] nsList = tfn.Split(new Char[] { '.' });
-			Type bt = t.BaseType;
-			string btfn = bt != null ? bt.FullName : "";
-			Array.Resize(ref nsList, nsList.Length - 1);
-			string clazz = "lua_" + tfnUnderscore + "_binder";
-			string path = LuaConst.GENERATED_LUA_BINDING_PREFIX + clazz + ".cs";
-			string buffer = "";
-
-			// namepace and class start
-			buffer += "namespace LuaLu {\n";
-			buffer += "\tusing System;\n";
-			buffer += "\tusing System.IO;\n";
-			buffer += "\tusing System.Collections;\n";
-			buffer += "\tusing System.Collections.Generic;\n";
-			buffer += "\tusing UnityEngine;\n";
-			buffer += "\tusing LuaInterface;\n";
-			buffer += string.Format("\n\tpublic class {0} {{\n", clazz);
-
-			// shared err struct
-			buffer += "\t#if DEBUG\n";
-			buffer += "\t\tstatic tolua_Error err = new tolua_Error();\n";
-			buffer += "\t#endif\n\n";
-
-			// get constructors, we don't generate constructor for delegate type
-			ConstructorInfo[] ctors = t.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
-			if(!t.IsCustomDelegateType()) {
-				if(ctors.Length > 0) {
-					buffer += GenerateConstructor(t, ctors);
-				}
-			}
-
+		private static Dictionary<string, List<MethodInfo>> GetBindableMethods(Type t) {
 			// methods
-			MethodInfo[] methods = t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance);
-			MethodInfo[] staticMethods = t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
+			MethodInfo[] mArr = t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance);
+			MethodInfo[] smArr = t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
 
 			// filter generic/obsolete methods, property setter/getter, operator, events
 			List<MethodInfo> publicMethods = new List<MethodInfo>();
-			Array.ForEach<MethodInfo>(methods, m => {
+			Array.ForEach<MethodInfo>(mArr, m => {
 				if(!m.IsGenericMethod && 
 					!m.IsObsolete() && 
 					!EXCLUDE_METHODS.Contains(m.Name) && 
@@ -358,7 +323,7 @@
 					}
 				}
 			});
-			Array.ForEach<MethodInfo>(staticMethods, m => {
+			Array.ForEach<MethodInfo>(smArr, m => {
 				if(!m.IsGenericMethod && 
 					!m.IsObsolete() && 
 					!EXCLUDE_METHODS.Contains(m.Name) && 
@@ -390,6 +355,62 @@
 				}
 				mList.Add(m);
 			});
+
+			// return
+			return publicMethodMap;
+		}
+
+		private static List<ConstructorInfo> GetBindableConstructors(Type t) {
+			ConstructorInfo[] cArr = t.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+			List<ConstructorInfo> ctors = new List<ConstructorInfo>();
+			Array.ForEach<ConstructorInfo>(cArr, c => {
+				if(!c.IsGenericMethod && !c.IsObsolete()) {
+					ctors.Add(c);
+				}
+			});
+			return ctors;
+		}
+
+		private static void GenerateClassLuaBinding(Type t) {
+			// get info
+			string tn = t.Name;
+			string tfn = t.GetNormalizedName();
+			string tfnUnderscore = t.GetNormalizedUnderscoreName();
+			string[] nsList = tfn.Split(new Char[] { '.' });
+			Type bt = t.BaseType;
+			string btfn = bt != null ? bt.FullName : "";
+			Array.Resize(ref nsList, nsList.Length - 1);
+			string clazz = "lua_" + tfnUnderscore + "_binder";
+			string path = LuaConst.GENERATED_LUA_BINDING_PREFIX + clazz + ".cs";
+			string buffer = "";
+
+			// namepace and class start
+			buffer += "namespace LuaLu {\n";
+			buffer += "\tusing System;\n";
+			buffer += "\tusing System.IO;\n";
+			buffer += "\tusing System.Collections;\n";
+			buffer += "\tusing System.Collections.Generic;\n";
+			buffer += "\tusing UnityEngine;\n";
+			buffer += "\tusing LuaInterface;\n";
+			buffer += string.Format("\n\tpublic class {0} {{\n", clazz);
+
+			// shared err struct
+			buffer += "\t#if DEBUG\n";
+			buffer += "\t\tstatic tolua_Error err = new tolua_Error();\n";
+			buffer += "\t#endif\n\n";
+
+			// get a map about methods which can be bound to lua
+			Dictionary<string, List<MethodInfo>> publicMethodMap = GetBindableMethods(t);
+
+			// get constructors which can be bound to lua
+			List<ConstructorInfo> ctors = GetBindableConstructors(t);
+
+			// we don't generate constructor for delegate type
+			if(!t.IsCustomDelegateType()) {
+				if(ctors.Count > 0) {
+					buffer += GenerateConstructor(t, ctors);
+				}
+			}
 
 			// generate for public methods
 			foreach(List<MethodInfo> mList in publicMethodMap.Values) {
@@ -457,7 +478,7 @@
 
 			// register constructor, except custom delegate type
 			if(!t.IsCustomDelegateType()) {
-				if(ctors.Length > 0) {
+				if(ctors.Count > 0) {
 					buffer += "\t\t\tLuaLib.tolua_function(L, \"new\", new LuaFunction(__Constructor__));\n";
 				}
 			}
@@ -1036,7 +1057,7 @@
 			return buffer;
 		}
 
-		private static string GenerateConstructor(Type t, ConstructorInfo[] mList) {
+		private static string GenerateConstructor(Type t, List<ConstructorInfo> mList) {
 			string buffer = "";
 			string tfnUnderscore = t.GetNormalizedUnderscoreName();
 			string clazz = "lua_" + tfnUnderscore + "_binder";
@@ -1048,7 +1069,7 @@
 
 			// group constructor by parameter count, mind optional parameter
 			Dictionary<int, List<ConstructorInfo>> cpMap = new Dictionary<int, List<ConstructorInfo>>();
-			Array.ForEach<ConstructorInfo>(mList, c => {
+			mList.ForEach(c => {
 				ParameterInfo[] pList = c.GetParameters();
 				int maxArg = pList.Length;
 				int minArg = maxArg;
