@@ -347,23 +347,34 @@
 			return ok;
 		}
 
-		public static bool luaval_to_array<T>(IntPtr L, int lo, out T[] ret, string funcName = "") {
+		public static bool luaval_to_array<T>(IntPtr L, int lo, int toLo, out T[] ret, string funcName = "") {
 			// by default nullify it
 			ret = null;
 
-			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
+			// convert negative index to positive
+			int top = LuaLib.lua_gettop(L);
+			if(lo < 0) {
+				lo = top + lo + 1;
+			}
+			if(toLo < 0) {
+				toLo = top + toLo + 1;
+			}
+
+			// if toLo <= lo, then we think lo should be a table
+			// otherwise, the array is flatten from lo to toLo 
+			bool flat = toLo > lo;
+
+			// validate, however, if no such index, we return true, not false
+			if(IntPtr.Zero == L) {
 				return false;
 			}
-
-			// convert negative index to positive
-			if(lo < 0) {
-				lo = LuaLib.lua_gettop(L) + lo + 1;
+			if(top < lo) {
+				return true;
 			}
 
-			// top should be a table
+			// top should be a table if not flat
 			bool ok = true;
-			if(!LuaLib.tolua_istable(L, lo, ref tolua_err)) {
+			if(!flat && !LuaLib.tolua_istable(L, lo, ref tolua_err)) {
 				#if DEBUG
 				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
 				#endif
@@ -377,15 +388,18 @@
 				string tn = t.GetNormalizedName();
 
 				// iterate all elements
-				int len = LuaLib.lua_objlen(L, lo);
+				int len = flat ? (toLo - lo + 1) : LuaLib.lua_objlen(L, lo);
 				ret = new T[len];
 				for(int i = 0; i < len; i++) {
-					LuaLib.lua_pushnumber(L, i + 1);
-					LuaLib.lua_gettable(L, lo);
+					// if not flat, get value from table
+					if(!flat) {
+						LuaLib.lua_pushnumber(L, i + 1);
+						LuaLib.lua_gettable(L, lo);
+					}
 
 					// convert value
 					T element;
-					ok = luaval_to_type<T>(L, -1, out element, funcName);
+					ok = luaval_to_type<T>(L, flat ? (lo + i) : -1, out element, funcName);
 					if(ok) {
 						ret[i] = element;
 					}
@@ -395,8 +409,10 @@
 						Debug.Assert(false, string.Format("luaval_to_array: some element are not type: {0}", tn));
 					}
 
-					// pop value
-					LuaLib.lua_pop(L, 1);
+					// pop value if not flat
+					if(!flat) {
+						LuaLib.lua_pop(L, 1);
+					}
 				}
 			}
 

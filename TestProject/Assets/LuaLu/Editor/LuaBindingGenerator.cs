@@ -245,7 +245,6 @@
 
 		private static void GenerateEnumLuaBinding(Type t) {
 			// get info
-			string tn = t.Name;
 			string tfn = t.GetNormalizedName();
 			string tfnUnderscore = t.GetNormalizedUnderscoreName();
 			string[] nsList = tfn.Split(new Char[] { '.' });
@@ -1033,7 +1032,7 @@
 						if(et.IsArray) {
 							// TODO more than one dimension array? not supported yet
 						} else {
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_array<{0}>(L, 2, out ret, \"{1}\");\n", etn, sn);
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_array<{0}>(L, 2, 2, out ret, \"{1}\");\n", etn, sn);
 						}
 					} else if(ft.IsList()) {
 						if(ftn == "System.Array") {
@@ -1168,7 +1167,7 @@
 						if(et.IsArray) {
 							// TODO more than one dimension array? not supported yet
 						} else {
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_array<{0}>(L, 2, out ret, \"{1}\");\n", etn, fn);
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_array<{0}>(L, 2, 2, out ret, \"{1}\");\n", etn, fn);
 						}
 					} else if(pt.IsList()) {
 						if(ptn == "System.Array") {
@@ -1600,8 +1599,10 @@
 				string etn = et.GetNormalizedName();
 				if(et.IsArray) {
 					// TODO more than one dimension array? not supported yet
+				} else if(pi.IsParams()) {
+					buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_array<{0}>(L, {1}, -1, out arg{2}, \"{3}\");\n", etn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
 				} else {
-					buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_array<{0}>(L, {1}, out arg{2}, \"{3}\");\n", etn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
+					buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_array<{0}>(L, {1}, {1}, out arg{2}, \"{3}\");\n", etn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
 				}
 			} else if(pt.IsList()) {
 				if(ptn == "System.Array") {
@@ -1835,7 +1836,7 @@
 						if(et.IsArray) {
 							// TODO more than one dimension array? not supported yet
 						} else {
-							buffer += string.Format(indent + "LuaValueBoxer.luaval_to_array<{0}>(state, -1, out ret);\n", etn);
+							buffer += string.Format(indent + "LuaValueBoxer.luaval_to_array<{0}>(state, -1, -1, out ret);\n", etn);
 						}
 					} else if(rt.IsList()) {
 						if(rtn == "System.Array") {
