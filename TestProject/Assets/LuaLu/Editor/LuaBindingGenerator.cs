@@ -249,7 +249,6 @@
 			string tfn = t.GetNormalizedName();
 			string tfnUnderscore = t.GetNormalizedUnderscoreName();
 			string[] nsList = tfn.Split(new Char[] { '.' });
-			Array.Resize(ref nsList, nsList.Length - 1);
 			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string path = LuaConst.GENERATED_LUA_BINDING_PREFIX + clazz + ".cs";
 			string buffer = "";
@@ -271,8 +270,6 @@
 				buffer += string.Format("\t\t\tLuaLib.tolua_module(L, \"{0}\", 0);\n", ns);
 				buffer += string.Format("\t\t\tLuaLib.tolua_beginmodule(L, \"{0}\");\n", ns);
 			}
-			buffer += string.Format("\t\t\tLuaLib.tolua_class(L, \"{0}\", null, new LuaFunction(LuaStack.LuaGC));\n", tfn);
-			buffer += string.Format("\t\t\tLuaLib.tolua_beginmodule(L, \"{0}\");\n", tn);
 
 			// class type and name, 1 means c sharp class
 			buffer += "\t\t\tLuaLib.tolua_constant(L, \"__ctype\", 1);\n";
