@@ -120,20 +120,20 @@
 			types.Add(typeof(LuaComponent));
 
 			// XXX: test code
-			types.Add(typeof(System.Object));
-			types.Add(typeof(Component));
-			types.Add(typeof(Type));
-			types.Add(typeof(GameObject));
-			types.Add(typeof(Transform));
-			types.Add(typeof(Time));
-			types.Add(typeof(Vector3));
-			types.Add(typeof(Rigidbody));
-			types.Add(typeof(Text));
-			types.Add(typeof(Input));
-			types.Add(typeof(BoxCollider));
-			types.Add(typeof(MulticastDelegate));
-			types.Add(typeof(Vector3));
-			types.Add(typeof(CameraType));
+//			types.Add(typeof(System.Object));
+//			types.Add(typeof(Component));
+//			types.Add(typeof(Type));
+//			types.Add(typeof(GameObject));
+//			types.Add(typeof(Transform));
+//			types.Add(typeof(Time));
+//			types.Add(typeof(Vector3));
+//			types.Add(typeof(Rigidbody));
+//			types.Add(typeof(Text));
+//			types.Add(typeof(Input));
+//			types.Add(typeof(BoxCollider));
+//			types.Add(typeof(MulticastDelegate));
+//			types.Add(typeof(Vector3));
+//			types.Add(typeof(CameraType));
 
 			// sort them
 			types = SortTypes(types);
@@ -1356,144 +1356,70 @@
 			string tfnUnderscore = t.GetNormalizedUnderscoreName();
 			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string fn = clazz + "." + mn;
+			string indent = "\t\t";
 
 			// generate invocation wrappers
 			for(int i = 0; i < mList.Count; i++) {
 				buffer += GenerateMethodInvocation(t, mList[i], i);
 			}
 
-			// group method by parameter count, mind optional parameter
-			Dictionary<int, List<MethodInfo>> mpMap = new Dictionary<int, List<MethodInfo>>();
-			mList.ForEach(m => {
-				ParameterInfo[] pList = m.GetParameters();
-				int maxArg = pList.Length;
-				if(!m.IsStatic) {
-					maxArg++;
-				}
-				int minArg = maxArg;
-				foreach(ParameterInfo pi in pList) {
-					if(pi.IsOptional) {
-						minArg--;
-					}
-				}
-				for(int i = minArg; i <= maxArg; i++) {
-					List<MethodInfo> ml = null;
-					if(mpMap.ContainsKey(i)) {
-						ml = mpMap[i];
-					} else {
-						ml = new List<MethodInfo>();
-						mpMap[i] = ml;
-					}
-					ml.Add(m);
-				}
-			});
+			// method start
+			buffer += indent + "[MonoPInvokeCallback(typeof(LuaFunction))]\n";
+			buffer += indent + string.Format("public static int {0}(IntPtr L) {{\n", mn);
 
-			// method
-			buffer += "\t\t[MonoPInvokeCallback(typeof(LuaFunction))]\n";
-			buffer += string.Format("\t\tpublic static int {0}(IntPtr L) {{\n", mn);
-			buffer += "\t\t\t// get argument count\n";
-			buffer += "\t\t\tint argc = LuaLib.lua_gettop(L);\n";
-			buffer += "\n";
-			foreach(int c in mpMap.Keys) {
+			// get argument count
+			indent += "\t";
+			buffer += indent + "// get argument count\n";
+			buffer += indent + "int argc = LuaLib.lua_gettop(L);\n\n";
+
+			// if no overload method, just call
+			// if has, need do overload resolution
+			if(mList.Count > 1) {
+				// prepare, clear resolution list
+				buffer += indent + "// clear resolution list\n";
+				buffer += indent + "ORList.Clear();\n\n";
+
+				// first exclude methods which argument count not matched
+				buffer += indent + "// first exclude methods whose argument count not matched\n";
+				buffer += indent + string.Format("List<List<string>> sigList = SIG[\"{0}\"];\n", mn);
+				buffer += indent + "for(int i = 0; i < sigList.Count; i++) {\n";
+				indent += "\t";
+				buffer += indent + "List<string> sigs = sigList[i];\n";
+				buffer += indent + "bool lastIsParams = sigs.Count > 0 ? sigs[sigs.Count - 1].StartsWith(\"params \") : false;\n";
+				buffer += indent + "int minArg = sigs.Count - (lastIsParams ? 1 : 0);\n";
+				buffer += indent + "if((lastIsParams && argc >= minArg) || (!lastIsParams && argc == minArg)) {\n";
+				indent += "\t";
+				buffer += indent + "ORList.Add(i);\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n\n";
+			} else {
+				// method info
+				bool isStatic = mList[0].IsStatic;
+				ParameterInfo[] pList = mList[0].GetParameters();
+				bool lastIsParams = pList.Length > 0 ? pList[pList.Length - 1].IsParams() : false;
+				int minArg = pList.Length + (isStatic ? 0 : 1) - (lastIsParams ? 1 : 0);
+
 				// check argument count
-				buffer += "\t\t\t// if argument count matched, call\n";
-				buffer += string.Format("\t\t\tif(argc == {0}) {{\n", c);
+				buffer += indent + "// if argument count matched, call\n";
+				buffer += string.Format("\t\t\tif(argc {0} {1}) {{\n", lastIsParams ? ">=" : "==", minArg);
 
-				// check method count with same parameter count
-				List<MethodInfo> ml = mpMap[c];
-				if(ml.Count > 1) {
-					// get lua types
-					buffer += "\t\t\t\t// get lua parameter types\n";
-					buffer += "\t\t\t\tint[] luaTypes;\n";
-					buffer += "\t\t\t\tint[] staticLuaTypes;\n";
-					buffer += "\t\t\t\tLuaValueBoxer.GetLuaParameterTypes(L, out luaTypes, false);\n";
-					buffer += "\t\t\t\tLuaValueBoxer.GetLuaParameterTypes(L, out staticLuaTypes, true);\n";
+				// call
+				indent += "\t";
+				buffer += indent + string.Format("return call_0_{0}(L);\n", mn);
 
-					// check first arg if it is user type
-					buffer += string.Format("\t\t\t\tbool mayBeThis = LuaLib.tolua_checkusertype(L, 1, \"{0}\");\n", tfn);
-
-					// native types
-					buffer += "\n";
-					buffer += "\t\t\t\t// native types\n";
-					for(int i = 0; i < ml.Count; i++) {
-						// get parameter name which can be queried by GetType
-						buffer += string.Format("\t\t\t\tstring[] nativeTypes{0} = new string[] {{\n", i);
-						ParameterInfo[] pList = ml[i].GetParameters();
-						for(int j = 0; j < pList.Length; j++) {
-							ParameterInfo pi = pList[j];
-							Type pt = pi.ParameterType;
-							string ptn = pt.FullName;
-							if(pt.IsGenericType) {
-								int gArgc = pt.GetGenericArguments().Length;
-								if(gArgc > 0) {
-									ptn = ptn.Substring(0, ptn.IndexOf('`')) + "`" + gArgc;
-								}
-							}
-
-							// put
-							buffer += string.Format("\t\t\t\t\t\"{0}\"", ptn);
-							if(j < pList.Length - 1) {
-								buffer += ",";
-							}
-							buffer += "\n";
-						}
-						buffer += "\t\t\t\t};\n";
-					}
-
-					// accurate match every method
-					buffer += "\n";
-					for(int i = 0; i < ml.Count; i++) {
-						// accurate match
-						if(i == 0) {
-							buffer += "\t\t\t\t";
-						}
-						if(ml[i].IsStatic) {
-							buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, staticLuaTypes, nativeTypes{0}, true)) {{\n", i);
-						} else {
-							buffer += string.Format("if(mayBeThis && LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, false)) {{\n", i);
-						}
-
-						// only one method, so it is simple, just pick the only one
-						buffer += string.Format("\t\t\t\t\treturn call_{0}_{1}(L);\n", mList.IndexOf(ml[i]), mn);
-
-						// close if
-						buffer += "\t\t\t\t} else ";
-					}
-
-					// fuzzy match every method
-					for(int i = 0; i < ml.Count; i++) {
-						// accurate match
-						if(ml[i].IsStatic) {
-							buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, staticLuaTypes, nativeTypes{0}, true, true)) {{\n", i);
-						} else {
-							buffer += string.Format("if(mayBeThis && LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, false, true)) {{\n", i);
-						}
-
-						// only one method, so it is simple, just pick the only one
-						buffer += string.Format("\t\t\t\t\treturn call_{0}_{1}(L);\n", mList.IndexOf(ml[i]), mn);
-
-						// close if
-						buffer += "\t\t\t\t}";
-						if(i < ml.Count - 1) {
-							buffer += " else ";
-						} else {
-							buffer += "\n";
-						}
-					}
-				} else {
-					// only one method, so it is simple, just pick the only one
-					buffer += string.Format("\t\t\t\treturn call_{0}_{1}(L);\n", mList.IndexOf(ml[0]), mn);
-				}
-
-				// close if
-				buffer += "\t\t\t}\n\n";
+				// check argument count - end
+				indent = indent.Substring(1);
+				buffer += indent + "}\n\n";
 			}
 
 			// fallback if argc doesn't match
-			buffer += "\t\t\t// if to here, means argument count is not correct\n";
-			buffer += string.Format("\t\t\tLuaLib.luaL_error(L, \"{0} has wrong number of arguments: \" + argc);\n", fn);
-			buffer += "\t\t\treturn 0;\n";
-			buffer += "\t\t}\n\n";
+			buffer += indent + "// if to here, means argument count is not correct\n";
+			buffer += indent + string.Format("LuaLib.luaL_error(L, \"{0} has wrong number of arguments: \" + argc);\n", fn);
+			buffer += indent + "return 0;\n";
+			indent = indent.Substring(1);
+			buffer += indent + "}\n\n";
 
 			// return
 			return buffer;
