@@ -15,6 +15,7 @@
 	/// <summary>
 	/// it manages one lua state machine, and provides helper method to ease lua api usage
 	/// </summary>
+	[NoLuaBinding]
 	public class LuaStack : IDisposable {
 		// lua state
 		private IntPtr L;

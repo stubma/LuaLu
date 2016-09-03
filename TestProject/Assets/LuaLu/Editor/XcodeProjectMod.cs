@@ -6,6 +6,7 @@
 	using System.Collections;
 	using System.IO;
 
+	[NoLuaBinding]
 	public class XcodeProjectMod {
 		[PostProcessBuild]
 		public static void OnPostprocessBuild(BuildTarget buildTarget, string path) {

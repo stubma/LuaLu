@@ -1,7 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using LuaLu;
 
+[NoLuaBinding]
 public static class ExtensionString {
 	private static Dictionary<string, string> TYPE_MAPPING = new Dictionary<string, string> {
 		{ "System.Void", "void" },

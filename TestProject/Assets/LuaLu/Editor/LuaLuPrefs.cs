@@ -10,6 +10,7 @@
 		CUSTOM = 2
 	}
 
+	[NoLuaBinding]
 	public class LuaLuPrefs {
 		// pref key
 		private const string PREF_LUA_EDITOR = "com.luma.lualu.editor";

@@ -4,6 +4,7 @@
 	using UnityEditor;
 	using System.IO;
 
+	[NoLuaBinding]
 	[CustomEditor(typeof(LuaComponent))]
 	public class LuaInspector : Editor {
 		// properities of LuaComponent

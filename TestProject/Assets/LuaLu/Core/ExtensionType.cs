@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using LuaLu;
 
+[NoLuaBinding]
 public static class ExtensionType {
 	public static bool IsDictionary(this Type t) {
 		return typeof(IDictionary).IsAssignableFrom(t);

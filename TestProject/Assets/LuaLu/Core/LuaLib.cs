@@ -5,6 +5,7 @@
 	using System.Collections;
 	using System.Text;
 	using System.Security;
+	using LuaLu;
 
 	[AttributeUsage(AttributeTargets.Method)]
 	public sealed class MonoPInvokeCallbackAttribute : Attribute {
@@ -100,6 +101,7 @@
 	#if !UNITY_IPHONE
 	[SuppressUnmanagedCodeSecurity]
 	#endif
+	[NoLuaBinding]
 	public class LuaLib {
 		// option for multiple returns in `lua_pcall' and `lua_call'
 		public const int LUA_MULTRET = -1;

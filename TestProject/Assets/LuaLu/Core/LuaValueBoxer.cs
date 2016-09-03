@@ -6,6 +6,7 @@
 	using System.Runtime.InteropServices;
 	using LuaInterface;
 
+	[NoLuaBinding]
 	public class LuaValueBoxer {
 		// shared error struct
 		static tolua_Error tolua_err;

@@ -7,7 +7,9 @@
 	using System.IO;
 	using System;
 	using System.Reflection;
+	using System.Text.RegularExpressions;
 
+	[NoLuaBinding]
 	public class LuaBindingGenerator {
 		// namespace to find classes
 		private static List<string> INCLUDE_NAMESPACES;
@@ -101,45 +103,78 @@
 				{ "__le", false },
 				{ "__mod", false }
 			};
+
+			// ensure folder exist
+			if(!Directory.Exists(LuaConst.GENERATED_LUA_BINDING_PREFIX)) {
+				Directory.CreateDirectory(LuaConst.GENERATED_LUA_BINDING_PREFIX);
+			}
+
+			// add lua component
+			s_types.Add(typeof(LuaComponent));
+
+			// XXX: test code
+			s_types.Add(typeof(System.Object));
+			s_types.Add(typeof(Component));
+			s_types.Add(typeof(Type));
+			s_types.Add(typeof(GameObject));
+			s_types.Add(typeof(Transform));
+			s_types.Add(typeof(Time));
+			s_types.Add(typeof(Vector3));
+			s_types.Add(typeof(Rigidbody));
+			s_types.Add(typeof(Text));
+			s_types.Add(typeof(Input));
+			s_types.Add(typeof(BoxCollider));
+			s_types.Add(typeof(MulticastDelegate));
+			s_types.Add(typeof(Vector3));
+			s_types.Add(typeof(CameraType));
 		}
 
-		public static void GenerateUnityLuaBinding() {
+		public static void ExposeSystemAndUnityTypes() {
 			// find types in wanted namespace
-			List<Type> types = new List<Type>();
 //			Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
 //			foreach(Assembly asm in assemblies) {
 //				Type[] tArray = asm.GetExportedTypes();
 //				foreach(Type t in tArray) {
 //					if(INCLUDE_NAMESPACES.Contains(t.Namespace)) {
-//						types.Add(t);
+//						s_types.Add(t);
 //					}
 //				}
 //			}
 
-			// add lua component
-			types.Add(typeof(LuaComponent));
+			// generate
+			StartGenerate();
+		}
 
-			// XXX: test code
-			types.Add(typeof(System.Object));
-			types.Add(typeof(Component));
-			types.Add(typeof(Type));
-			types.Add(typeof(GameObject));
-			types.Add(typeof(Transform));
-			types.Add(typeof(Time));
-			types.Add(typeof(Vector3));
-			types.Add(typeof(Rigidbody));
-			types.Add(typeof(Text));
-			types.Add(typeof(Input));
-			types.Add(typeof(BoxCollider));
-			types.Add(typeof(MulticastDelegate));
-			types.Add(typeof(Vector3));
-			types.Add(typeof(CameraType));
+		public static void ExposeCustomTypes(List<Type> wanted) {
+			// add wanted type and start to generate all
+			s_types.AddRange(wanted as IEnumerable<Type>);
+			StartGenerate();
+		}
 
-			// sort them
-			types = SortTypes(types);
+		public static void HideCustomTypes(List<Type> list) {
+			list.ForEach(t => {
+				s_types.Remove(t);
+			});
+			StartGenerate();
+		}
+
+		private static void CleanAllGenerated() {
+			DirectoryInfo di = new DirectoryInfo(LuaConst.GENERATED_LUA_BINDING_PREFIX);
+			foreach(FileInfo fi in di.GetFiles()) {
+				fi.Delete();
+			}
+		}
+
+		private static void StartGenerate() {
+			// clean for a new generating
+			CleanAllGenerated();
+
+			// add wanted type and sort again
+			List<Type> sortedTypes = SortTypes(s_types);
 
 			// filter types
-			types.ForEach(t => {
+			List<Type> finalTypes = new List<Type>();
+			sortedTypes.ForEach(t => {
 				if((INCLUDE_NAMESPACES.Contains(t.Namespace) || t.Namespace == "LuaLu") &&
 					!t.IsGenericType && 
 					!t.IsObsolete() &&
@@ -147,41 +182,32 @@
 					!t.IsPrimitive &&
 					!t.Name.StartsWith("_") &&
 					!EXCLUDE_CLASSES.Contains(t.GetNormalizedName())) {
-					s_types.Add(t);
+					finalTypes.Add(t);
 				}
 			});
 
-			// ensure folder exist
-			if(!Directory.Exists(LuaConst.GENERATED_LUA_BINDING_PREFIX)) {
-				Directory.CreateDirectory(LuaConst.GENERATED_LUA_BINDING_PREFIX);
-			}
-
 			// start generate all classes
-			GenerateTypesLuaBinding();
+			GenerateTypesLuaBinding(finalTypes);
 
 			// start generate delegate wrapper
 			GenerateLuaDelegateWrapper();
 
-			// clean
-			s_types.Clear();
-			s_delegates.Clear();
+			// generate register class
+			GenerateRegisterAll(finalTypes);
 
 			// refresh
 			AssetDatabase.Refresh();
 		}
 
-		private static void GenerateTypesLuaBinding() {
+		private static void GenerateTypesLuaBinding(List<Type> types) {
 			// generate every type
-			s_types.ForEach(t => { 
+			types.ForEach(t => { 
 				if(t.IsEnum) {
 					GenerateEnumLuaBinding(t);
 				} else {
 					GenerateClassLuaBinding(t);
 				}
 			});
-
-			// generate register class
-			GenerateRegisterAll();
 		}
 
 		private static List<Type> SortTypes(List<Type> types) {
@@ -207,7 +233,7 @@
 			return sortedParents;
 		}
 
-		private static void GenerateRegisterAll() {
+		private static void GenerateRegisterAll(List<Type> types) {
 			string clazz = "lua_register_unity";
 			string path = LuaConst.GENERATED_LUA_BINDING_PREFIX + clazz + ".cs";
 			string buffer = "";
@@ -220,14 +246,16 @@
 			buffer += "\tusing System.Collections.Generic;\n";
 			buffer += "\tusing UnityEngine;\n";
 			buffer += "\tusing LuaInterface;\n";
-			buffer += string.Format("\n\tpublic class {0} {{\n", clazz);
+			buffer += "\tusing LuaLu;\n\n";
+			buffer += "\t[NoLuaBinding]\n";
+			buffer += string.Format("\tpublic class {0} {{\n", clazz);
 
 			// register method
 			buffer += "\t\tpublic static int RegisterAll(IntPtr L) {\n";
 			buffer += "\t\t\tLuaLib.tolua_open(L);\n";
 			buffer += "\t\t\tLuaLib.tolua_module(L, null, 0);\n";
 			buffer += "\t\t\tLuaLib.tolua_beginmodule(L, null);\n";
-			foreach(Type t in s_types) {
+			foreach(Type t in types) {
 				string tfnUnderscore = t.GetNormalizedUnderscoreName();
 				string tClass = "lua_" + tfnUnderscore + "_binder";
 				buffer += string.Format("\t\t\t{0}.__Register__(L);\n", tClass);
@@ -519,7 +547,9 @@
 			buffer += "\tusing System.Collections.Generic;\n";
 			buffer += "\tusing UnityEngine;\n";
 			buffer += "\tusing LuaInterface;\n";
-			buffer += string.Format("\n\tpublic class {0} {{\n", clazz);
+			buffer += "\tusing LuaLu;\n\n";
+			buffer += "\t[NoLuaBinding]\n";
+			buffer += string.Format("\tpublic class {0} {{\n", clazz);
 
 			// shared err struct
 			buffer += "\t\t#pragma warning disable 0414\n";
@@ -1563,7 +1593,9 @@
 	using System.Collections.Generic;
 	using UnityEngine;
 	using LuaInterface;
+	using LuaLu;
 
+	[NoLuaBinding]
 	public class LuaDelegateWrapper : IDisposable {
 		// object if delegate method is on a user type object
 		private object targetObj;
@@ -1932,6 +1964,65 @@
 
 			// return
 			return buffer;
+		}
+
+		/// <summary>
+		/// From selected assets, find any c sharp class which can be exported to lua side
+		/// </summary>
+		/// <returns>Types which can be generated for lua</returns>
+		public static List<Type> GetSelectedBindableClassTypes() {
+			List<Type> types = new List<Type>();
+			foreach(UnityEngine.Object obj in Selection.GetFiltered(typeof(UnityEngine.Object), SelectionMode.Assets)) {
+				string path = AssetDatabase.GetAssetPath(obj);
+				if(!string.IsNullOrEmpty(path) && File.Exists(path)) {
+					if(obj is MonoScript) {
+						string ext = Path.GetExtension(path);
+						if(ext == ".cs") {
+							// load file
+							string code = File.ReadAllText(path);
+
+							// find classes
+							List<string> classes = new List<string>();
+							string pclazz = @"^[\s]*((internal|public|private|protected|sealed|abstract|static)?[\s]+){0,2}class[\s]+([\w\d_]+)[\s]*[\:]?[\s]*[\w\d_\.]*[\s]*\{";
+							MatchCollection mc = Regex.Matches(code, pclazz, RegexOptions.Multiline);
+							IEnumerator e = mc.GetEnumerator();
+							while(e.MoveNext()) {
+								Match m = (Match)e.Current;
+								string clazz = m.Groups[m.Groups.Count - 1].ToString();
+								classes.Add(clazz);
+							}
+
+							// find namespaces
+							if(classes.Count > 0) {
+								List<string> nsList = new List<string>();
+								string pns = @"^[\s]*namespace[\s]*([\w\d_]+)[\s]*\{";
+								mc = Regex.Matches(code, pns, RegexOptions.Multiline);
+								e = mc.GetEnumerator();
+								while(e.MoveNext()) {
+									Match m = (Match)e.Current;
+									string ns = m.Groups[m.Groups.Count - 1].ToString();
+									nsList.Add(ns);
+								}
+
+								// full namespace
+								string fullNS = string.Join(".", nsList.ToArray());
+
+								// check every class, if found a class which has no NoLuaBindingAttribute, then ok
+								foreach(string c in classes) {
+									Type t = ExtensionType.GetType(fullNS + "." + c);
+									if(t != null) {
+										if(t.GetCustomAttributes(typeof(NoLuaBindingAttribute), false).Length == 0) {
+											types.Add(t);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			return types;
 		}
 	}
 }

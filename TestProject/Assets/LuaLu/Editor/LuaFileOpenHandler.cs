@@ -6,6 +6,7 @@
 	using System;
 	using System.IO;
 
+	[NoLuaBinding]
 	public class LuaFileOpenHandler {
 		[OnOpenAsset]
 		public static bool OnOpenLuaFile(int instanceID, int line) {

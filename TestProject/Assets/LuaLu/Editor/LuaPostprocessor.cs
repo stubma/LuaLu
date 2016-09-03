@@ -4,6 +4,7 @@
 	using UnityEditor;
 	using System.IO;
 
+	[NoLuaBinding]
 	public class LuaPostprocessor : AssetPostprocessor {
 		private static bool GenerateLuaTextAsset(string asset) {
 			if(asset.EndsWith(".lua")) {

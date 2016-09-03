@@ -5,6 +5,7 @@
 	using UnityEditor;
 	using System.IO;
 
+	[NoLuaBinding]
 	public class LuaAssetBundleExporter {
 		public static void BuildAllLuaAssetBundles(BuildTarget targetPlatform) {
 			// collections

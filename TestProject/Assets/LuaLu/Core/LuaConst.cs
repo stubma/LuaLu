@@ -1,4 +1,5 @@
 ﻿namespace LuaLu {
+	[NoLuaBinding]
 	public class LuaConst {
 		// path prefix
 		public const string CORE_LUA_PREFIX = "Assets/LuaLu/Resources/";
