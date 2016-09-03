@@ -10,8 +10,149 @@
 		// shared error struct
 		static tolua_Error tolua_err;
 
+		// implicit numeric conversion table
+		static Dictionary<string, Dictionary<string, string>> implicitConversionTable;
+
+		// static better conversion check
+		static Dictionary<string, Dictionary<string, string>> betterConversionTable;
+
 		static LuaValueBoxer() {
 			tolua_err = new tolua_Error();
+			implicitConversionTable = new Dictionary<string, Dictionary<string, string>> {
+				{ 
+					"System.SByte", 
+					new Dictionary<string, string> {
+						{ "System.Int16", "System.Int16" },
+						{ "System.Int32", "System.Int32" },
+						{ "System.Int64", "System.Int64" },
+						{ "System.Float", "System.Float"},
+						{ "System.Double", "System.Double" },
+						{ "System.Decimal", "System.Decimal" }
+					}
+				},
+				{ 
+					"System.Byte",
+					new Dictionary<string, string> {
+						{ "System.Int16", "System.Int16" },
+						{ "System.UInt16", "System.UInt16" },
+						{ "System.Int32", "System.Int32" },
+						{ "System.UInt32", "System.UInt32" },
+						{ "System.Int64", "System.Int64" },
+						{ "System.UInt64", "System.UInt64" },
+						{ "System.Float" , "System.Float" },
+						{ "System.Double", "System.Double" },
+						{ "System.Decimal", "System.Decimal" }
+					}
+				},
+				{ 
+					"System.Int16",
+					new Dictionary<string, string> {
+						{ "System.Int32", "System.Int32" },
+						{ "System.Int64", "System.Int64" },
+						{ "System.Float" , "System.Float" },
+						{ "System.Double", "System.Double" },
+						{ "System.Decimal", "System.Decimal" }
+					}
+				},
+				{ 
+					"System.UInt16",
+					new Dictionary<string, string> {
+						{ "System.Int32", "System.Int32" },
+						{ "System.UInt32", "System.UInt32" },
+						{ "System.Int64", "System.Int64" },
+						{ "System.UInt64", "System.UInt64" },
+						{ "System.Float" , "System.Float" },
+						{ "System.Double", "System.Double" },
+						{ "System.Decimal", "System.Decimal" }
+					}
+				},
+				{
+					"System.Int32",
+					new Dictionary<string, string> {
+						{ "System.Int64", "System.Int64" },
+						{ "System.Float" , "System.Float" },
+						{ "System.Double", "System.Double" },
+						{ "System.Decimal", "System.Decimal" }
+					}
+				},
+				{
+					"System.UInt32",
+					new Dictionary<string, string> {
+						{ "System.Int64", "System.Int64" },
+						{ "System.UInt64", "System.UInt64" },
+						{ "System.Float" , "System.Float" },
+						{ "System.Double", "System.Double" },
+						{ "System.Decimal", "System.Decimal" }
+					}
+				},
+				{
+					"System.Int64",
+					new Dictionary<string, string> {
+						{ "System.Float" , "System.Float" },
+						{ "System.Double", "System.Double" },
+						{ "System.Decimal", "System.Decimal" }
+					}
+				},
+				{
+					"System.Char",
+					new Dictionary<string, string> {
+						{ "System.UInt16", "System.UInt16" },
+						{ "System.Int32", "System.Int32" },
+						{ "System.UInt32", "System.UInt32" },
+						{ "System.Int64", "System.Int64" },
+						{ "System.UInt64", "System.UInt64" },
+						{ "System.Float" , "System.Float" },
+						{ "System.Double", "System.Double" },
+						{ "System.Decimal", "System.Decimal" }
+					}
+				},
+				{
+					"System.Float",
+					new Dictionary<string, string> {
+						{ "System.Double", "System.Double" }
+					}
+				},
+				{
+					"System.UInt64",
+					new Dictionary<string, string> {
+						{ "System.Float" , "System.Float" },
+						{ "System.Double", "System.Double" },
+						{ "System.Decimal", "System.Decimal" }
+					}
+				}
+			};
+			betterConversionTable = new Dictionary<string, Dictionary<string, string>> {
+				{ 
+					"sbyte", 
+					new Dictionary<string, string> {
+						{ "byte", "byte" },
+						{ "ushort", "ushort" }, 
+						{ "uint", "uint" },
+						{ "ulong", "ulong" }
+					}
+				},
+				{ 
+					"short", 
+					new Dictionary<string, string> {
+						{ "ushort", "ushort" },
+						{ "uint", "uint" },
+						{ "ulong", "ulong" }
+					}
+				},
+				{ 
+					"int", 
+					new Dictionary<string, string> {
+						{ "uint", "uint" },
+						{ "ulong", "ulong" }
+					}
+				},
+				{ 
+					"long", 
+					new Dictionary<string, string> {
+						{ "ulong", "ulong" }
+					}
+				}
+			};
 		}
 
 		static bool luaval_is_usertype(IntPtr L, int lo, string type) {
@@ -372,16 +513,13 @@
 				return true;
 			}
 
-			// top should be a table if not flat
-			bool ok = true;
+			// if top is not a table, force it flat
 			if(!flat && !LuaLib.tolua_istable(L, lo, ref tolua_err)) {
-				#if DEBUG
-				luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
-				#endif
-				ok = false;
+				flat = true;
 			}
 
 			// fill elements
+			bool ok = true;
 			if(ok) {
 				// element type
 				Type t = typeof(T);
@@ -472,7 +610,7 @@
 				} else if(tn == "sbyte") {
 					LuaLib.lua_pushinteger(L, Convert.ToSByte(e.Current));
 				} else if(tn == "char") {
-					LuaLib.lua_pushstring(L, Convert.ToChar(e.Current).ToString());
+					LuaLib.lua_pushinteger(L, Convert.ToChar(e.Current));
 				} else if(tn == "short") {
 					LuaLib.lua_pushinteger(L, Convert.ToInt16(e.Current));
 				} else if(tn == "ushort") {
@@ -578,7 +716,7 @@
 				} else if(vtn == "sbyte") {
 					LuaLib.lua_pushinteger(L, Convert.ToSByte(e.Value));
 				} else if(vtn == "char") {
-					LuaLib.lua_pushstring(L, Convert.ToChar(e.Value).ToString());
+					LuaLib.lua_pushinteger(L, Convert.ToChar(e.Value));
 				} else if(vtn == "short") {
 					LuaLib.lua_pushinteger(L, Convert.ToInt16(e.Value));
 				} else if(vtn == "ushort") {
@@ -627,7 +765,7 @@
 			} else if(tn == "sbyte") {
 				LuaLib.lua_pushinteger(L, Convert.ToSByte(v));
 			} else if(tn == "char") {
-				LuaLib.lua_pushstring(L, Convert.ToChar(v).ToString());
+				LuaLib.lua_pushinteger(L, Convert.ToChar(v));
 			} else if(tn == "short") {
 				LuaLib.lua_pushinteger(L, Convert.ToInt16(v));
 			} else if(tn == "ushort") {
@@ -662,135 +800,269 @@
 			}
 		}
 
-		public static void GetLuaParameterTypes(IntPtr L, out int[] types, bool isStatic) {
+		public static int CompareOverload(IntPtr L, List<string> sigs1, List<string> sigs2) {
+			// check last is params or not
+			int sc1 = sigs1.Count;
+			int sc2 = sigs2.Count;
+			bool lastIsParams1 = sigs1.Count > 0 ? sigs1[sc1 - 1].StartsWith("params ") : false;
+			bool lastIsParams2 = sigs2.Count > 0 ? sigs2[sc2 - 1].StartsWith("params ") : false;
 			int argc = LuaLib.lua_gettop(L);
-			if(!isStatic) {
-				argc--;
-			}
-			types = new int[argc];
-			for(int i = 0; i < argc; i++) {
-				types[i] = LuaLib.lua_type(L, i + 1 + (isStatic ? 0 : 1));
-			}
-		}
 
-		public static bool CheckParameterType(IntPtr L, int[] luaTypes, string[] typeFullNames, bool isStatic, bool fuzzy = false) {
-			// first time we perform accurate match
-			int argc = luaTypes.Length;
-			bool matched = true;
-			if(typeFullNames != null && typeFullNames.Length >= argc) {
-				for(int i = 0; i < argc; i++) {
-					int luaType = luaTypes[i];
-					string tfn = typeFullNames[i];
-					if(luaType == (int)LuaTypes.LUA_TBOOLEAN) {
-						if(fuzzy) {
-							if(tfn != "System.Boolean" &&
-							   tfn != "System.Byte" &&
-							   tfn != "System.SByte" &&
-							   tfn != "System.Int16" &&
-							   tfn != "System.Int32" &&
-							   tfn != "System.Int64" &&
-							   tfn != "System.UInt16" &&
-							   tfn != "System.UInt32" &&
-							   tfn != "System.UInt64") {
-								matched = false;
-								break;
-							}
-						} else if(tfn != "System.Boolean") {
-							matched = false;
-							break;
+			// compare every parameter
+			for(int i = 0; i < argc; i++) {
+				// get native type info
+				string sig1 = sigs1[Math.Min(i, sc1 - 1)];
+				string sig2 = sigs2[Math.Min(i, sc2 - 1)];
+				bool isLast1 = i >= sc1 - 1;
+				bool isLast2 = i >= sc2 - 1;
+				bool isParams1 = isLast1 && lastIsParams1;
+				bool isParams2 = isLast2 && lastIsParams2;
+				string tn1 = isParams1 ? sig1.Substring(7) : sig1;
+				string tn2 = isParams2 ? sig2.Substring(7) : sig2;
+
+				// if equals, quick continue
+				if(tn1 == tn2) {
+					continue;
+				}
+
+				// get type
+				Type nt1 = ExtensionType.GetType(tn1);
+				Type nt2 = ExtensionType.GetType(tn2);
+
+				// check 
+				LuaTypes luaType = (LuaTypes)LuaLib.lua_type(L, i + 1);
+				switch(luaType) {
+				case LuaTypes.LUA_TBOOLEAN:
+					{
+						if(tn1 == "System.Boolean") {
+							return 1;
+						} else if(tn2 == "System.Boolean") {
+							return -1;
 						}
-					} else if(luaType == (int)LuaTypes.LUA_TNUMBER) {
-						if(fuzzy) {
-							if(tfn != "System.Boolean" &&
-							   tfn != "System.Byte" &&
-							   tfn != "System.SByte" &&
-							   tfn != "System.Int16" &&
-							   tfn != "System.Int32" &&
-							   tfn != "System.Int64" &&
-							   tfn != "System.UInt16" &&
-							   tfn != "System.UInt32" &&
-							   tfn != "System.UInt64" &&
-							   tfn != "System.Decimal" &&
-							   tfn != "System.Double" &&
-							   tfn != "System.Single") {
-								matched = false;
-								break;
-							}
-						} else if(tfn != "System.Int16" &&
-						          tfn != "System.Int32" &&
-						          tfn != "System.Int64" &&
-						          tfn != "System.UInt16" &&
-						          tfn != "System.UInt32" &&
-						          tfn != "System.UInt64" &&
-						          tfn != "System.Decimal" &&
-						          tfn != "System.Double" &&
-						          tfn != "System.Single") {
-							matched = false;
-							break;
+						break;
+					}
+				case LuaTypes.LUA_TNUMBER:
+					{
+						// check int, double, float
+						if(tn1 == "System.Int32") {
+							return 1;
+						} else if(tn2 == "System.Int32") {
+							return -1;
+						} else if(tn1 == "System.Double") {
+							return 1;
+						} else if(tn2 == "System.Double") {
+							return -1;
+						} else if(tn1 == "System.Float") {
+							return 1;
+						} else if(tn2 == "System.Float") {
+							return -1;
 						}
-					} else if(luaType == (int)LuaTypes.LUA_TSTRING) {
-						if(fuzzy) {
-							if(tfn != "System.String" && tfn != "System.Char") {
-								matched = false;
-								break;
-							} else if(tfn == "System.Char") {
-								string arg = LuaLib.lua_tostring(L, i + (isStatic ? 1 : 2));
-								if(arg.Length != 1) {
-									matched = false;
-									break;
+
+						// check implicit conversion between tn1 and tn2
+						bool can1to2 = implicitConversionTable.ContainsKey(tn1) ? implicitConversionTable[tn1].ContainsKey(tn2) : false;
+						bool can2to1 = implicitConversionTable.ContainsKey(tn2) ? implicitConversionTable[tn2].ContainsKey(tn1) : false;
+						if(can1to2 && !can2to1) {
+							return 1;
+						} else if(!can1to2 && can2to1) {
+							return -1;
+						}
+
+						// check fixed better conversion
+						if(betterConversionTable.ContainsKey(tn1) && betterConversionTable[tn1].ContainsKey(tn2)) {
+							return 1;
+						} else if(betterConversionTable.ContainsKey(tn2) && betterConversionTable[tn2].ContainsKey(tn1)) {
+							return -1;
+						}
+						break;
+					}
+				case LuaTypes.LUA_TSTRING:
+					{
+						if(tn1 == "System.String") {
+							return 1;
+						} else if(tn2 == "System.String") {
+							return -1;
+						}
+						break;
+					}
+				case LuaTypes.LUA_TTABLE:
+					{
+						if(nt2.IsAssignableFrom(nt1)) {
+							return 1;
+						} else if(nt1.IsAssignableFrom(nt2)) {
+							return -1;
+						} else {
+							// if the table is a delegate wrapper, check if there is a delegate type
+							LuaLib.lua_pushstring(L, "handler");
+							LuaLib.lua_gettable(L, i + 1);
+							if(!LuaLib.lua_isnil(L, -1)) {
+								LuaLib.lua_pop(L, 1);
+								if(nt1.IsCustomDelegateType()) {
+									return 1;
+								} else if(nt2.IsCustomDelegateType()) {
+									return -1;
 								}
 							}
-						} else if(tfn != "System.String") {
-							matched = false;
-							break;
 						}
-					} else if(luaType == (int)LuaTypes.LUA_TTABLE) {
-						Type t = ExtensionType.GetType(tfn);
-						if(!t.IsList() && !t.IsDictionary() && !t.IsCustomDelegateType()) {
-							matched = false;
-							break;
-						}
-					} else if(luaType == (int)LuaTypes.LUA_TUSERDATA) {
-						string typeName = LuaLib.tolua_typename(L, i + (isStatic ? 1 : 2));
-						if(fuzzy) {
-							Type nt = ExtensionType.GetType(tfn);
-							Type lt = ExtensionType.GetType(typeName);
-							if(typeName != tfn && !nt.IsAssignableFrom(lt)) {
-								matched = false;
-								break;
+						break;
+					}
+				case LuaTypes.LUA_TUSERDATA:
+					{
+						if(isParams1 == isParams2) {
+							if(isParams1) {
+								Type et1 = nt1.GetElementType();
+								Type et2 = nt2.GetElementType();
+								if(et2.IsAssignableFrom(et1)) {
+									return 1;
+								} else if(et1.IsAssignableFrom(et2)) {
+									return -1;
+								}
+							} else {
+								if(nt2.IsAssignableFrom(nt1)) {
+									return 1;
+								} else if(nt1.IsAssignableFrom(nt2)) {
+									return -1;
+								}
 							}
-						} else if(typeName != tfn) {
-							matched = false;
-							break;
-						}
-					} else if(luaType == (int)LuaTypes.LUA_TNIL) {
-						Type t = ExtensionType.GetType(tfn);
-						if(fuzzy) {
-							if(t.IsPrimitive &&
-							   tfn != "System.Boolean" &&
-							   tfn != "System.Byte" &&
-							   tfn != "System.SByte" &&
-							   tfn != "System.Int16" &&
-							   tfn != "System.Int32" &&
-							   tfn != "System.Int64" &&
-							   tfn != "System.UInt16" &&
-							   tfn != "System.UInt32" &&
-							   tfn != "System.UInt64" &&
-							   tfn != "System.Decimal" &&
-							   tfn != "System.Double" &&
-							   tfn != "System.Single") {
-								matched = false;
-								break;
+						} else {
+							if(isParams1) {
+								Type et1 = nt1.GetElementType();
+								if(et1 == nt2) {
+									return -1;
+								} else if(nt2.IsAssignableFrom(et1)) {
+									return 1;
+								} else if(et1.IsAssignableFrom(nt2)) {
+									return -1;
+								}
+							} else {
+								Type et2 = nt2.GetElementType();
+								if(nt1 == et2) {
+									return 1;
+								} else if(et2.IsAssignableFrom(nt1)) {
+									return 1;
+								} else if(nt1.IsAssignableFrom(et2)) {
+									return -1;
+								}
 							}
-						} else if(t.IsPrimitive) {
-							matched = false;
-							break;
 						}
+						break;
+					}
+				case LuaTypes.LUA_TNIL:
+					{
+						// check which one is more specific
+						if(nt2.IsAssignableFrom(nt1)) {
+							return 1;
+						} else if(nt1.IsAssignableFrom(nt2)) {
+							return -1;
+						}
+						break;
 					}
 				}
 			}
 
-			return matched;
+			return 0;
+		}
+
+		public static bool CanLuaNativeMatch(IntPtr L, int lo, string t) {
+			// get native type info
+			bool isParams = t.StartsWith("params ");
+			string nativeType = isParams ? t.Substring(7) : t;
+			Type nt = ExtensionType.GetType(nativeType);
+			Type et = isParams ? nt.GetElementType() : null;
+			string etn = isParams ? et.GetNormalizedName() : null;
+
+			// check based on lua type
+			LuaTypes luaType = (LuaTypes)LuaLib.lua_type(L, lo);
+			switch(luaType) {
+			case LuaTypes.LUA_TBOOLEAN:
+				{
+					if(isParams) {
+						if(etn == "System.Boolean") {
+							return true;
+						}
+					} else if(nativeType == "System.Boolean") {
+						return true;
+					}
+					break;
+				}
+			case LuaTypes.LUA_TNUMBER:
+				{
+					if(isParams) {
+						if(etn == "System.Byte" ||
+							etn == "System.SByte" ||
+							etn == "System.Int16" ||
+							etn == "System.UInt16" ||
+							etn == "System.Int32" ||
+							etn == "System.UInt32" ||
+							etn == "System.Decimal" ||
+							etn == "System.Int64" ||
+							etn == "System.UInt64" ||
+							etn == "System.Float" ||
+							etn == "System.Double" ||
+							etn == "System.Char") {
+							return true;
+						}
+					} else if(nativeType == "System.Byte" ||
+						nativeType == "System.SByte" ||
+						nativeType == "System.Int16" ||
+						nativeType == "System.UInt16" ||
+						nativeType == "System.Int32" ||
+						nativeType == "System.UInt32" ||
+						nativeType == "System.Decimal" ||
+						nativeType == "System.Int64" ||
+						nativeType == "System.UInt64" ||
+						nativeType == "System.Float" ||
+						nativeType == "System.Double" ||
+						nativeType == "System.Char") {
+						return true;
+					}
+					break;
+				}
+			case LuaTypes.LUA_TSTRING:
+				{
+					if(isParams) {
+						if(etn == "System.String") {
+							return true;
+						}
+					} else if(nativeType == "System.String") {
+						return true;
+					}
+					break;
+				}
+			case LuaTypes.LUA_TTABLE:
+				{
+					if(isParams) {
+						if(et.IsList() || et.IsDictionary() || et.IsCustomDelegateType()) {
+							return true;
+						}
+					} else if(nt.IsList() || nt.IsDictionary() || nt.IsCustomDelegateType()) {
+						return true;
+					}
+					break;
+				}
+			case LuaTypes.LUA_TUSERDATA:
+				{
+					string typeName = LuaLib.tolua_typename(L, lo);
+					Type lt = ExtensionType.GetType(typeName);
+					if(isParams) {
+						if(etn == typeName || et.IsAssignableFrom(lt)) {
+							return true;
+						}
+					} else if(nativeType == typeName || nt.IsAssignableFrom(lt)) {
+						return true;
+					}
+					break;
+				}
+			case LuaTypes.LUA_TNIL:
+				{
+					if(!nt.IsValueType) {
+						return true;
+					}
+					break;
+				}
+			}
+
+			// fallback
+			return false;
 		}
 	}
 }

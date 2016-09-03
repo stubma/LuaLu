@@ -36,27 +36,6 @@
 			return fn;
 		}
 
-		public string test(int i) {
-			Debug.Log("call test int");
-			return "hahaa";
-		}
-		public int test(byte b) {
-			Debug.Log("call test byte");
-			return 33;
-		}
-		public void test(string s) {
-			Debug.Log("call test string");
-		}
-		public static void test(string s, int i) {
-			Debug.Log("call test static string");
-		}
-		public void test(object o) {
-			Debug.Log("call test obj");
-		}
-		public void test(sbyte b, params string[] s) {
-			Debug.Log("call test sbyte, params string");
-		}
-
 		static LuaComponent() {
 			s_fileIndex = 1;
 		}

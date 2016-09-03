@@ -86,4 +86,27 @@ public static class ExtensionType {
 		}
 		return results;
 	}
+
+	public static string GetReversableTypeName(this Type t) {
+		if(t.IsGenericType) {
+			string ptn = t.FullName;
+			int gArgc = t.GetGenericArguments().Length;
+			if(gArgc > 0) {
+				ptn = ptn.Substring(0, ptn.IndexOf('`')) + "`" + gArgc;
+			}
+			return ptn;
+		} else if(t.IsArray) {
+			Type et = t.GetElementType();
+			string str = et.GetReversableTypeName();
+			str += "[";
+			int rank = t.GetArrayRank();
+			for(int i = 1; i < rank; i++) {
+				str += ",";
+			}
+			str += "]";
+			return str;
+		} else {
+			return t.FullName == null ? t.Name.ReversableTypeName() : t.FullName.ReversableTypeName();
+		}
+	}
 }

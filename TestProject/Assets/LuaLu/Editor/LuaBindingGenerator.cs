@@ -120,20 +120,20 @@
 			types.Add(typeof(LuaComponent));
 
 			// XXX: test code
-//			types.Add(typeof(System.Object));
-//			types.Add(typeof(Component));
-//			types.Add(typeof(Type));
-//			types.Add(typeof(GameObject));
-//			types.Add(typeof(Transform));
-//			types.Add(typeof(Time));
-//			types.Add(typeof(Vector3));
-//			types.Add(typeof(Rigidbody));
-//			types.Add(typeof(Text));
-//			types.Add(typeof(Input));
-//			types.Add(typeof(BoxCollider));
-//			types.Add(typeof(MulticastDelegate));
-//			types.Add(typeof(Vector3));
-//			types.Add(typeof(CameraType));
+			types.Add(typeof(System.Object));
+			types.Add(typeof(Component));
+			types.Add(typeof(Type));
+			types.Add(typeof(GameObject));
+			types.Add(typeof(Transform));
+			types.Add(typeof(Time));
+			types.Add(typeof(Vector3));
+			types.Add(typeof(Rigidbody));
+			types.Add(typeof(Text));
+			types.Add(typeof(Input));
+			types.Add(typeof(BoxCollider));
+			types.Add(typeof(MulticastDelegate));
+			types.Add(typeof(Vector3));
+			types.Add(typeof(CameraType));
 
 			// sort them
 			types = SortTypes(types);
@@ -296,13 +296,13 @@
 			File.WriteAllText(path, buffer);
 		}
 
-		private static Dictionary<string, List<MethodInfo>> GetBindableMethods(Type t) {
+		private static Dictionary<string, List<MethodBase>> GetBindableMethods(Type t) {
 			// methods
 			MethodInfo[] mArr = t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance);
 			MethodInfo[] smArr = t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
 
 			// filter generic/obsolete methods, property setter/getter, operator, events
-			List<MethodInfo> publicMethods = new List<MethodInfo>();
+			List<MethodBase> publicMethods = new List<MethodBase>();
 			Array.ForEach<MethodInfo>(mArr, m => {
 				if(!m.IsGenericMethod && 
 					!m.IsObsolete() && 
@@ -343,13 +343,13 @@
 			});
 
 			// group it by name
-			Dictionary<string, List<MethodInfo>> publicMethodMap = new Dictionary<string, List<MethodInfo>>();
+			Dictionary<string, List<MethodBase>> publicMethodMap = new Dictionary<string, List<MethodBase>>();
 			publicMethods.ForEach(m => {
-				List<MethodInfo> mList = null;
+				List<MethodBase> mList = null;
 				if(publicMethodMap.ContainsKey(m.Name)) {
 					mList = publicMethodMap[m.Name];
 				} else {
-					mList = new List<MethodInfo>();
+					mList = new List<MethodBase>();
 					publicMethodMap[m.Name] = mList;
 				}
 				mList.Add(m);
@@ -359,9 +359,9 @@
 			return publicMethodMap;
 		}
 
-		private static List<ConstructorInfo> GetBindableConstructors(Type t) {
+		private static List<MethodBase> GetBindableConstructors(Type t) {
 			ConstructorInfo[] cArr = t.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
-			List<ConstructorInfo> ctors = new List<ConstructorInfo>();
+			List<MethodBase> ctors = new List<MethodBase>();
 			Array.ForEach<ConstructorInfo>(cArr, c => {
 				if(!c.IsGenericMethod && !c.IsObsolete()) {
 					ctors.Add(c);
@@ -370,9 +370,8 @@
 			return ctors;
 		}
 
-		public static string GenerateOverloadMethodSignatures(Type t, Dictionary<string, List<MethodInfo>> publicMethodMap, List<ConstructorInfo> ctors) {
+		public static string GenerateOverloadMethodSignatures(Type t, Dictionary<string, List<MethodBase>> publicMethodMap, List<MethodBase> ctors) {
 			string buffer = "";
-			string tfn = t.GetNormalizedName();
 
 			// map start
 			buffer += "\t\t// overload method parameter signatures\n";
@@ -403,13 +402,7 @@
 						// get parameter info
 						ParameterInfo pi = pList[j];
 						Type pt = pi.ParameterType;
-						string ptn = pt.FullName;
-						if(pt.IsGenericType) {
-							int gArgc = pt.GetGenericArguments().Length;
-							if(gArgc > 0) {
-								ptn = ptn.Substring(0, ptn.IndexOf('`')) + "`" + gArgc;
-							}
-						}
+						string ptn = pt.GetReversableTypeName();
 
 						// append parameter name
 						buffer += string.Format("\"{0}{1}\"", pi.IsParams() ? "params " : "", ptn);
@@ -434,7 +427,7 @@
 			}
 
 			// for public methods
-			foreach(List<MethodInfo> mList in publicMethodMap.Values) {
+			foreach(List<MethodBase> mList in publicMethodMap.Values) {
 				if(mList.Count > 1) {
 					// get method info
 					string mn = mList[0].Name;
@@ -461,7 +454,7 @@
 
 						// if not static, append type name
 						if(!isStatic) {
-							buffer += string.Format("\"{0}\"", tfn);
+							buffer += string.Format("\"{0}\"", t.GetReversableTypeName());
 							if(pList.Length > 0) {
 								buffer += ", ";
 							}
@@ -472,13 +465,7 @@
 							// get parameter info
 							ParameterInfo pi = pList[j];
 							Type pt = pi.ParameterType;
-							string ptn = pt.FullName;
-							if(pt.IsGenericType) {
-								int gArgc = pt.GetGenericArguments().Length;
-								if(gArgc > 0) {
-									ptn = ptn.Substring(0, ptn.IndexOf('`')) + "`" + gArgc;
-								}
-							}
+							string ptn = pt.GetReversableTypeName();
 
 							// append parameter name
 							buffer += string.Format("\"{0}{1}\"", pi.IsParams() ? "params " : "", ptn);
@@ -504,7 +491,8 @@
 			}
 
 			// map end
-			buffer += "\t\t};\n\n";
+			buffer += "\t\t};\n";
+			buffer += "\t\t#pragma warning restore 0414\n\n";
 
 			// return
 			return buffer;
@@ -534,6 +522,7 @@
 			buffer += string.Format("\n\tpublic class {0} {{\n", clazz);
 
 			// shared err struct
+			buffer += "\t\t#pragma warning disable 0414\n";
 			buffer += "\t#if DEBUG\n";
 			buffer += "\t\tstatic tolua_Error err = new tolua_Error();\n";
 			buffer += "\t#endif\n\n";
@@ -543,10 +532,10 @@
 			buffer += "\t\tstatic List<int> ORList = new List<int>();\n\n";
 
 			// get a map about methods which can be bound to lua
-			Dictionary<string, List<MethodInfo>> publicMethodMap = GetBindableMethods(t);
+			Dictionary<string, List<MethodBase>> publicMethodMap = GetBindableMethods(t);
 
 			// get constructors which can be bound to lua
-			List<ConstructorInfo> ctors = GetBindableConstructors(t);
+			List<MethodBase> ctors = GetBindableConstructors(t);
 
 			// generate parameter map for overload methods
 			buffer += GenerateOverloadMethodSignatures(t, publicMethodMap, ctors);
@@ -554,12 +543,12 @@
 			// we don't generate constructor for delegate type
 			if(!t.IsCustomDelegateType()) {
 				if(ctors.Count > 0) {
-					buffer += GenerateConstructor(t, ctors);
+					buffer += GeneratePublicMethod(t, ctors);
 				}
 			}
 
 			// generate for public methods
-			foreach(List<MethodInfo> mList in publicMethodMap.Values) {
+			foreach(List<MethodBase> mList in publicMethodMap.Values) {
 				buffer += GeneratePublicMethod(t, mList);
 			}
 
@@ -1203,146 +1192,9 @@
 			return buffer;
 		}
 
-		private static string GenerateConstructor(Type t, List<ConstructorInfo> mList) {
-			string buffer = "";
-			string tfnUnderscore = t.GetNormalizedUnderscoreName();
-			string clazz = "lua_" + tfnUnderscore + "_binder";
-			string fn = clazz + ".__Constructor__";
-
-			// generate invocation wrapper
-			for(int i = 0; i < mList.Count; i++) {
-				buffer += GenerateMethodInvocation(t, mList[i], i);
-			}
-
-			// constructor start
-			buffer += "\t\t[MonoPInvokeCallback(typeof(LuaFunction))]\n";
-			buffer += "\t\tpublic static int __Constructor__(IntPtr L) {\n";
-
-			// group constructor by parameter count, mind optional parameter
-			Dictionary<int, List<ConstructorInfo>> cpMap = new Dictionary<int, List<ConstructorInfo>>();
-			mList.ForEach(c => {
-				ParameterInfo[] pList = c.GetParameters();
-				int maxArg = pList.Length;
-				int minArg = maxArg;
-				foreach(ParameterInfo pi in pList) {
-					if(pi.IsOptional) {
-						minArg--;
-					}
-				}
-				for(int i = minArg; i <= maxArg; i++) {
-					List<ConstructorInfo> cl = null;
-					if(cpMap.ContainsKey(i)) {
-						cl = cpMap[i];
-					} else {
-						cl = new List<ConstructorInfo>();
-						cpMap[i] = cl;
-					}
-					cl.Add(c);
-				}
-			});
-
-			// get argument count
-			buffer += "\t\t\t// get argument count\n";
-			buffer += "\t\t\tint argc = LuaLib.lua_gettop(L);\n";
-
-			// constructor body
-			buffer += "\n";
-			foreach(int c in cpMap.Keys) {
-				// check argument count
-				buffer += "\t\t\t// if argument count matched, call\n";
-				buffer += string.Format("\t\t\tif(argc == {0}) {{\n", c);
-
-				// check constructor count with same parameter count
-				List<ConstructorInfo> cl = cpMap[c];
-				if(cl.Count > 1) {
-					// get lua types
-					buffer += "\t\t\t\t// get lua parameter types\n";
-					buffer += "\t\t\t\tint[] luaTypes;\n";
-					buffer += "\t\t\t\tLuaValueBoxer.GetLuaParameterTypes(L, out luaTypes, true);\n";
-
-					// native types
-					buffer += "\n";
-					buffer += "\t\t\t\t// native types\n";
-					for(int i = 0; i < cl.Count; i++) {
-						// get parameter name which can be queried by GetType
-						buffer += string.Format("\t\t\t\tstring[] nativeTypes{0} = new string[] {{\n", i);
-						ParameterInfo[] pList = cl[i].GetParameters();
-						for(int j = 0; j < pList.Length; j++) {
-							ParameterInfo pi = pList[j];
-							Type pt = pi.ParameterType;
-							string ptn = pt.FullName;
-							if(pt.IsGenericType) {
-								int gArgc = pt.GetGenericArguments().Length;
-								if(gArgc > 0) {
-									ptn = ptn.Substring(0, ptn.IndexOf('`')) + "`" + gArgc;
-								}
-							}
-
-							// put
-							buffer += string.Format("\t\t\t\t\t\"{0}\"", ptn);
-							if(j < pList.Length - 1) {
-								buffer += ",";
-							}
-							buffer += "\n";
-						}
-						buffer += "\t\t\t\t};\n";
-					}
-
-					// accurate match every method
-					buffer += "\n";
-					for(int i = 0; i < cl.Count; i++) {
-						// accurate match
-						if(i == 0) {
-							buffer += "\t\t\t\t";
-						}
-						buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, true)) {{\n", i);
-
-						// only one method, so it is simple, just pick the only one
-						buffer += string.Format("\t\t\t\t\treturn call_{0}_Constructor(L);\n", mList.IndexOf(cl[i]));
-
-						// close if
-						buffer += "\t\t\t\t} else ";
-					}
-
-					// fuzzy match every method
-					for(int i = 0; i < cl.Count; i++) {
-						// accurate match
-						buffer += string.Format("if(LuaValueBoxer.CheckParameterType(L, luaTypes, nativeTypes{0}, true, true)) {{\n", i);
-
-						// only one method, so it is simple, just pick the only one
-						buffer += string.Format("\t\t\t\t\treturn call_{0}_Constructor(L);\n", mList.IndexOf(cl[i]));
-
-						// close if
-						buffer += "\t\t\t\t}";
-						if(i < cl.Count - 1) {
-							buffer += " else ";
-						} else {
-							buffer += "\n";
-						}
-					}
-				} else {
-					// only one method, so it is simple, just pick the only one
-					buffer += string.Format("\t\t\t\treturn call_{0}_Constructor(L);\n", mList.IndexOf(cl[0]));
-				}
-
-				// close if
-				buffer += "\t\t\t}\n\n";
-			}
-
-			// fallback if argc doesn't match
-			buffer += "\t\t\t// if to here, means argument count is not correct\n";
-			buffer += string.Format("\t\t\tLuaLib.luaL_error(L, \"{0} has wrong number of arguments: \" + argc);\n", fn);
-
-			// constructor end
-			buffer += "\t\t\treturn 0;\n";
-			buffer += "\t\t}\n\n";
-
-			// return
-			return buffer;
-		}
-
-		private static string GeneratePublicMethod(Type t, List<MethodInfo> mList) {
+		private static string GeneratePublicMethod(Type t, List<MethodBase> mList) {
 			// decide method name, if operator, need a conversion
+			bool isCtor = mList[0].IsConstructor;
 			string mn = mList[0].Name;
 			if(mn.StartsWith("op_")) {
 				string op = mn.Substring(3);
@@ -1350,7 +1202,6 @@
 			}
 
 			// other info
-			string tfn = t.GetNormalizedName();
 			string buffer = "";
 			string tfnUnderscore = t.GetNormalizedUnderscoreName();
 			string clazz = "lua_" + tfnUnderscore + "_binder";
@@ -1364,7 +1215,7 @@
 
 			// method start
 			buffer += indent + "[MonoPInvokeCallback(typeof(LuaFunction))]\n";
-			buffer += indent + string.Format("public static int {0}(IntPtr L) {{\n", mn);
+			buffer += indent + string.Format("public static int {0}(IntPtr L) {{\n", isCtor ? "__Constructor__" : mn);
 
 			// get argument count
 			indent += "\t";
@@ -1380,7 +1231,7 @@
 
 				// first exclude methods which argument count not matched
 				buffer += indent + "// first exclude methods whose argument count not matched\n";
-				buffer += indent + string.Format("List<List<string>> sigList = SIG[\"{0}\"];\n", mn);
+				buffer += indent + string.Format("List<List<string>> sigList = SIG[\"{0}\"];\n", isCtor ? "__Constructor__" : mn);
 				buffer += indent + "for(int i = 0; i < sigList.Count; i++) {\n";
 				indent += "\t";
 				buffer += indent + "List<string> sigs = sigList[i];\n";
@@ -1393,9 +1244,76 @@
 				buffer += indent + "}\n";
 				indent = indent.Substring(1);
 				buffer += indent + "}\n\n";
+
+				// if still more than one candidate, remove method whose parameter type can not be implicit converted
+				buffer += indent + "// if still more than candidates, remove methods whose\n";
+				buffer += indent + "// parameter type can not be implicit converted from lua type\n";
+				buffer += indent + "if(ORList.Count > 1) {\n";
+				indent += "\t";
+				buffer += indent + "for(int i = 0; i < argc && ORList.Count > 1; i++) {\n";
+				indent += "\t";
+				buffer += indent + "for(int j = ORList.Count - 1; j >= 0; j--) {\n";
+				indent += "\t";
+				buffer += indent + "List<string> sigs = sigList[ORList[j]];\n";
+				buffer += indent + "string nativeType = sigs[Math.Min(i, sigs.Count - 1)];\n";
+				buffer += indent + "if(!LuaValueBoxer.CanLuaNativeMatch(L, i + 1, nativeType)) {\n";
+				indent += "\t";
+				buffer += indent + "ORList.RemoveAt(j);\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n\n";
+
+				// if still more than candidates, compare conversion and keep best one
+				buffer += indent + "// if still more than candidates, compare conversion and keep best one\n";
+				buffer += indent + "if(ORList.Count > 1) {\n";
+				indent += "\t";
+				buffer += indent + "for(int i = ORList.Count - 1; i >= 1; i--) {\n";
+				indent += "\t";
+				buffer += indent + "List<string> sigs1 = sigList[ORList[i]];\n";
+				buffer += indent + "List<string> sigs2 = sigList[ORList[i - 1]];\n";
+				buffer += indent + "int result = LuaValueBoxer.CompareOverload(L, sigs1, sigs2);\n";
+				buffer += indent + "if(result > 0) {\n";
+				indent += "\t";
+				buffer += indent + "ORList.RemoveAt(i - 1);\n";
+				indent = indent.Substring(1);
+				buffer += indent + "} else if(result < 0) {\n";
+				indent += "\t";
+				buffer += indent + "while(i <= ORList.Count - 1) {\n";
+				indent += "\t";
+				buffer += indent + "ORList.RemoveAt(i);\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n\n";
+
+				// if still more than one candidates, just call first one
+				// or if no candidates, fallback to error
+				buffer += indent + "// if has candidates, just call first one\n";
+				buffer += indent + "if(ORList.Count > 0) {\n";
+				indent += "\t";
+				buffer += indent + "int mIndex = ORList[0];\n";
+				buffer += indent + "switch(mIndex) {\n";
+				indent += "\t";
+				for(int i = 0; i < mList.Count; i++) {
+					buffer += indent + string.Format("case {0}:\n", i);
+					buffer += indent + string.Format("\treturn call_{0}_{1}(L);\n", i, isCtor ? "Constructor" : mn);
+				}
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n\n";
 			} else {
 				// method info
-				bool isStatic = mList[0].IsStatic;
+				bool isStatic = isCtor ? true : mList[0].IsStatic;
 				ParameterInfo[] pList = mList[0].GetParameters();
 				bool lastIsParams = pList.Length > 0 ? pList[pList.Length - 1].IsParams() : false;
 				int minArg = pList.Length + (isStatic ? 0 : 1) - (lastIsParams ? 1 : 0);
@@ -1406,7 +1324,7 @@
 
 				// call
 				indent += "\t";
-				buffer += indent + string.Format("return call_0_{0}(L);\n", mn);
+				buffer += indent + string.Format("return call_0_{0}(L);\n", isCtor ? "Constructor" : mn);
 
 				// check argument count - end
 				indent = indent.Substring(1);

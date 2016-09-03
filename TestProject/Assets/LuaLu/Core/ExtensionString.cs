@@ -38,4 +38,13 @@ public static class ExtensionString {
 
 		return str;
 	}
+
+	public static string ReversableTypeName(this string s) {
+		string str = s; 
+		if(str.Length > 1 && str[str.Length - 1] == '&') {
+			str = str.Remove(str.Length - 1);
+		}
+
+		return str;
+	}
 }
