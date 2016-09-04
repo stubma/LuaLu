@@ -104,11 +104,6 @@
 				{ "__mod", false }
 			};
 
-			// ensure folder exist
-			if(!Directory.Exists(LuaConst.GENERATED_LUA_BINDING_PREFIX)) {
-				Directory.CreateDirectory(LuaConst.GENERATED_LUA_BINDING_PREFIX);
-			}
-
 			// add lua component
 			s_types.Add(typeof(LuaComponent));
 
@@ -166,6 +161,11 @@
 		}
 
 		private static void StartGenerate() {
+			// ensure folder exist
+			if(!Directory.Exists(LuaConst.GENERATED_LUA_BINDING_PREFIX)) {
+				Directory.CreateDirectory(LuaConst.GENERATED_LUA_BINDING_PREFIX);
+			}
+
 			// clean for a new generating
 			CleanAllGenerated();
 
