@@ -11,7 +11,7 @@
 	[NoLuaBinding]
 	public class LuaMenu {
 		[MenuItem("Lua/Expose Unity Classes", false, 1)]  
-		static void MenuGenerateUnityLuaBinding() {
+		static void MenuExposeUnityTypes() {
 			LuaBindingGenerator.ExposeSystemAndUnityTypes();
 		}
 
