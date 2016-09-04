@@ -209,7 +209,8 @@
 			   tn == "uint" ||
 			   tn == "decimal" ||
 			   tn == "long" ||
-			   tn == "ulong") {
+			   tn == "ulong" ||
+				tn == "char") {
 				// top should be a number
 				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
 					#if DEBUG
@@ -239,7 +240,7 @@
 				} else {
 					ret = default(T);
 				}
-			} else if(tn == "char" || tn == "string") {
+			} else if(tn == "string") {
 				// top should be a string
 				if(!LuaLib.tolua_isstring(L, lo, ref tolua_err)) {
 					#if DEBUG
