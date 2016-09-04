@@ -23,6 +23,12 @@ public static class ExtensionType {
 	}
 
 	public static Type GetType(string name) {
+		// resolve simple form
+		if(LuaConst.SIMPLE_NAME_MAPPING.ContainsKey(name)) {
+			name = LuaConst.SIMPLE_NAME_MAPPING[name];
+		}
+
+		// append assembly name
 		if(name.StartsWith("UnityEngine.") || name.StartsWith("UnityEditor")) {
 			string ns = name.Substring(0, name.LastIndexOf("."));
 			return Type.GetType(name + ", " + ns);
