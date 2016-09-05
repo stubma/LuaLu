@@ -676,7 +676,7 @@
 
 		public int ExecuteObjectFunction(object obj, string funcName, Array args = null, bool isStatic = false, Action<IntPtr, int> collector = null) {
 			// get func
-			PushObject(obj, obj.GetType().GetNormalizedName());
+			PushObject(obj, obj.GetType().GetNormalizedCodeName());
 			PushString(funcName);
 			LuaLib.lua_gettable(L, -2);
 

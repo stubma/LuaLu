@@ -51,10 +51,10 @@ public static class ExtensionType {
 		}
 	}
 
-	public static string GetNormalizedName(this Type t) {
+	public static string GetNormalizedCodeName(this Type t) {
 		if(t.IsArray) {
 			Type et = t.GetElementType();
-			string str = et.GetNormalizedName();
+			string str = et.GetNormalizedCodeName();
 			str += "[";
 			int rank = t.GetArrayRank();
 			for(int i = 1; i < rank; i++) {
@@ -63,49 +63,54 @@ public static class ExtensionType {
 			str += "]";
 			return str;
 		} else if(t.IsGenericType) {
-			return t.GetGenericName();
+			// get pure type
+			Type[] gArgs = t.GetGenericArguments();
+			string typeName = t.FullName;
+			string pureTypeName = typeName.Substring(0, typeName.IndexOf('`'));
+
+			// append generic parameter
+			pureTypeName += "<";
+			bool first = true;
+			Array.ForEach<Type>(gArgs, arg => {
+				if(!first) {
+					pureTypeName += ",";
+				}
+				first = false;
+				pureTypeName += arg.GetNormalizedCodeName();
+			});
+			pureTypeName += ">";
+			return pureTypeName;
 		} else {
-			return t.FullName == null ? t.Name.NormalizeTypeName() : t.FullName.NormalizeTypeName();            
+			return t.FullName == null ? t.Name.NormalizeCodeName() : t.FullName.NormalizeCodeName();            
 		}
 	}
 
-	public static string GetNormalizedUnderscoreName(this Type t) {
-		return t.GetNormalizedName().Replace(".", "_").Replace("<", "_").Replace(">", "_").Replace("[]", "_array").Replace(",", "_");
+	public static string GetNormalizedIdentityName(this Type t) {
+		return t.GetNormalizedCodeName().Replace(".", "_").Replace("<", "_").Replace(">", "_").Replace("[]", "_array").Replace(",", "_");
 	}
 
-	public static string GetGenericName(this Type t) {
-		if(t.GetGenericArguments().Length == 0) {
-			return t.FullName.NormalizeTypeName();
-		}
-		Type[] gArgs = t.GetGenericArguments();
-		string typeName = t.FullName;
-		string pureTypeName = typeName.Substring(0, typeName.IndexOf('`'));
-		return pureTypeName + "<" + string.Join(",", GetGenericName(gArgs)) + ">";
-	}
-
-	private static string[] GetGenericName(Type[] types) {
-		string[] results = new string[types.Length];
-		for(int i = 0; i < types.Length; i++) {
-			if(types[i].IsGenericType) {
-				results[i] = types[i].GetGenericName();
-			} else {
-				results[i] = types[i].GetNormalizedName();
-			}
-		}
-		return results;
-	}
-
-	public static string GetReversableTypeName(this Type t) {
+	public static string GetNormalizedTypeName(this Type t) {
 		if(t.IsGenericType) {
-			string ptn = t.FullName;
-			int gArgc = t.GetGenericArguments().Length;
-			if(gArgc > 0) {
-				ptn = ptn.Substring(0, ptn.IndexOf('`')) + "`" + gArgc;
-			}
-			return ptn;
+			// get pure type name
+			Type[] gArgs = t.GetGenericArguments();
+			string typeName = t.FullName;
+			string pureTypeName = typeName.Substring(0, typeName.IndexOf('`'));
+
+			// append generic names
+			pureTypeName += "[";
+			bool first = true;
+			Array.ForEach<Type>(gArgs, arg => {
+				if(!first) {
+					pureTypeName += ",";
+				}
+				first = false;
+				pureTypeName += "[" + arg.GetNormalizedTypeName() + "]";
+			});
+			pureTypeName += "]";
+			return pureTypeName;
 		} else if(t.IsArray) {
 			Type et = t.GetElementType();
-			string str = et.GetReversableTypeName();
+			string str = et.GetNormalizedTypeName();
 			str += "[";
 			int rank = t.GetArrayRank();
 			for(int i = 1; i < rank; i++) {
@@ -114,7 +119,7 @@ public static class ExtensionType {
 			str += "]";
 			return str;
 		} else {
-			return t.FullName == null ? t.Name.ReversableTypeName() : t.FullName.ReversableTypeName();
+			return t.FullName == null ? t.Name.NormalizeTypeName() : t.FullName.NormalizeTypeName();
 		}
 	}
 }

@@ -11,9 +11,6 @@
 
 	[NoLuaBinding]
 	public class LuaBindingGenerator {
-		// namespace to find classes
-		private static List<string> INCLUDE_NAMESPACES;
-
 		// class excluded
 		private static List<string> EXCLUDE_CLASSES;
 
@@ -37,11 +34,6 @@
 		static LuaBindingGenerator() {
 			s_types = new List<Type>();
 			s_delegates = new List<Type>();
-			INCLUDE_NAMESPACES = new List<string> {
-				"System",
-				"UnityEngine",
-				"UnityEngine.UI"
-			};
 			EXCLUDE_CLASSES = new List<string> {
 				"string",
 				"decimal",
@@ -175,13 +167,12 @@
 			// filter types
 			List<Type> finalTypes = new List<Type>();
 			sortedTypes.ForEach(t => {
-				if((INCLUDE_NAMESPACES.Contains(t.Namespace) || t.Namespace == "LuaLu") &&
-					!t.IsGenericType && 
+				if(!t.IsGenericType && 
 					!t.IsObsolete() &&
 					!t.HasGenericBaseType() && 
 					!t.IsPrimitive &&
 					!t.Name.StartsWith("_") &&
-					!EXCLUDE_CLASSES.Contains(t.GetNormalizedName())) {
+					!EXCLUDE_CLASSES.Contains(t.GetNormalizedCodeName())) {
 					finalTypes.Add(t);
 				}
 			});
@@ -256,7 +247,7 @@
 			buffer += "\t\t\tLuaLib.tolua_module(L, null, 0);\n";
 			buffer += "\t\t\tLuaLib.tolua_beginmodule(L, null);\n";
 			foreach(Type t in types) {
-				string tfnUnderscore = t.GetNormalizedUnderscoreName();
+				string tfnUnderscore = t.GetNormalizedIdentityName();
 				string tClass = "lua_" + tfnUnderscore + "_binder";
 				buffer += string.Format("\t\t\t{0}.__Register__(L);\n", tClass);
 			}
@@ -273,8 +264,8 @@
 
 		private static void GenerateEnumLuaBinding(Type t) {
 			// get info
-			string tfn = t.GetNormalizedName();
-			string tfnUnderscore = t.GetNormalizedUnderscoreName();
+			string tfn = t.GetNormalizedCodeName();
+			string tfnUnderscore = t.GetNormalizedIdentityName();
 			string[] nsList = tfn.Split(new Char[] { '.' });
 			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string path = LuaConst.GENERATED_LUA_BINDING_PREFIX + clazz + ".cs";
@@ -324,7 +315,10 @@
 			File.WriteAllText(path, buffer);
 		}
 
-		private static Dictionary<string, List<MethodBase>> GetBindableMethods(Type t) {
+		private static Dictionary<string, List<MethodBase>> GetBindableMethods(Type t, out Dictionary<string, List<MethodInfo>> publicGenericMethodMap) {
+			// out
+			publicGenericMethodMap = new Dictionary<string, List<MethodInfo>>();
+
 			// methods
 			MethodInfo[] mArr = t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance);
 			MethodInfo[] smArr = t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static);
@@ -332,8 +326,7 @@
 			// filter generic/obsolete methods, property setter/getter, operator, events
 			List<MethodBase> publicMethods = new List<MethodBase>();
 			Array.ForEach<MethodInfo>(mArr, m => {
-				if(!m.IsGenericMethod && 
-					!m.IsObsolete() && 
+				if(!m.IsObsolete() && 
 					!EXCLUDE_METHODS.Contains(m.Name) && 
 					!m.Name.StartsWith("get_") && 
 					!m.Name.StartsWith("set_") &&
@@ -372,16 +365,35 @@
 
 			// group it by name
 			Dictionary<string, List<MethodBase>> publicMethodMap = new Dictionary<string, List<MethodBase>>();
-			publicMethods.ForEach(m => {
-				List<MethodBase> mList = null;
-				if(publicMethodMap.ContainsKey(m.Name)) {
-					mList = publicMethodMap[m.Name];
+			foreach(MethodBase m in publicMethods) {
+				if(m.IsGenericMethod) {
+					// build method name for generic method
+					int gargc = m.GetGenericArguments().Length;
+					string mn = m.Name;
+					for(int i = 0; i < gargc; i++) {
+						mn += "T";
+					}
+
+					// group it by name
+					List<MethodInfo> mList = null;
+					if(publicGenericMethodMap.ContainsKey(mn)) {
+						mList = publicGenericMethodMap[mn];
+					} else {
+						mList = new List<MethodInfo>();
+						publicGenericMethodMap[mn] = mList;
+					}
+					mList.Add(m as MethodInfo);
 				} else {
-					mList = new List<MethodBase>();
-					publicMethodMap[m.Name] = mList;
+					List<MethodBase> mList = null;
+					if(publicMethodMap.ContainsKey(m.Name)) {
+						mList = publicMethodMap[m.Name];
+					} else {
+						mList = new List<MethodBase>();
+						publicMethodMap[m.Name] = mList;
+					}
+					mList.Add(m);
 				}
-				mList.Add(m);
-			});
+			}
 
 			// return
 			return publicMethodMap;
@@ -398,7 +410,7 @@
 			return ctors;
 		}
 
-		public static string GenerateOverloadMethodSignatures(Type t, Dictionary<string, List<MethodBase>> publicMethodMap, List<MethodBase> ctors) {
+		public static string GenerateOverloadMethodSignatures(Type t, Dictionary<string, List<MethodBase>> publicMethodMap, Dictionary<string, List<MethodInfo>> publicGenericMethodMap, List<MethodBase> ctors) {
 			string buffer = "";
 
 			// map start
@@ -430,7 +442,7 @@
 						// get parameter info
 						ParameterInfo pi = pList[j];
 						Type pt = pi.ParameterType;
-						string ptn = pt.GetReversableTypeName();
+						string ptn = pt.GetNormalizedTypeName();
 
 						// append parameter name
 						buffer += string.Format("\"{0}{1}\"", pi.IsParams() ? "params " : "", ptn);
@@ -482,7 +494,7 @@
 
 						// if not static, append type name
 						if(!isStatic) {
-							buffer += string.Format("\"{0}\"", t.GetReversableTypeName());
+							buffer += string.Format("\"{0}\"", t.GetNormalizedTypeName());
 							if(pList.Length > 0) {
 								buffer += ", ";
 							}
@@ -493,7 +505,7 @@
 							// get parameter info
 							ParameterInfo pi = pList[j];
 							Type pt = pi.ParameterType;
-							string ptn = pt.GetReversableTypeName();
+							string ptn = pt.GetNormalizedTypeName();
 
 							// append parameter name
 							buffer += string.Format("\"{0}{1}\"", pi.IsParams() ? "params " : "", ptn);
@@ -518,6 +530,63 @@
 				}
 			}
 
+			// for public generic methods
+			foreach(string mn in publicGenericMethodMap.Keys) {
+				List<MethodInfo> mList = publicGenericMethodMap[mn];
+
+				// entry start
+				buffer += "\t\t\t{\n";
+				buffer += string.Format("\t\t\t\t\"{0}\",\n", mn);
+
+				// value list start
+				buffer += "\t\t\t\tnew List<List<string>> {\n";
+
+				// method arguments
+				for(int i = 0; i < mList.Count; i++) {
+					// method info
+					bool isStatic = mList[i].IsStatic;
+					ParameterInfo[] pList = mList[i].GetParameters();
+
+					// method arguments start
+					buffer += "\t\t\t\t\tnew List<string> { ";
+
+					// if not static, append type name
+					if(!isStatic) {
+						buffer += string.Format("\"{0}\"", t.GetNormalizedTypeName());
+						if(pList.Length > 0) {
+							buffer += ", ";
+						}
+					}
+
+					// method arguments
+					for(int j = 0; j < pList.Length; j++) {
+						// get parameter info
+						ParameterInfo pi = pList[j];
+						Type pt = pi.ParameterType;
+						string ptn = pt.GetNormalizedTypeName();
+
+						// append parameter name
+						buffer += string.Format("\"{0}{1}\"", pi.IsParams() ? "params " : "", pt.IsGenericParameter ? "T" : ptn);
+						if(j < pList.Length - 1) {
+							buffer += ", ";
+						}
+					}
+
+					// method arguments end
+					buffer += " }";
+					if(i < mList.Count - 1) {
+						buffer += ",";
+					}
+					buffer += "\n";
+				}
+
+				// value list end
+				buffer += "\t\t\t\t}\n";
+
+				// entry end
+				buffer += "\t\t\t}, \n";
+			}
+
 			// map end
 			buffer += "\t\t};\n";
 			buffer += "\t\t#pragma warning restore 0414\n\n";
@@ -529,8 +598,8 @@
 		private static void GenerateClassLuaBinding(Type t) {
 			// get info
 			string tn = t.Name;
-			string tfn = t.GetNormalizedName();
-			string tfnUnderscore = t.GetNormalizedUnderscoreName();
+			string tfn = t.GetNormalizedCodeName();
+			string tfnUnderscore = t.GetNormalizedIdentityName();
 			string[] nsList = tfn.Split(new Char[] { '.' });
 			Type bt = t.BaseType;
 			string btfn = bt != null ? bt.FullName : "";
@@ -562,13 +631,14 @@
 			buffer += "\t\tstatic List<int> ORList = new List<int>();\n\n";
 
 			// get a map about methods which can be bound to lua
-			Dictionary<string, List<MethodBase>> publicMethodMap = GetBindableMethods(t);
+			Dictionary<string, List<MethodInfo>> publicGenericMethodMap;
+			Dictionary<string, List<MethodBase>> publicMethodMap = GetBindableMethods(t, out publicGenericMethodMap);
 
 			// get constructors which can be bound to lua
 			List<MethodBase> ctors = GetBindableConstructors(t);
 
 			// generate parameter map for overload methods
-			buffer += GenerateOverloadMethodSignatures(t, publicMethodMap, ctors);
+			buffer += GenerateOverloadMethodSignatures(t, publicMethodMap, publicGenericMethodMap, ctors);
 
 			// we don't generate constructor for delegate type
 			if(!t.IsCustomDelegateType()) {
@@ -580,6 +650,11 @@
 			// generate for public methods
 			foreach(List<MethodBase> mList in publicMethodMap.Values) {
 				buffer += GeneratePublicMethod(t, mList);
+			}
+
+			// generate for public generic methods
+			foreach(List<MethodInfo> mList in publicGenericMethodMap.Values) {
+				buffer += GeneratePublicGenericMethod(t, mList);
 			}
 
 			// for custom delegate, we will append custom meta __add and __sub method to mimic operator overload
@@ -771,8 +846,8 @@
 
 		private static string GenerateEvents(Type t, EventInfo[] events) {
 			string buffer = "";
-			string tfn = t.GetNormalizedName();
-			string tfnUnderscore = t.GetNormalizedUnderscoreName();
+			string tfn = t.GetNormalizedCodeName();
+			string tfnUnderscore = t.GetNormalizedIdentityName();
 			string clazz = "lua_" + tfnUnderscore + "_binder";
 
 			// generate every event
@@ -782,8 +857,8 @@
 				bool isStatic = ei.GetAddMethod().IsStatic;
 				string en = ei.Name;
 				Type et = ei.EventHandlerType;
-				string etn = et.GetNormalizedName();
-				string etnUnderscore = et.GetNormalizedUnderscoreName();
+				string etn = et.GetNormalizedCodeName();
+				string etnUnderscore = et.GetNormalizedIdentityName();
 				string fn = clazz + ".add_" + en;
 				string indent = "\t\t";
 
@@ -970,11 +1045,11 @@
 
 				// get info
 				Type ft = fi.FieldType;
-				string ftn = ft.GetNormalizedName();
+				string ftn = ft.GetNormalizedCodeName();
 				string fin = fi.Name;
 				string gn = "get_" + fin;
 				string sn = "set_" + fin;
-				string tn = t.GetNormalizedName();
+				string tn = t.GetNormalizedCodeName();
 
 				// generate getter
 				{
@@ -1047,7 +1122,7 @@
 					buffer += string.Format("\t\t\t{0} ret;\n", ftn);
 					if(ft.IsArray) {
 						Type et = ft.GetElementType();
-						string etn = et.GetNormalizedName();
+						string etn = et.GetNormalizedCodeName();
 						if(et.IsArray) {
 							// TODO more than one dimension array? not supported yet
 						} else {
@@ -1056,11 +1131,23 @@
 					} else if(ft.IsList()) {
 						if(ftn == "System.Array") {
 							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list(L, 2, out ret, \"{0}\");\n", sn);
+						} else if(ft.IsGenericType) {
+							Type et = ft.GetGenericArguments()[0];
+							string etn = et.GetNormalizedCodeName();
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, 2, out ret, \"{1}\");\n", etn, sn);
 						} else {
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, 2, out ret, \"{1}\");\n", ftn, sn);
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<object>(L, 2, out ret, \"{0}\");\n", sn);
 						}
 					} else if(ft.IsDictionary()) {
-						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<{0}>(L, 2, out ret, \"{1}\");\n", ftn, sn);
+						if(ft.IsGenericType) {
+							Type kt = ft.GetGenericArguments()[0];
+							Type vt = ft.GetGenericArguments()[1];
+							string ktn = kt.GetNormalizedCodeName();
+							string vtn = vt.GetNormalizedCodeName();
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<{0}, {1}>(L, 2, out ret, \"{2}\");\n", ktn, vtn, sn);
+						} else {
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<object, object>(L, 2, out ret, \"{0}\");\n", sn);
+						}
 					} else {
 						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_type<{0}>(L, 2, out ret, \"{1}\");\n", ftn, sn);
 					}
@@ -1096,9 +1183,9 @@
 				MethodInfo getter = pi.GetGetMethod();
 				MethodInfo setter = pi.GetSetMethod();
 				Type pt = pi.PropertyType;
-				string ptn = pt.GetNormalizedName();
+				string ptn = pt.GetNormalizedCodeName();
 				string pn = pi.Name;
-				string tn = t.GetNormalizedName();
+				string tn = t.GetNormalizedCodeName();
 
 				// filter special name
 				if(pi.Name == "Item") {
@@ -1182,7 +1269,7 @@
 					buffer += string.Format("\t\t\t{0} ret;\n", ptn);
 					if(pt.IsArray) {
 						Type et = pt.GetElementType();
-						string etn = et.GetNormalizedName();
+						string etn = et.GetNormalizedCodeName();
 						if(et.IsArray) {
 							// TODO more than one dimension array? not supported yet
 						} else {
@@ -1191,11 +1278,23 @@
 					} else if(pt.IsList()) {
 						if(ptn == "System.Array") {
 							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list(L, 2, out ret, \"{0}\");\n", fn);
+						} else if(pt.IsGenericType) {
+							Type et = pt.GetGenericArguments()[0];
+							string etn = et.GetNormalizedCodeName();
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, 2, out ret, \"{1}\");\n", etn, fn);
 						} else {
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, 2, out ret, \"{1}\");\n", ptn, fn);
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<object>(L, 2, out ret, \"{0}\");\n", fn);
 						}
 					} else if(pt.IsDictionary()) {
-						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<{0}>(L, 2, out ret, \"{1}\");\n", ptn, fn);
+						if(pt.IsGenericType) {
+							Type kt = pt.GetGenericArguments()[0];
+							Type vt = pt.GetGenericArguments()[1];
+							string ktn = kt.GetNormalizedCodeName();
+							string vtn = vt.GetNormalizedCodeName();
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<{0}, {1}>(L, 2, out ret, \"{2}\");\n", ktn, vtn, fn);
+						} else {
+							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<object, object>(L, 2, out ret, \"{0}\");\n", fn);
+						}
 					} else {
 						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_type<{0}>(L, 2, out ret, \"{1}\");\n", ptn, fn);
 					}
@@ -1222,6 +1321,137 @@
 			return buffer;
 		}
 
+		private static string GeneratePublicGenericMethod(Type t, List<MethodInfo> mList) {
+			// method name
+			string mn = mList[0].Name;
+			int gargc = mList[0].GetGenericArguments().Length;
+			for(int i = 0; i < gargc; i++) {
+				mn += "T";
+			}
+
+			// other info
+			string buffer = "";
+			string tfnUnderscore = t.GetNormalizedIdentityName();
+			string clazz = "lua_" + tfnUnderscore + "_binder";
+			string fn = clazz + "." + mn;
+			string indent = "\t\t";
+
+			// generate invocation wrappers
+			for(int i = 0; i < mList.Count; i++) {
+				buffer += GenerateGenericMethodInvocation(t, mList[i], i);
+			}
+
+			return buffer;
+		}
+
+		private static string GenerateGenericMethodInvocation(Type t, MethodInfo m, int mIndex) {
+			// if operator, should conversion name
+			string mn = m.Name;
+			int gargc = m.GetGenericArguments().Length;
+			for(int i = 0; i < gargc; i++) {
+				mn += "T";
+			}
+
+			// other info
+			string indent = "\t\t";
+			string tn = t.Name;
+			string tfn = t.GetNormalizedCodeName();
+			string tfnUnderscore = t.GetNormalizedIdentityName();
+			string clazz = "lua_" + tfnUnderscore + "_binder";
+			string fn = clazz + "." + mn;
+			string buffer = "";
+			ParameterInfo[] pList = m.GetParameters();
+			int paramCount = pList.Length;
+			bool isStatic = m.IsStatic;
+
+			// invocation start
+			buffer += indent + string.Format("private static int call_{0}_{1}(IntPtr L) {{\n", mIndex, mn);
+
+			// get argument count
+			indent += "\t";
+			buffer += indent + "// get argument count\n";
+			buffer += indent + "int argc = LuaLib.lua_gettop(L);\n\n";
+
+			// perform object type checking based on method type, static or not
+			if(!isStatic) {
+				buffer += indent + "// caller type check\n";
+				buffer += indent.Substring(1) + "#if DEBUG\n";
+				buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tfn);
+				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
+				buffer += indent + "\treturn 0;\n";
+				buffer += indent + "}\n";
+				buffer += indent.Substring(1) + "#endif\n";
+				buffer += indent + "int refId = LuaLib.tolua_tousertype(L, 1);\n";
+				buffer += string.Format(indent + "{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tfn);
+				if(!t.IsValueType) {
+					buffer += indent.Substring(1) + "#if DEBUG\n";
+					buffer += indent + "if(obj == null) {\n";
+					buffer += string.Format(indent + "\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", fn);
+					buffer += indent + "\treturn 0;\n";
+					buffer += indent + "}\n";
+					buffer += indent.Substring(1) + "#endif\n\n";
+				}
+			}
+
+			// get generatic type strings
+			buffer += indent + "// get generic type names\n";
+			for(int i = 0; i < gargc; i++) {
+				buffer += indent + string.Format("string t{0} = null;\n", i);
+			}
+			for(int i = 0; i < gargc; i++) {
+				buffer += indent + string.Format("if(LuaLib.lua_isstring(L, {0})) {{\n", (isStatic ? 0 : 1) + i + 1);
+				buffer += indent + string.Format("\tt{0} = LuaLib.lua_tostring(L, {1});\n", i, (isStatic ? 0 : 1) + i + 1);
+				buffer += indent + "} else {\n";
+				buffer += indent + string.Format("\tLuaLib.tolua_error(L, string.Format(\"generic type name is not string type in function '{0}'\", refId), ref err);\n", fn);
+				buffer += indent + "\treturn 0;\n";
+				buffer += indent + "}\n";
+			}
+
+			// argument handling
+//			if(paramCount > 0) {
+//				// argument declaration
+//				buffer += "\n";
+//				indent += "\t";
+//				buffer += indent + "// arguments declaration\n";
+//				for(int i = 0; i < pList.Length; i++) {
+//					Type pt = pList[i].ParameterType;
+//					if(pt.IsGenericParameter) {
+//						
+//					} else {
+//						string ptn = pt.GetNormalizedCodeName();
+//						buffer += string.Format(indent + "{0} arg{1} = default({0});\n", ptn, i);
+//					}
+//				}
+//
+//				// argument conversion
+//				buffer += "\n";
+//				buffer += indent + "// convert lua value to desired arguments\n";
+//				buffer += indent + "bool ok = true;\n";
+//				for(int i = 0; i < pList.Length; i++) {
+//					buffer += GenerateUnboxParameters(pList[i], i, tn + "." + mn, indent, isStatic);
+//				}
+//
+//				// check conversion
+//				buffer += "\n";
+//				buffer += indent + "// if conversion is not ok, print error and return\n";
+//				buffer += indent + "if(!ok) {\n";
+//				buffer += indent.Substring(1) + "#if DEBUG\n";
+//				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"invalid arguments in function '{0}'\", ref err);\n", fn);
+//				buffer += indent.Substring(1) + "#endif\n";
+//				buffer += indent + "\treturn 0;\n";
+//				buffer += indent + "}\n\n";
+//				indent = indent.Substring(1);
+//			}
+
+			// invocation end
+			buffer += indent + "return 0;\n";
+			indent = indent.Substring(1);
+			buffer += indent + "}\n\n";
+
+			// return
+			return buffer;
+		}
+
 		private static string GeneratePublicMethod(Type t, List<MethodBase> mList) {
 			// decide method name, if operator, need a conversion
 			bool isCtor = mList[0].IsConstructor;
@@ -1233,7 +1463,7 @@
 
 			// other info
 			string buffer = "";
-			string tfnUnderscore = t.GetNormalizedUnderscoreName();
+			string tfnUnderscore = t.GetNormalizedIdentityName();
 			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string fn = clazz + "." + mn;
 			string indent = "\t\t";
@@ -1372,9 +1602,9 @@
 			return buffer;
 		}
 
-		private static string GenerateMethodInvocation(Type t, MethodBase callM, int mIndex) {
+		private static string GenerateMethodInvocation(Type t, MethodBase m, int mIndex) {
 			// if operator, should conversion name
-			string mn = callM.Name;
+			string mn = m.Name;
 			bool isOperator = false;
 			if(mn.StartsWith("op_")) {
 				string op = mn.Substring(3);
@@ -1385,17 +1615,17 @@
 			// other info
 			string indent = "\t\t";
 			string tn = t.Name;
-			string tfn = t.GetNormalizedName();
-			string tfnUnderscore = t.GetNormalizedUnderscoreName();
+			string tfn = t.GetNormalizedCodeName();
+			string tfnUnderscore = t.GetNormalizedIdentityName();
 			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string fn = clazz + "." + mn;
 			string buffer = "";
-			ParameterInfo[] pList = callM.GetParameters();
+			ParameterInfo[] pList = m.GetParameters();
 			int paramCount = pList.Length;
-			bool isStatic = callM.IsConstructor ? true : callM.IsStatic;
+			bool isStatic = m.IsConstructor ? true : m.IsStatic;
 
 			// invocation start
-			buffer += indent + string.Format("private static int call_{0}_{1}(IntPtr L) {{\n", mIndex, callM.IsConstructor ? "Constructor" : mn);
+			buffer += indent + string.Format("private static int call_{0}_{1}(IntPtr L) {{\n", mIndex, m.IsConstructor ? "Constructor" : mn);
 
 			// argument handling
 			if(paramCount > 0) {
@@ -1404,7 +1634,7 @@
 				buffer += indent + "// arguments declaration\n";
 				for(int i = 0; i < pList.Length; i++) {
 					Type pt = pList[i].ParameterType;
-					string ptn = pt.GetNormalizedName();
+					string ptn = pt.GetNormalizedCodeName();
 					buffer += string.Format(indent + "{0} arg{1} = default({0});\n", ptn, i);
 				}
 
@@ -1429,8 +1659,8 @@
 			}
 
 			// get info of method to be called
-			Type rt = callM.IsConstructor ? t : ((MethodInfo)callM).ReturnType;
-			string rtn = rt.GetNormalizedName();
+			Type rt = m.IsConstructor ? t : ((MethodInfo)m).ReturnType;
+			string rtn = rt.GetNormalizedCodeName();
 
 			// perform object type checking based on method type, static or not
 			if(!isStatic) {
@@ -1472,7 +1702,7 @@
 					buffer += "arg0 " + opStr + " arg1;\n";
 				}
 			} else {
-				if(callM.IsConstructor) {
+				if(m.IsConstructor) {
 					buffer += string.Format("new {0}(", tfn);
 				} else if(isStatic) {
 					buffer += string.Format("{0}.{1}(", tfn, mn);
@@ -1505,7 +1735,7 @@
 		}
 
 		private static string GenerateBoxReturnValue(Type returnType, string indent) {
-			string rtn = returnType.GetNormalizedName();
+			string rtn = returnType.GetNormalizedCodeName();
 			string buffer = "";
 			int retured = 1;
 
@@ -1515,7 +1745,7 @@
 				retured = 0;
 			} else if(returnType.IsArray) {
 				Type et = returnType.GetElementType();
-				string etn = et.GetNormalizedName();
+				string etn = et.GetNormalizedCodeName();
 				buffer += string.Format(indent + "LuaValueBoxer.array_to_luaval<{0}>(L, ret);\n", etn);
 			} else {
 				buffer += string.Format(indent + "LuaValueBoxer.type_to_luaval<{0}>(L, ret);\n", rtn);
@@ -1538,13 +1768,13 @@
 			// variables
 			string buffer = "";
 			Type pt = pi.ParameterType;
-			string ptn = pt.GetNormalizedName();
-			string ptnUnderscore = pt.GetNormalizedUnderscoreName();
+			string ptn = pt.GetNormalizedCodeName();
+			string ptnUnderscore = pt.GetNormalizedIdentityName();
 
 			// find conversion by parameter type name
 			if(pt.IsArray) {
 				Type et = pt.GetElementType();
-				string etn = et.GetNormalizedName();
+				string etn = et.GetNormalizedCodeName();
 				if(et.IsArray) {
 					// TODO more than one dimension array? not supported yet
 				} else if(pi.IsParams()) {
@@ -1555,11 +1785,23 @@
 			} else if(pt.IsList()) {
 				if(ptn == "System.Array") {
 					buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_list(L, {0}, out arg{1}, \"{2}\");\n", argIndex + (isStatic ? 1 : 2), argIndex, methodName);
+				} else if(pt.IsGenericType) {
+					Type et = pt.GetGenericArguments()[0];
+					string etn = et.GetNormalizedCodeName();
+					buffer += indent + string.Format("ok &= LuaValueBoxer.luaval_to_list<{0}>(L, {1}, out arg{2}, \"{3}\");\n", etn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
 				} else {
-					buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_list<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
+					buffer += indent + string.Format("ok &= LuaValueBoxer.luaval_to_list<object>(L, {0}, out arg{1}, \"{2}\");\n", argIndex + (isStatic ? 1 : 2), argIndex, methodName);
 				}
 			} else if(pt.IsDictionary()) {
-				buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_dictionary<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
+				if(pt.IsGenericType) {
+					Type kt = pt.GetGenericArguments()[0];
+					Type vt = pt.GetGenericArguments()[1];
+					string ktn = kt.GetNormalizedCodeName();
+					string vtn = vt.GetNormalizedCodeName();
+					buffer += indent + string.Format("ok &= LuaValueBoxer.luaval_to_dictionary<{0}, {1}>(L, {2}, out arg{3}, \"{4}\");\n", ktn, vtn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
+				} else {
+					buffer += indent + string.Format("ok &= LuaValueBoxer.luaval_to_dictionary<object, object>(L, {0}, out arg{1}, \"{2}\");\n", argIndex + (isStatic ? 1 : 2), argIndex, methodName);
+				}
 			} else if(pt.IsCustomDelegateType()) {
 				// add this delegate type
 				if(!s_delegates.Contains(pt)) {
@@ -1698,11 +1940,11 @@
 			// generate delegate redirector
 			foreach(Type t in s_delegates) {
 				// info
-				string tnUnderscore = t.GetNormalizedUnderscoreName();
+				string tnUnderscore = t.GetNormalizedIdentityName();
 				MethodInfo m = t.GetMethod("Invoke");
 				Type rt = m.ReturnType;
-				string rtn = rt.GetNormalizedName();
-				string rtnUnderscore = rt.GetNormalizedUnderscoreName();
+				string rtn = rt.GetNormalizedCodeName();
+				string rtnUnderscore = rt.GetNormalizedIdentityName();
 				ParameterInfo[] pList = m.GetParameters();
 
 				// method start, without args
@@ -1710,7 +1952,7 @@
 				buffer += indent + string.Format("public {0} delegate_{1}(", rtn, tnUnderscore);
 				for(int i = 0; i < pList.Length; i++) {
 					Type pt = pList[i].ParameterType;
-					string ptn = pt.GetNormalizedName();
+					string ptn = pt.GetNormalizedCodeName();
 					buffer += string.Format("{0} arg{1}", ptn, i);
 					if(i < pList.Length - 1) {
 						buffer += ", ";
@@ -1757,10 +1999,10 @@
 					buffer += indent + string.Format("argc += {0};\n", pList.Length);
 					for(int i = 0; i < pList.Length; i++) {
 						Type pt = pList[i].ParameterType;
-						string ptn = pt.GetNormalizedName();
+						string ptn = pt.GetNormalizedCodeName();
 						if(pt.IsArray) {
 							Type et = pt.GetElementType();
-							string etn = et.GetNormalizedName();
+							string etn = et.GetNormalizedCodeName();
 							buffer += string.Format(indent + "LuaValueBoxer.array_to_luaval<{0}>(L, arg{1});\n", etn, i);
 						} else {
 							buffer += string.Format(indent + "LuaValueBoxer.type_to_luaval<{0}>(L, arg{1});\n", ptn, i);
@@ -1782,7 +2024,7 @@
 					// check return type
 					if(rt.IsArray) {
 						Type et = rt.GetElementType();
-						string etn = et.GetNormalizedName();
+						string etn = et.GetNormalizedCodeName();
 						if(et.IsArray) {
 							// TODO more than one dimension array? not supported yet
 						} else {
@@ -1791,11 +2033,23 @@
 					} else if(rt.IsList()) {
 						if(rtn == "System.Array") {
 							buffer += indent + "LuaValueBoxer.luaval_to_list(L, -1, out ret);\n";
+						} else if(rt.IsGenericType) {
+							Type et = rt.GetGenericArguments()[0];
+							string etn = et.GetNormalizedCodeName();
+							buffer += indent + string.Format("LuaValueBoxer.luaval_to_list<{0}>(L, -1, out ret);\n", etn);
 						} else {
-							buffer += string.Format(indent + "LuaValueBoxer.luaval_to_list<{0}>(state, -1, out ret);\n", rtn);
+							buffer += indent + "LuaValueBoxer.luaval_to_list<object>(state, -1, out ret);\n";
 						}
 					} else if(rt.IsDictionary()) {
-						buffer += string.Format(indent + "LuaValueBoxer.luaval_to_dictionary<{0}>(state, -1, out ret);\n", rtn);
+						if(rt.IsGenericType) {
+							Type kt = rt.GetGenericArguments()[0];
+							Type vt = rt.GetGenericArguments()[1];
+							string ktn = kt.GetNormalizedCodeName();
+							string vtn = vt.GetNormalizedCodeName();
+							buffer += indent + string.Format("LuaValueBoxer.luaval_to_dictionary<{0}, {1}>(state, -1, out ret);\n", ktn, vtn);
+						} else {
+							buffer += indent + "LuaValueBoxer.luaval_to_dictionary<object, object>(state, -1, out ret);\n";
+						}
 					} else if(rt.IsCustomDelegateType()) {
 						// create lua delegate wrapper for it
 						buffer += indent + "LuaDelegateWrapper w = new LuaDelegateWrapper(state, -1);\n";
@@ -1837,8 +2091,8 @@
 		private static string GenerateCustomDelegateAddMethod(Type t) {
 			string buffer = "";
 			string indent = "\t\t";
-			string tfn = t.GetNormalizedName();
-			string tfnUnderscore = t.GetNormalizedUnderscoreName();
+			string tfn = t.GetNormalizedCodeName();
+			string tfnUnderscore = t.GetNormalizedIdentityName();
 			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string fn = clazz + ".__add";
 
@@ -1903,8 +2157,8 @@
 		private static string GenerateCustomDelegateRemoveMethod(Type t) {
 			string buffer = "";
 			string indent = "\t\t";
-			string tfn = t.GetNormalizedName();
-			string tfnUnderscore = t.GetNormalizedUnderscoreName();
+			string tfn = t.GetNormalizedCodeName();
+			string tfnUnderscore = t.GetNormalizedIdentityName();
 			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string fn = clazz + ".__sub";
 

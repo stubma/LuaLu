@@ -24,7 +24,7 @@ public static class ExtensionString {
 		{ "System.MonoType", "System.Type" }
 	};
 
-	public static string NormalizeTypeName(this string s) {
+	public static string NormalizeCodeName(this string s) {
 		string str = s; 
 		if(str.Length > 1 && str[str.Length - 1] == '&') {
 			str = str.Remove(str.Length - 1); 
@@ -41,7 +41,7 @@ public static class ExtensionString {
 		return str;
 	}
 
-	public static string ReversableTypeName(this string s) {
+	public static string NormalizeTypeName(this string s) {
 		string str = s; 
 		if(str.Length > 1 && str[str.Length - 1] == '&') {
 			str = str.Remove(str.Length - 1);

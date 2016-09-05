@@ -197,7 +197,7 @@
 
 			// get type and name
 			Type t = typeof(T);
-			string tn = t.GetNormalizedName();
+			string tn = t.GetNormalizedCodeName();
 
 			// convert
 			bool ok = true;
@@ -210,7 +210,7 @@
 			   tn == "decimal" ||
 			   tn == "long" ||
 			   tn == "ulong" ||
-				tn == "char") {
+			   tn == "char") {
 				// top should be a number
 				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
 					#if DEBUG
@@ -285,6 +285,12 @@
 				} else {
 					ret = default(T);
 				}
+			} else if(t.IsList()) {
+				// TODO not support nested List yet
+				ret = default(T);
+			} else if(t.IsDictionary()) {
+				// TODO not support nested Dictionary yet
+				ret = default(T);
 			} else {
 				// top should be a user type
 				if(!luaval_is_usertype(L, lo, tn)) {
@@ -368,9 +374,9 @@
 			return ok;
 		}
 
-		public static bool luaval_to_list<T>(IntPtr L, int lo, out T ret, string funcName = "") where T : IList, new() {
+		public static bool luaval_to_list<T>(IntPtr L, int lo, out List<T> ret, string funcName = "") {
 			// new
-			ret = new T();
+			ret = new List<T>();
 
 			// validate
 			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
@@ -399,24 +405,9 @@
 					LuaLib.lua_gettable(L, lo);
 
 					// get value and push to list
-					int t = LuaLib.lua_type(L, -1);
-					if(t == (int)LuaTypes.LUA_TBOOLEAN) {
-						ret.Add(LuaLib.tolua_toboolean(L, -1, 0));
-					} else if(t == (int)LuaTypes.LUA_TNUMBER) {
-						ret.Add(LuaLib.tolua_tonumber(L, -1, 0));
-					} else if(t == (int)LuaTypes.LUA_TSTRING) {
-						ret.Add(LuaLib.tolua_tostring(L, -1, ""));
-					} else if(t == (int)LuaTypes.LUA_TUSERDATA) {
-						string tn = LuaLib.tolua_typename(L, -1);
-						if(luaval_is_usertype(L, -1, tn)) {
-							// to obj
-							int refId = LuaLib.tolua_tousertype(L, -1);
-							object obj = LuaStack.FromState(L).FindObject(refId);
-							if(obj != null) {
-								ret.Add(obj);
-							}
-						}
-					}
+					T v;
+					luaval_to_type<T>(L, -1, out v, funcName);
+					ret.Add(v);
 
 					// pop value
 					LuaLib.lua_pop(L, 1);
@@ -426,9 +417,9 @@
 			return ok;
 		}
 
-		public static bool luaval_to_dictionary<T>(IntPtr L, int lo, out T ret, string funcName = "") where T: IDictionary, new() {
+		public static bool luaval_to_dictionary<K, V>(IntPtr L, int lo, out Dictionary<K, V> ret, string funcName = "") {
 			// new
-			ret = new T();
+			ret = new Dictionary<K, V>();
 
 			// validate
 			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
@@ -453,34 +444,16 @@
 			if(ok) {
 				LuaLib.lua_pushnil(L);
 				while(LuaLib.lua_next(L, lo) != 0) {
-					// if key is not string, ignore
-					if(!LuaLib.lua_isstring(L, -2)) {
-						LuaLib.lua_pop(L, 1);
-						continue;
-					}
-
 					// get key
-					string strKey = LuaLib.lua_tostring(L, -2);
+					K k;
+					LuaValueBoxer.luaval_to_type<K>(L, -2, out k, funcName);
 
-					// get value and push to list
-					int vt = LuaLib.lua_type(L, -1);
-					if(vt == (int)LuaTypes.LUA_TBOOLEAN) {
-						ret.Add(strKey, LuaLib.tolua_toboolean(L, -1, 0));
-					} else if(vt == (int)LuaTypes.LUA_TNUMBER) {
-						ret.Add(strKey, LuaLib.tolua_tonumber(L, -1, 0));
-					} else if(vt == (int)LuaTypes.LUA_TSTRING) {
-						ret.Add(strKey, LuaLib.tolua_tostring(L, -1, ""));
-					} else if(vt == (int)LuaTypes.LUA_TUSERDATA) {
-						string tn = LuaLib.tolua_typename(L, -1);
-						if(luaval_is_usertype(L, -1, tn)) {
-							// to obj
-							int refId = LuaLib.tolua_tousertype(L, -1);
-							object obj = LuaStack.FromState(L).FindObject(refId);
-							if(obj != null) {
-								ret.Add(strKey, obj);
-							}
-						}
-					}
+					// get value
+					V v;
+					LuaValueBoxer.luaval_to_type<V>(L, -1, out v, funcName);
+
+					// add
+					ret.Add(k, v);
 
 					// pop value
 					LuaLib.lua_pop(L, 1);
@@ -525,7 +498,7 @@
 			if(ok) {
 				// element type
 				Type t = typeof(T);
-				string tn = t.GetNormalizedName();
+				string tn = t.GetNormalizedCodeName();
 
 				// iterate all elements
 				int len = flat ? (toLo - lo + 1) : LuaLib.lua_objlen(L, lo);
@@ -599,7 +572,7 @@
 			while(e.MoveNext()) {
 				// get type
 				Type t = e.Current.GetType();
-				string tn = t.GetNormalizedName();
+				string tn = t.GetNormalizedCodeName();
 
 				// if not flat, assign a table index
 				if(!flat) {
@@ -671,7 +644,7 @@
 			while(e.MoveNext()) {
 				// get key type
 				Type kt = e.Key.GetType();
-				string ktn = kt.GetNormalizedName();
+				string ktn = kt.GetNormalizedCodeName();
 				string strKey = null;
 				int intKey = 0;
 
@@ -712,7 +685,7 @@
 
 				// push value
 				Type vt = e.Value.GetType();
-				string vtn = vt.GetNormalizedName();
+				string vtn = vt.GetNormalizedCodeName();
 				if(vtn == "byte") {
 					LuaLib.lua_pushinteger(L, Convert.ToByte(e.Value));
 				} else if(vtn == "sbyte") {
@@ -760,7 +733,7 @@
 
 		public static void type_to_luaval<T>(IntPtr L, T v) {
 			Type t = v.GetType();
-			string tn = t.GetNormalizedName();
+			string tn = t.GetNormalizedCodeName();
 
 			if(tn == "byte") {
 				LuaLib.lua_pushinteger(L, Convert.ToByte(v));
@@ -970,7 +943,7 @@
 			string nativeType = isParams ? t.Substring(7) : t;
 			Type nt = ExtensionType.GetType(nativeType);
 			Type et = isParams ? nt.GetElementType() : null;
-			string etn = isParams ? et.GetNormalizedName() : null;
+			string etn = isParams ? et.GetNormalizedCodeName() : null;
 
 			// check based on lua type
 			LuaTypes luaType = (LuaTypes)LuaLib.lua_type(L, lo);
