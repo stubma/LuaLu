@@ -753,11 +753,11 @@
 		}
 			
 		public void PushArray(Array array, bool flat = false) {
-			LuaValueBoxer.list_to_luaval(L, array, flat);
+			LuaValueBoxer.type_to_luaval(L, array, flat);
 		}
 
 		public void PushDictionary(Dictionary<string, object> dict) {
-			LuaValueBoxer.dictionary_to_luaval(L, dict);
+			LuaValueBoxer.type_to_luaval(L, dict);
 		}
 
 		public bool PushFunctionByHandler(int nHandler) {

@@ -965,7 +965,7 @@
 				buffer += indent + string.Format("LuaLib.lua_gettable(L, {0});\n", isStatic ? 1 : 2);
 				buffer += indent + "if(!LuaLib.lua_isnil(L, -1) && LuaLib.tolua_checkusertype(L, -1, \"System.Object\")) {\n";
 				indent += "\t";
-				buffer += indent + "LuaValueBoxer.luaval_to_type<System.Object>(L, -1, out targetObj);\n";
+				buffer += indent + "targetObj = LuaValueBoxer.luaval_to_type(L, -1, \"System.Object\");\n";
 				indent = indent.Substring(1);
 				buffer += indent + "} else if(LuaLib.lua_istable(L, -1)) {\n";
 				indent += "\t";
@@ -1045,7 +1045,8 @@
 
 				// get info
 				Type ft = fi.FieldType;
-				string ftn = ft.GetNormalizedCodeName();
+				string ftcn = ft.GetNormalizedCodeName();
+				string fttn = ft.GetNormalizedTypeName();
 				string fin = fi.Name;
 				string gn = "get_" + fin;
 				string sn = "set_" + fin;
@@ -1080,7 +1081,7 @@
 
 					// call function
 					buffer += "\t\t\t// get field\n";
-					buffer += string.Format("\t\t\t{0} ret = {1}.{2};\n", ftn, fi.IsStatic ? tn : "obj", fin);
+					buffer += string.Format("\t\t\t{0} ret = {1}.{2};\n", ftcn, fi.IsStatic ? tn : "obj", fin);
 
 					// push returned value
 					buffer += GenerateBoxReturnValue(ft, "\t\t\t");
@@ -1119,38 +1120,9 @@
 					// find conversion by property type name
 					buffer += "\t\t\t// set field\n";
 					buffer += "\t\t\tbool ok = true;\n";
-					buffer += string.Format("\t\t\t{0} ret;\n", ftn);
-					if(ft.IsArray) {
-						Type et = ft.GetElementType();
-						string etn = et.GetNormalizedCodeName();
-						if(et.IsArray) {
-							// TODO more than one dimension array? not supported yet
-						} else {
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_array<{0}>(L, 2, 2, out ret, \"{1}\");\n", etn, sn);
-						}
-					} else if(ft.IsList()) {
-						if(ftn == "System.Array") {
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list(L, 2, out ret, \"{0}\");\n", sn);
-						} else if(ft.IsGenericType) {
-							Type et = ft.GetGenericArguments()[0];
-							string etn = et.GetNormalizedCodeName();
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, 2, out ret, \"{1}\");\n", etn, sn);
-						} else {
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<object>(L, 2, out ret, \"{0}\");\n", sn);
-						}
-					} else if(ft.IsDictionary()) {
-						if(ft.IsGenericType) {
-							Type kt = ft.GetGenericArguments()[0];
-							Type vt = ft.GetGenericArguments()[1];
-							string ktn = kt.GetNormalizedCodeName();
-							string vtn = vt.GetNormalizedCodeName();
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<{0}, {1}>(L, 2, out ret, \"{2}\");\n", ktn, vtn, sn);
-						} else {
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<object, object>(L, 2, out ret, \"{0}\");\n", sn);
-						}
-					} else {
-						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_type<{0}>(L, 2, out ret, \"{1}\");\n", ftn, sn);
-					}
+					buffer += string.Format("\t\t\t{0} ret;\n", ftcn);
+					buffer += string.Format("\t\t\tret = ({0})LuaValueBoxer.luaval_to_type(L, 2, \"{1}\", \"{2}\");\n", ftcn, fttn, sn);
+					buffer += "\t\t\tok &= ret != null;\n";
 
 					// set field
 					buffer += "\t\t\tif(ok) {\n";
@@ -1183,7 +1155,8 @@
 				MethodInfo getter = pi.GetGetMethod();
 				MethodInfo setter = pi.GetSetMethod();
 				Type pt = pi.PropertyType;
-				string ptn = pt.GetNormalizedCodeName();
+				string ptcn = pt.GetNormalizedCodeName();
+				string pttn = pt.GetNormalizedTypeName();
 				string pn = pi.Name;
 				string tn = t.GetNormalizedCodeName();
 
@@ -1224,7 +1197,7 @@
 
 					// call function
 					buffer += "\t\t\t// get property\n";
-					buffer += string.Format("\t\t\t{0} ret = {1}.{2};\n", ptn, getter.IsStatic ? tn : "obj", pn);
+					buffer += string.Format("\t\t\t{0} ret = {1}.{2};\n", ptcn, getter.IsStatic ? tn : "obj", pn);
 
 					// push returned value
 					buffer += GenerateBoxReturnValue(getter.ReturnType, "\t\t\t");
@@ -1266,38 +1239,9 @@
 					// find conversion by property type name
 					buffer += "\t\t\t// set property\n";
 					buffer += "\t\t\tbool ok = true;\n";
-					buffer += string.Format("\t\t\t{0} ret;\n", ptn);
-					if(pt.IsArray) {
-						Type et = pt.GetElementType();
-						string etn = et.GetNormalizedCodeName();
-						if(et.IsArray) {
-							// TODO more than one dimension array? not supported yet
-						} else {
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_array<{0}>(L, 2, 2, out ret, \"{1}\");\n", etn, fn);
-						}
-					} else if(pt.IsList()) {
-						if(ptn == "System.Array") {
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list(L, 2, out ret, \"{0}\");\n", fn);
-						} else if(pt.IsGenericType) {
-							Type et = pt.GetGenericArguments()[0];
-							string etn = et.GetNormalizedCodeName();
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<{0}>(L, 2, out ret, \"{1}\");\n", etn, fn);
-						} else {
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_list<object>(L, 2, out ret, \"{0}\");\n", fn);
-						}
-					} else if(pt.IsDictionary()) {
-						if(pt.IsGenericType) {
-							Type kt = pt.GetGenericArguments()[0];
-							Type vt = pt.GetGenericArguments()[1];
-							string ktn = kt.GetNormalizedCodeName();
-							string vtn = vt.GetNormalizedCodeName();
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<{0}, {1}>(L, 2, out ret, \"{2}\");\n", ktn, vtn, fn);
-						} else {
-							buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_dictionary<object, object>(L, 2, out ret, \"{0}\");\n", fn);
-						}
-					} else {
-						buffer += string.Format("\t\t\tok &= LuaValueBoxer.luaval_to_type<{0}>(L, 2, out ret, \"{1}\");\n", ptn, fn);
-					}
+					buffer += string.Format("\t\t\t{0} ret;\n", ptcn);
+					buffer += string.Format("\t\t\tret = ({0})LuaValueBoxer.luaval_to_type(L, 2, \"{1}\", \"{2}\");\n", ptcn, pttn, fn);
+					buffer += "\t\t\tok &= ret != null;\n";
 
 					// set property
 					buffer += "\t\t\tif(ok) {\n";
@@ -1735,20 +1679,15 @@
 		}
 
 		private static string GenerateBoxReturnValue(Type returnType, string indent) {
-			string rtn = returnType.GetNormalizedCodeName();
 			string buffer = "";
 			int retured = 1;
 
 			// convert to lua value
-			if(rtn == "void") {
+			if(returnType == typeof(void)) {
 				// do not generate for void return
 				retured = 0;
-			} else if(returnType.IsArray) {
-				Type et = returnType.GetElementType();
-				string etn = et.GetNormalizedCodeName();
-				buffer += string.Format(indent + "LuaValueBoxer.array_to_luaval<{0}>(L, ret);\n", etn);
 			} else {
-				buffer += string.Format(indent + "LuaValueBoxer.type_to_luaval<{0}>(L, ret);\n", rtn);
+				buffer += indent + "LuaValueBoxer.type_to_luaval(L, ret);\n";
 			}
 
 			// returned value count
@@ -1998,15 +1937,7 @@
 					buffer += indent + "// push arguments\n";
 					buffer += indent + string.Format("argc += {0};\n", pList.Length);
 					for(int i = 0; i < pList.Length; i++) {
-						Type pt = pList[i].ParameterType;
-						string ptn = pt.GetNormalizedCodeName();
-						if(pt.IsArray) {
-							Type et = pt.GetElementType();
-							string etn = et.GetNormalizedCodeName();
-							buffer += string.Format(indent + "LuaValueBoxer.array_to_luaval<{0}>(L, arg{1});\n", etn, i);
-						} else {
-							buffer += string.Format(indent + "LuaValueBoxer.type_to_luaval<{0}>(L, arg{1});\n", ptn, i);
-						}
+						buffer += indent + string.Format("LuaValueBoxer.type_to_luaval(L, arg{0});\n", i);
 					}
 				}
 
@@ -2091,7 +2022,7 @@
 		private static string GenerateCustomDelegateAddMethod(Type t) {
 			string buffer = "";
 			string indent = "\t\t";
-			string tfn = t.GetNormalizedCodeName();
+			string tfcn = t.GetNormalizedCodeName();
 			string tfnUnderscore = t.GetNormalizedIdentityName();
 			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string fn = clazz + ".__add";
@@ -2109,13 +2040,13 @@
 			// object should be first argument
 			buffer += indent + "// first should be this\n";
 			buffer += indent.Substring(1) + "#if DEBUG\n";
-			buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tfn);
+			buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tfcn);
 			buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
 			buffer += indent + "\treturn 0;\n";
 			buffer += indent + "}\n";
 			buffer += indent.Substring(1) + "#endif\n";
 			buffer += indent + "int refId = LuaLib.tolua_tousertype(L, 1);\n";
-			buffer += string.Format(indent + "{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tfn);
+			buffer += string.Format(indent + "{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tfcn);
 			buffer += indent.Substring(1) + "#if DEBUG\n";
 			buffer += indent + "if(obj == null) {\n";
 			buffer += string.Format(indent + "\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", fn);
@@ -2131,7 +2062,7 @@
 			indent += "\t";
 			buffer += indent + "// create lua delegate wrapper\n";
 			buffer += indent + "LuaDelegateWrapper w = new LuaDelegateWrapper(L, -1);\n";
-			buffer += indent + string.Format("{0} arg0 = new {0}(w.delegate_{1});\n", tfn, tfnUnderscore);
+			buffer += indent + string.Format("{0} arg0 = new {0}(w.delegate_{1});\n", tfcn, tfnUnderscore);
 
 			// combine them
 			buffer += "\n";
@@ -2143,7 +2074,7 @@
 			buffer += indent + "}\n\n";
 
 			// return this
-			buffer += indent + string.Format("LuaValueBoxer.object_to_luaval(L, \"{0}\", obj);\n", tfn);
+			buffer += indent + "LuaValueBoxer.type_to_luaval(L, obj);\n";
 			buffer += indent + "return 1;\n";
 
 			// method end
@@ -2157,7 +2088,7 @@
 		private static string GenerateCustomDelegateRemoveMethod(Type t) {
 			string buffer = "";
 			string indent = "\t\t";
-			string tfn = t.GetNormalizedCodeName();
+			string tfcn = t.GetNormalizedCodeName();
 			string tfnUnderscore = t.GetNormalizedIdentityName();
 			string clazz = "lua_" + tfnUnderscore + "_binder";
 			string fn = clazz + ".__sub";
@@ -2175,13 +2106,13 @@
 			// object should be first argument
 			buffer += indent + "// first should be this\n";
 			buffer += indent.Substring(1) + "#if DEBUG\n";
-			buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tfn);
+			buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tfcn);
 			buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
 			buffer += indent + "\treturn 0;\n";
 			buffer += indent + "}\n";
 			buffer += indent.Substring(1) + "#endif\n";
 			buffer += indent + "int refId = LuaLib.tolua_tousertype(L, 1);\n";
-			buffer += string.Format(indent + "{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tfn);
+			buffer += string.Format(indent + "{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tfcn);
 			buffer += indent.Substring(1) + "#if DEBUG\n";
 			buffer += indent + "if(obj == null) {\n";
 			buffer += string.Format(indent + "\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", fn);
@@ -2197,7 +2128,7 @@
 			indent += "\t";
 			buffer += indent + "// create lua delegate wrapper\n";
 			buffer += indent + "LuaDelegateWrapper w = new LuaDelegateWrapper(L, -1);\n";
-			buffer += indent + string.Format("{0} arg0 = new {0}(w.delegate_{1});\n", tfn, tfnUnderscore);
+			buffer += indent + string.Format("{0} arg0 = new {0}(w.delegate_{1});\n", tfcn, tfnUnderscore);
 
 			// remove
 			buffer += "\n";
@@ -2209,7 +2140,7 @@
 			buffer += indent + "}\n\n";
 
 			// return this
-			buffer += indent + string.Format("LuaValueBoxer.object_to_luaval(L, \"{0}\", obj);\n", tfn);
+			buffer += indent + "LuaValueBoxer.type_to_luaval(L, obj);\n";
 			buffer += indent + "return 1;\n";
 
 			// method end

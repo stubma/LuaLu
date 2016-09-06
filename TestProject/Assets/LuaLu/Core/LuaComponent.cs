@@ -40,10 +40,23 @@
 			s_fileIndex = 1;
 		}
 
+//		public void test<T>(T t, params T[] tt) {
+//			Debug.Log("call generic T");
+//		}
+//		public void test<T>(int i, params T[] tt) {
+//			Debug.Log("call generic int T");
+//		}
+//		public void test<T, V>(string s, T t, V v) {
+//			Debug.Log("call generic s, T, V");
+//		}
+
+		public List<int> mListField;
+
 		public LuaComponent() {
 			#if UNITY_EDITOR
 			m_luaFile = DefaultFileName();
 			#endif
+			mListField = new List<int> { 3, 4, 5, 6, 8 };
 		}
 
 		void OnValidate() {

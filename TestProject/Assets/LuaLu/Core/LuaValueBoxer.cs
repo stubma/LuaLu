@@ -26,7 +26,7 @@
 						{ "System.Int16", "System.Int16" },
 						{ "System.Int32", "System.Int32" },
 						{ "System.Int64", "System.Int64" },
-						{ "System.Float", "System.Float"},
+						{ "System.Single", "System.Single"},
 						{ "System.Double", "System.Double" },
 						{ "System.Decimal", "System.Decimal" }
 					}
@@ -40,7 +40,7 @@
 						{ "System.UInt32", "System.UInt32" },
 						{ "System.Int64", "System.Int64" },
 						{ "System.UInt64", "System.UInt64" },
-						{ "System.Float" , "System.Float" },
+						{ "System.Single" , "System.Single" },
 						{ "System.Double", "System.Double" },
 						{ "System.Decimal", "System.Decimal" }
 					}
@@ -50,7 +50,7 @@
 					new Dictionary<string, string> {
 						{ "System.Int32", "System.Int32" },
 						{ "System.Int64", "System.Int64" },
-						{ "System.Float" , "System.Float" },
+						{ "System.Single" , "System.Single" },
 						{ "System.Double", "System.Double" },
 						{ "System.Decimal", "System.Decimal" }
 					}
@@ -62,7 +62,7 @@
 						{ "System.UInt32", "System.UInt32" },
 						{ "System.Int64", "System.Int64" },
 						{ "System.UInt64", "System.UInt64" },
-						{ "System.Float" , "System.Float" },
+						{ "System.Single" , "System.Single" },
 						{ "System.Double", "System.Double" },
 						{ "System.Decimal", "System.Decimal" }
 					}
@@ -71,7 +71,7 @@
 					"System.Int32",
 					new Dictionary<string, string> {
 						{ "System.Int64", "System.Int64" },
-						{ "System.Float" , "System.Float" },
+						{ "System.Single" , "System.Single" },
 						{ "System.Double", "System.Double" },
 						{ "System.Decimal", "System.Decimal" }
 					}
@@ -81,7 +81,7 @@
 					new Dictionary<string, string> {
 						{ "System.Int64", "System.Int64" },
 						{ "System.UInt64", "System.UInt64" },
-						{ "System.Float" , "System.Float" },
+						{ "System.Single" , "System.Single" },
 						{ "System.Double", "System.Double" },
 						{ "System.Decimal", "System.Decimal" }
 					}
@@ -89,7 +89,7 @@
 				{
 					"System.Int64",
 					new Dictionary<string, string> {
-						{ "System.Float" , "System.Float" },
+						{ "System.Single" , "System.Single" },
 						{ "System.Double", "System.Double" },
 						{ "System.Decimal", "System.Decimal" }
 					}
@@ -102,13 +102,13 @@
 						{ "System.UInt32", "System.UInt32" },
 						{ "System.Int64", "System.Int64" },
 						{ "System.UInt64", "System.UInt64" },
-						{ "System.Float" , "System.Float" },
+						{ "System.Single" , "System.Single" },
 						{ "System.Double", "System.Double" },
 						{ "System.Decimal", "System.Decimal" }
 					}
 				},
 				{
-					"System.Float",
+					"System.Single",
 					new Dictionary<string, string> {
 						{ "System.Double", "System.Double" }
 					}
@@ -116,7 +116,7 @@
 				{
 					"System.UInt64",
 					new Dictionary<string, string> {
-						{ "System.Float" , "System.Float" },
+						{ "System.Single" , "System.Single" },
 						{ "System.Double", "System.Double" },
 						{ "System.Decimal", "System.Decimal" }
 					}
@@ -188,29 +188,330 @@
 			}
 		}
 
+		public static object luaval_to_type(IntPtr L, int lo, string tn, string funcName = "") {
+			// get top
+			int top = LuaLib.lua_gettop(L);
+
+			// ensure lo is positive
+			if(lo < 0) {
+				lo = top + lo + 1;
+			}
+
+			// basic checking
+			if(IntPtr.Zero == L || top < lo) {
+				return null;
+			}
+
+			// get type
+			Type t = ExtensionType.GetType(tn);
+
+			// convert
+			bool ok = true;
+			if(tn == "System.Byte" ||
+			   tn == "System.SByte" ||
+			   tn == "System.Int16" ||
+			   tn == "System.UInt16" ||
+			   tn == "System.Int32" ||
+			   tn == "System.UInt32" ||
+			   tn == "System.Decimal" ||
+			   tn == "System.Int64" ||
+			   tn == "System.UInt64" ||
+			   tn == "System.Char") {
+				// top should be a number
+				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+
+					// to integer then cast to desired type
+					if(ok) {
+						return Convert.ChangeType(LuaLib.tolua_tointeger(L, lo, 0), t);
+					}
+				}
+			} else if(tn == "System.Boolean") {
+				// top should be a boolean
+				if(!LuaLib.tolua_isboolean(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// to boolean
+				if(ok) {
+					return LuaLib.tolua_toboolean(L, lo, 0);
+				}
+			} else if(tn == "System.String") {
+				// top should be a string
+				if(!LuaLib.tolua_isstring(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// to string
+				if(ok) {
+					return LuaLib.tolua_tostring(L, lo, "");
+				}
+			} else if(tn == "System.Single" || tn == "System.Double") {
+				// top should be a number
+				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// to number
+				if(ok) {
+					return LuaLib.tolua_tonumber(L, lo, 0);
+				}
+			} else if(t.IsEnum) {
+				// top should be a number
+				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// to enum
+				if(ok) {
+					return Enum.ToObject(t, LuaLib.tolua_tointeger(L, lo, 0));
+				}
+			} else if(t.IsArray) {
+				// if top is a table, then convert this table to array
+				// if top is not table, then convert all elements from lo to top to array
+				// that is because an array may be a variant parameter
+				bool flat = false;
+				if(!LuaLib.tolua_istable(L, lo, ref tolua_err)) {
+					flat = true;
+				}
+
+				// create array
+				Type et = t.GetElementType();
+				string etn = et.GetNormalizedTypeName();
+				int len = flat ? (top - lo + 1) : LuaLib.lua_objlen(L, lo);
+				Array a = Array.CreateInstance(et, len);
+
+				// add element to array
+				for(int i = 0; i < len; i++) {
+					// if not flat, get value from table
+					if(!flat) {
+						LuaLib.lua_pushnumber(L, i + 1);
+						LuaLib.lua_gettable(L, lo);
+					}
+
+					// convert value
+					object element = luaval_to_type(L, flat ? (lo + i) : -1, etn, funcName);
+					if(element != null) {
+						a.SetValue(element, i);
+					}
+
+					// pop value if not flat
+					if(!flat) {
+						LuaLib.lua_pop(L, 1);
+					}
+				}
+
+				// return
+				return a;
+			} else if(tn == "System.Array") {
+				// top should be a table
+				if(!LuaLib.tolua_istable(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// fill elements
+				if(ok) {
+					int len = LuaLib.lua_objlen(L, lo);
+					Array a = Array.CreateInstance(typeof(object), len);
+					for(int i = 0; i < len; i++) {
+						LuaLib.lua_pushnumber(L, i + 1);
+						LuaLib.lua_gettable(L, lo);
+
+						// get value and push to array
+						int lt = LuaLib.lua_type(L, -1);
+						if(lt == (int)LuaTypes.LUA_TBOOLEAN) {
+							a.SetValue(LuaLib.tolua_toboolean(L, -1, 0), i);
+						} else if(lt == (int)LuaTypes.LUA_TNUMBER) {
+							a.SetValue(LuaLib.tolua_tonumber(L, -1, 0), i);
+						} else if(lt == (int)LuaTypes.LUA_TSTRING) {
+							a.SetValue(LuaLib.tolua_tostring(L, -1, ""), i);
+						} else if(lt == (int)LuaTypes.LUA_TUSERDATA) {
+							string ltn = LuaLib.tolua_typename(L, -1);
+							if(luaval_is_usertype(L, -1, ltn)) {
+								// to obj
+								int refId = LuaLib.tolua_tousertype(L, -1);
+								object obj = LuaStack.FromState(L).FindObject(refId);
+								if(obj != null) {
+									a.SetValue(obj, i);
+								}
+							}
+						}
+
+						// pop value
+						LuaLib.lua_pop(L, 1);
+					}
+
+					// return
+					return a;
+				}
+			} else if(t.IsList()) {
+				// top should be a table
+				if(!LuaLib.tolua_istable(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// to list
+				if(ok) {
+					// get element type
+					Type et = typeof(object);
+					string etn = "System.Object";
+					if(t.IsGenericType) {
+						et = t.GetGenericArguments()[0];
+						etn = et.GetNormalizedTypeName();
+					}
+
+					// create list instance, if original type is an abstract type, create 
+					// a list for it
+					IList list = null;
+					if(t.IsAbstract) {
+						Type listType = typeof(List<>).MakeGenericType(et);
+						list = Activator.CreateInstance(listType) as IList;
+					} else {
+						list = Activator.CreateInstance(t) as IList;
+					}
+
+					// add element
+					int len = LuaLib.lua_objlen(L, lo);
+					for(int i = 0; i < len; i++) {
+						// get value from table
+						LuaLib.lua_pushnumber(L, i + 1);
+						LuaLib.lua_gettable(L, lo);
+
+						// convert value
+						object element = luaval_to_type(L, -1, etn, funcName);
+						if(element != null) {
+							list.Add(element);
+						}
+
+						// pop index
+						LuaLib.lua_pop(L, 1);
+					}
+
+					// return
+					return list;
+				}
+			} else if(t.IsDictionary()) {
+				// top should be a table
+				if(!LuaLib.tolua_istable(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// to dictionary
+				if(ok) {
+					// get key/value type
+					Type kt = typeof(object);
+					Type vt = typeof(object);
+					string ktn = "System.Object";
+					string vtn = "System.Object";
+					if(t.IsGenericType) {
+						Type[] gt = t.GetGenericArguments();
+						kt = gt[0];
+						vt = gt[1];
+						ktn = kt.GetNormalizedTypeName();
+						vtn = vt.GetNormalizedTypeName();
+					}
+
+					// create dictionary instance
+					IDictionary dict = null;
+					if(t.IsAbstract) {
+						Type dictType = typeof(Dictionary<,>).MakeGenericType(kt, vt);
+						dict = Activator.CreateInstance(dictType) as IDictionary;
+					} else {
+						dict = Activator.CreateInstance(t) as IDictionary;
+					}
+
+					// add pairs
+					LuaLib.lua_pushnil(L);
+					while(LuaLib.lua_next(L, lo) != 0) {
+						// get key
+						object k = LuaValueBoxer.luaval_to_type(L, -2, ktn, funcName);
+
+						// get value
+						object v = LuaValueBoxer.luaval_to_type(L, -1, vtn, funcName);
+
+						// add
+						dict.Add(k, v);
+
+						// pop value
+						LuaLib.lua_pop(L, 1);
+					}
+
+					// return
+					return dict;
+				}
+			} else {
+				// top should be a user type
+				if(!luaval_is_usertype(L, lo, tn)) {
+					ok = false;
+				}
+
+				// to obj
+				if(ok) {
+					int refId = LuaLib.tolua_tousertype(L, lo);
+					object obj = LuaStack.FromState(L).FindObject(refId);
+					return obj;
+				}
+			}
+
+			// fallback, return null
+			return null;
+		}
+
 		public static bool luaval_to_type<T>(IntPtr L, int lo, out T ret, string funcName = "") {
+			// get top
+			int top = LuaLib.lua_gettop(L);
+
+			// ensure lo is positive
+			if(lo < 0) {
+				lo = top + lo + 1;
+			}
+
 			// validate
-			if(IntPtr.Zero == L || LuaLib.lua_gettop(L) < lo) {
+			if(IntPtr.Zero == L || top < lo) {
 				ret = default(T);
 				return false;
 			}
 
 			// get type and name
 			Type t = typeof(T);
-			string tn = t.GetNormalizedCodeName();
+			string tn = t.GetNormalizedTypeName();
 
 			// convert
 			bool ok = true;
-			if(tn == "byte" ||
-			   tn == "sbyte" ||
-			   tn == "short" ||
-			   tn == "ushort" ||
-			   tn == "int" ||
-			   tn == "uint" ||
-			   tn == "decimal" ||
-			   tn == "long" ||
-			   tn == "ulong" ||
-			   tn == "char") {
+			if(tn == "System.Byte" ||
+			   tn == "System.SByte" ||
+			   tn == "System.Int16" ||
+			   tn == "System.UInt16" ||
+			   tn == "System.Int32" ||
+			   tn == "System.UInt32" ||
+			   tn == "System.Decimal" ||
+			   tn == "System.Int64" ||
+			   tn == "System.UInt64" ||
+			   tn == "System.Char") {
 				// top should be a number
 				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
 					#if DEBUG
@@ -225,7 +526,7 @@
 				} else {
 					ret = default(T);
 				}
-			} else if(tn == "bool") {
+			} else if(tn == "System.Boolean") {
 				// top should be a boolean
 				if(!LuaLib.tolua_isboolean(L, lo, ref tolua_err)) {
 					#if DEBUG
@@ -240,7 +541,7 @@
 				} else {
 					ret = default(T);
 				}
-			} else if(tn == "string") {
+			} else if(tn == "System.String") {
 				// top should be a string
 				if(!LuaLib.tolua_isstring(L, lo, ref tolua_err)) {
 					#if DEBUG
@@ -255,7 +556,7 @@
 				} else {
 					ret = default(T);
 				}
-			} else if(tn == "float" || tn == "double") {
+			} else if(tn == "System.Single" || tn == "System.Double") {
 				// top should be a number
 				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
 					#if DEBUG
@@ -285,12 +586,8 @@
 				} else {
 					ret = default(T);
 				}
-			} else if(t.IsList()) {
-				// TODO not support nested List yet
-				ret = default(T);
-			} else if(t.IsDictionary()) {
-				// TODO not support nested Dictionary yet
-				ret = default(T);
+			} else if(tn == "System.Array" || t.IsArray || t.IsList() || t.IsDictionary()) {
+				ret = (T)luaval_to_type(L, lo, tn, funcName);
 			} else {
 				// top should be a user type
 				if(!luaval_is_usertype(L, lo, tn)) {
@@ -532,246 +829,129 @@
 			return ok;
 		}
 
-		public static void object_to_luaval(IntPtr L, string type, object t) {
-			if(t != null) {
-				LuaStack.SharedInstance().PushObject(t, type);
-			} else {
+		public static void type_to_luaval(IntPtr L, object v, bool flat = false) {
+			// check nil
+			if(v == null) {
 				LuaLib.lua_pushnil(L);
-			}
-		}
-
-		public static void array_to_luaval<T>(IntPtr L, T[] inValue) {
-			// new table for array value
-			LuaLib.lua_newtable(L);
-
-			// validate
-			if(IntPtr.Zero == L || null == inValue)
 				return;
-
-			// push every element
-			for(int i = 0; i < inValue.Length; i++) {
-				LuaLib.lua_pushnumber(L, i + 1);
-				type_to_luaval<T>(L, inValue[i]);
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void list_to_luaval(IntPtr L, IEnumerable inValue, bool flat = false) {
-			// new table for array value, if not flat
-			if(!flat) {
-				LuaLib.lua_newtable(L);
 			}
 
-			// validate
-			if(IntPtr.Zero == L || null == inValue)
-				return;
-
-			// push every element
-			int indexTable = 1;
-			IEnumerator e = inValue.GetEnumerator();
-			while(e.MoveNext()) {
-				// get type
-				Type t = e.Current.GetType();
-				string tn = t.GetNormalizedCodeName();
-
-				// if not flat, assign a table index
-				if(!flat) {
-					LuaLib.lua_pushnumber(L, indexTable);
-				}
-
-				// convert
-				if(tn == "byte") {
-					LuaLib.lua_pushinteger(L, Convert.ToByte(e.Current));
-				} else if(tn == "sbyte") {
-					LuaLib.lua_pushinteger(L, Convert.ToSByte(e.Current));
-				} else if(tn == "char") {
-					LuaLib.lua_pushinteger(L, Convert.ToChar(e.Current));
-				} else if(tn == "short") {
-					LuaLib.lua_pushinteger(L, Convert.ToInt16(e.Current));
-				} else if(tn == "ushort") {
-					LuaLib.lua_pushinteger(L, Convert.ToUInt16(e.Current));
-				} else if(tn == "bool") {
-					LuaLib.lua_pushboolean(L, Convert.ToBoolean(e.Current));
-				} else if(tn == "int" || tn == "decimal") {
-					LuaLib.lua_pushinteger(L, Convert.ToInt32(e.Current));
-				} else if(tn == "uint") {
-					LuaLib.lua_pushinteger(L, (int)Convert.ToUInt32(e.Current));
-				} else if(tn == "long") {
-					LuaLib.lua_pushinteger(L, (int)Convert.ToInt64(e.Current));
-				} else if(tn == "ulong") {
-					LuaLib.lua_pushnumber(L, indexTable);
-					LuaLib.lua_pushinteger(L, (int)Convert.ToUInt64(e.Current));
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
-				} else if(tn == "float" || tn == "double") {
-					LuaLib.lua_pushnumber(L, Convert.ToDouble(e.Current));
-				} else if(tn == "string") {
-					LuaLib.lua_pushstring(L, (string)e.Current);
-				} else if(tn == "void") {
-					// impossible
-					Debug.Assert(false, "void type in in list, that should not be possible");
-				} else if(t.IsEnum) {
-					LuaLib.lua_pushinteger(L, (int)e.Current);
-				} else if(t.IsArray) {
-					Array a = (Array)e.Current;
-					list_to_luaval(L, a as IEnumerable);
-				} else if(t.IsList() && t.IsEnumerable()) {
-					list_to_luaval(L, e.Current as IEnumerable);
-				} else if(t.IsDictionary()) {
-					dictionary_to_luaval(L, (IDictionary)e.Current);
-				} else {
-					object_to_luaval(L, tn, e.Current);
-				}
-
-				// if not flat, add to table
-				if(!flat) {
-					LuaLib.lua_rawset(L, -3);
-					++indexTable;
-				}
-			}
-		}
-
-		public static void dictionary_to_luaval(IntPtr L, IDictionary dict) {
-			// new table for dictionary value
-			LuaLib.lua_newtable(L);
-
-			// validate
-			if(IntPtr.Zero == L || null == dict)
-				return;
-
-			// push
-			IDictionaryEnumerator e = dict.GetEnumerator();
-			while(e.MoveNext()) {
-				// get key type
-				Type kt = e.Key.GetType();
-				string ktn = kt.GetNormalizedCodeName();
-				string strKey = null;
-				int intKey = 0;
-
-				// convert key
-				if(ktn == "byte") {
-					intKey = Convert.ToByte(e.Key);
-				} else if(ktn == "sbyte") {
-					intKey = Convert.ToSByte(e.Key);
-				} else if(ktn == "char") {
-					strKey = Convert.ToChar(e.Key).ToString();
-				} else if(ktn == "short") {
-					intKey = Convert.ToInt16(e.Key);
-				} else if(ktn == "ushort") {
-					intKey = Convert.ToUInt16(e.Key);
-				} else if(ktn == "bool") {
-					intKey = Convert.ToBoolean(e.Key) ? 1 : 0;
-				} else if(ktn == "int" || ktn == "decimal") {
-					intKey = Convert.ToInt32(e.Key);
-				} else if(ktn == "uint") {
-					intKey = (int)Convert.ToUInt32(e.Key);
-				} else if(ktn == "long") {
-					intKey = (int)Convert.ToInt64(e.Key);
-				} else if(ktn == "ulong") {
-					intKey = (int)Convert.ToUInt64(e.Key);
-				} else if(ktn == "string") {
-					strKey = (string)e.Key;
-				} else {
-					// not supported key type
-					continue;
-				}
-
-				// push key
-				if(strKey != null) {
-					LuaLib.lua_pushstring(L, strKey);
-				} else {
-					LuaLib.lua_pushnumber(L, intKey);
-				}
-
-				// push value
-				Type vt = e.Value.GetType();
-				string vtn = vt.GetNormalizedCodeName();
-				if(vtn == "byte") {
-					LuaLib.lua_pushinteger(L, Convert.ToByte(e.Value));
-				} else if(vtn == "sbyte") {
-					LuaLib.lua_pushinteger(L, Convert.ToSByte(e.Value));
-				} else if(vtn == "char") {
-					LuaLib.lua_pushinteger(L, Convert.ToChar(e.Value));
-				} else if(vtn == "short") {
-					LuaLib.lua_pushinteger(L, Convert.ToInt16(e.Value));
-				} else if(vtn == "ushort") {
-					LuaLib.lua_pushinteger(L, Convert.ToUInt16(e.Value));
-				} else if(vtn == "bool") {
-					LuaLib.lua_pushboolean(L, Convert.ToBoolean(e.Value));
-				} else if(vtn == "int" || vtn == "decimal") {
-					LuaLib.lua_pushinteger(L, Convert.ToInt32(e.Value));
-				} else if(vtn == "uint") {
-					LuaLib.lua_pushinteger(L, (int)Convert.ToUInt32(e.Value));
-				} else if(vtn == "long") {
-					LuaLib.lua_pushinteger(L, (int)Convert.ToInt64(e.Value));
-				} else if(vtn == "ulong") {
-					LuaLib.lua_pushinteger(L, (int)Convert.ToUInt64(e.Value));
-				} else if(vtn == "float" || vtn == "double") {
-					LuaLib.lua_pushnumber(L, Convert.ToDouble(e.Value));
-				} else if(vtn == "string") {
-					LuaLib.lua_pushstring(L, (string)e.Value);
-				} else if(vtn == "void") {
-					// impossible
-					Debug.Assert(false, "void type in in list, that should not be possible");
-				} else if(vt.IsEnum) {
-					LuaLib.lua_pushinteger(L, (int)e.Value);
-				} else if(vt.IsArray) {
-					Array a = (Array)e.Value;
-					list_to_luaval(L, a as IEnumerable);
-				} else if(vt.IsList() && vt.IsEnumerable()) {
-					list_to_luaval(L, e.Value as IEnumerable);
-				} else if(vt.IsDictionary()) {
-					dictionary_to_luaval(L, e.Value as IDictionary);
-				} else {
-					object_to_luaval(L, vtn, e.Value);
-				}
-
-				// set to dict
-				LuaLib.lua_rawset(L, -3);
-			}
-		}
-
-		public static void type_to_luaval<T>(IntPtr L, T v) {
+			// get type
 			Type t = v.GetType();
-			string tn = t.GetNormalizedCodeName();
+			string tn = t.GetNormalizedTypeName();
 
-			if(tn == "byte") {
+			if(tn == "System.Byte") {
 				LuaLib.lua_pushinteger(L, Convert.ToByte(v));
-			} else if(tn == "sbyte") {
+			} else if(tn == "System.SByte") {
 				LuaLib.lua_pushinteger(L, Convert.ToSByte(v));
-			} else if(tn == "char") {
+			} else if(tn == "System.Char") {
 				LuaLib.lua_pushinteger(L, Convert.ToChar(v));
-			} else if(tn == "short") {
+			} else if(tn == "System.Int16") {
 				LuaLib.lua_pushinteger(L, Convert.ToInt16(v));
-			} else if(tn == "ushort") {
+			} else if(tn == "System.UInt16") {
 				LuaLib.lua_pushinteger(L, Convert.ToUInt16(v));
-			} else if(tn == "bool") {
+			} else if(tn == "System.Boolean") {
 				LuaLib.lua_pushboolean(L, Convert.ToBoolean(v));
-			} else if(tn == "int" || tn == "decimal") {
+			} else if(tn == "System.Int32" || tn == "System.Decimal" || tn == "System.Int64") {
 				LuaLib.lua_pushinteger(L, Convert.ToInt32(v));
-			} else if(tn == "uint") {
+			} else if(tn == "System.UInt32" || tn == "System.UInt64") {
 				LuaLib.lua_pushinteger(L, (int)Convert.ToUInt32(v));
-			} else if(tn == "long") {
-				LuaLib.lua_pushinteger(L, (int)Convert.ToInt64(v));
-			} else if(tn == "ulong") {
-				LuaLib.lua_pushinteger(L, (int)Convert.ToUInt64(v));
-			} else if(tn == "float" || tn == "double") {
+			} else if(tn == "System.Single" || tn == "System.Double") {
 				LuaLib.lua_pushnumber(L, Convert.ToDouble(v));
-			} else if(tn == "string") {
+			} else if(tn == "System.String") {
 				LuaLib.lua_pushstring(L, Convert.ToString(v));
-			} else if(tn == "void") {
+			} else if(tn == "System.Void") {
 				// do nothing for void
 			} else if(t.IsEnum) {
 				LuaLib.lua_pushinteger(L, Convert.ToInt32(v));
 			} else if(t.IsArray) {
+				// new table if not flat
+				if(!flat) {
+					LuaLib.lua_newtable(L);
+				}
+
+				// cast to array and push every element
+				int indexTable = 1;
 				Array a = v as Array;
-				list_to_luaval(L, a as IEnumerable);
-			} else if(t.IsList() && t.IsEnumerable()) {
-				list_to_luaval(L, v as IEnumerable);
+				IEnumerator e = a.GetEnumerator();
+				while(e.MoveNext()) {
+					// if not flat, assign a table index
+					if(!flat) {
+						LuaLib.lua_pushnumber(L, indexTable);
+					}
+
+					// push to stack
+					type_to_luaval(L, e.Current);
+
+					// if not flat, add to table
+					if(!flat) {
+						LuaLib.lua_rawset(L, -3);
+						++indexTable;
+					}
+				}
+			} else if(t.IsList()) {
+				// new table if not flat
+				if(!flat) {
+					LuaLib.lua_newtable(L);
+				}
+
+				// cast to list and push every element
+				int indexTable = 1;
+				IList list = v as IList;
+				for(int i = 0; i < list.Count; i++) {
+					// if not flat, assign a table index
+					if(!flat) {
+						LuaLib.lua_pushnumber(L, indexTable);
+					}
+
+					// push to stack
+					type_to_luaval(L, list[i]);
+
+					// if not flat, add to table
+					if(!flat) {
+						LuaLib.lua_rawset(L, -3);
+						++indexTable;
+					}
+				}
 			} else if(t.IsDictionary()) {
-				dictionary_to_luaval(L, v as IDictionary);
+				// get key/value type
+				string ktn = "System.Object";
+				if(t.IsGenericType) {
+					ktn = t.GetGenericArguments()[0].GetNormalizedTypeName();
+				}
+
+				// new table for dictionary value
+				LuaLib.lua_newtable(L);
+
+				// if key type is not int or string, do nothing
+				if(ktn != "System.Byte" &&
+					ktn != "System.SByte" &&
+					ktn != "System.Int16" &&
+					ktn != "System.UInt16" &&
+					ktn != "System.Int32" &&
+					ktn != "System.UInt32" &&
+					ktn != "System.Decimal" &&
+					ktn != "System.Int64" &&
+					ktn != "System.UInt64" &&
+					ktn != "System.Char" && 
+					ktn != "System.String") {
+					// just leave an empty table
+					return;
+				}
+
+				// push
+				IDictionary dict = v as IDictionary;
+				IDictionaryEnumerator e = dict.GetEnumerator();
+				while(e.MoveNext()) {
+					// push key and value
+					type_to_luaval(L, e.Key);
+					type_to_luaval(L, e.Value);
+
+					// set to dict
+					LuaLib.lua_rawset(L, -3);
+				}
 			} else {
-				object_to_luaval(L, tn, v);
+				LuaStack.SharedInstance().PushObject(v, t.GetNormalizedCodeName());
 			}
 		}
 
@@ -827,9 +1007,9 @@
 							return 1;
 						} else if(tn2 == "System.Double") {
 							return -1;
-						} else if(tn1 == "System.Float") {
+						} else if(tn1 == "System.Single") {
 							return 1;
-						} else if(tn2 == "System.Float") {
+						} else if(tn2 == "System.Single") {
 							return -1;
 						}
 
@@ -971,7 +1151,7 @@
 							etn == "System.Decimal" ||
 							etn == "System.Int64" ||
 							etn == "System.UInt64" ||
-							etn == "System.Float" ||
+							etn == "System.Single" ||
 							etn == "System.Double" ||
 							etn == "System.Char") {
 							return true;
@@ -985,7 +1165,7 @@
 						nativeType == "System.Decimal" ||
 						nativeType == "System.Int64" ||
 						nativeType == "System.UInt64" ||
-						nativeType == "System.Float" ||
+						nativeType == "System.Single" ||
 						nativeType == "System.Double" ||
 						nativeType == "System.Char") {
 						return true;

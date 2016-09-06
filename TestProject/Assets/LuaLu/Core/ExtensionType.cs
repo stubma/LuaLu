@@ -95,6 +95,7 @@ public static class ExtensionType {
 			Type[] gArgs = t.GetGenericArguments();
 			string typeName = t.FullName;
 			string pureTypeName = typeName.Substring(0, typeName.IndexOf('`'));
+			pureTypeName += "`" + gArgs.Length;
 
 			// append generic names
 			pureTypeName += "[";
