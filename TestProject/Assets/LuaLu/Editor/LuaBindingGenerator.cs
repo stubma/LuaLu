@@ -1122,7 +1122,9 @@
 					buffer += "\t\t\tbool ok = true;\n";
 					buffer += string.Format("\t\t\t{0} ret;\n", ftcn);
 					buffer += string.Format("\t\t\tret = ({0})LuaValueBoxer.luaval_to_type(L, 2, \"{1}\", \"{2}\");\n", ftcn, fttn, sn);
-					buffer += "\t\t\tok &= ret != null;\n";
+					if(!ft.IsValueType) {
+						buffer += "\t\t\tok &= ret != null;\n";
+					}
 
 					// set field
 					buffer += "\t\t\tif(ok) {\n";
@@ -1241,7 +1243,9 @@
 					buffer += "\t\t\tbool ok = true;\n";
 					buffer += string.Format("\t\t\t{0} ret;\n", ptcn);
 					buffer += string.Format("\t\t\tret = ({0})LuaValueBoxer.luaval_to_type(L, 2, \"{1}\", \"{2}\");\n", ptcn, pttn, fn);
-					buffer += "\t\t\tok &= ret != null;\n";
+					if(!pt.IsValueType) {
+						buffer += "\t\t\tok &= ret != null;\n";
+					}
 
 					// set property
 					buffer += "\t\t\tif(ok) {\n";
@@ -1707,41 +1711,12 @@
 			// variables
 			string buffer = "";
 			Type pt = pi.ParameterType;
-			string ptn = pt.GetNormalizedCodeName();
+			string ptcn = pt.GetNormalizedCodeName();
+			string pttn = pt.GetNormalizedTypeName();
 			string ptnUnderscore = pt.GetNormalizedIdentityName();
 
 			// find conversion by parameter type name
-			if(pt.IsArray) {
-				Type et = pt.GetElementType();
-				string etn = et.GetNormalizedCodeName();
-				if(et.IsArray) {
-					// TODO more than one dimension array? not supported yet
-				} else if(pi.IsParams()) {
-					buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_array<{0}>(L, {1}, -1, out arg{2}, \"{3}\");\n", etn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
-				} else {
-					buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_array<{0}>(L, {1}, {1}, out arg{2}, \"{3}\");\n", etn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
-				}
-			} else if(pt.IsList()) {
-				if(ptn == "System.Array") {
-					buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_list(L, {0}, out arg{1}, \"{2}\");\n", argIndex + (isStatic ? 1 : 2), argIndex, methodName);
-				} else if(pt.IsGenericType) {
-					Type et = pt.GetGenericArguments()[0];
-					string etn = et.GetNormalizedCodeName();
-					buffer += indent + string.Format("ok &= LuaValueBoxer.luaval_to_list<{0}>(L, {1}, out arg{2}, \"{3}\");\n", etn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
-				} else {
-					buffer += indent + string.Format("ok &= LuaValueBoxer.luaval_to_list<object>(L, {0}, out arg{1}, \"{2}\");\n", argIndex + (isStatic ? 1 : 2), argIndex, methodName);
-				}
-			} else if(pt.IsDictionary()) {
-				if(pt.IsGenericType) {
-					Type kt = pt.GetGenericArguments()[0];
-					Type vt = pt.GetGenericArguments()[1];
-					string ktn = kt.GetNormalizedCodeName();
-					string vtn = vt.GetNormalizedCodeName();
-					buffer += indent + string.Format("ok &= LuaValueBoxer.luaval_to_dictionary<{0}, {1}>(L, {2}, out arg{3}, \"{4}\");\n", ktn, vtn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
-				} else {
-					buffer += indent + string.Format("ok &= LuaValueBoxer.luaval_to_dictionary<object, object>(L, {0}, out arg{1}, \"{2}\");\n", argIndex + (isStatic ? 1 : 2), argIndex, methodName);
-				}
-			} else if(pt.IsCustomDelegateType()) {
+			if(pt.IsCustomDelegateType()) {
 				// add this delegate type
 				if(!s_delegates.Contains(pt)) {
 					s_delegates.Add(pt);
@@ -1749,9 +1724,12 @@
 
 				// create lua delegate wrapper for it
 				buffer += indent + string.Format("LuaDelegateWrapper w{0} = new LuaDelegateWrapper(L, {1});\n", argIndex, argIndex + (isStatic ? 1 : 2));
-				buffer += indent + string.Format("arg{0} = new {1}(w{0}.delegate_{2});\n", argIndex, ptn, ptnUnderscore);
+				buffer += indent + string.Format("arg{0} = new {1}(w{0}.delegate_{2});\n", argIndex, ptcn, ptnUnderscore);
 			} else {
-				buffer += string.Format(indent + "ok &= LuaValueBoxer.luaval_to_type<{0}>(L, {1}, out arg{2}, \"{3}\");\n", ptn, argIndex + (isStatic ? 1 : 2), argIndex, methodName);
+				buffer += indent + string.Format("arg{0} = ({1})LuaValueBoxer.luaval_to_type(L, {2}, \"{3}\", \"{4}\");\n", argIndex, ptcn, argIndex + (isStatic ? 1 : 2), pttn, methodName);
+				if(!pt.IsValueType) {
+					buffer += indent + string.Format("ok &= arg{0} != null;\n", argIndex);
+				}
 			}
 
 			// return
@@ -1809,7 +1787,7 @@
 				LuaLib.lua_gettable(L, lo);
 				if(!LuaLib.lua_isnil(L, -1) && LuaLib.tolua_checkusertype(L, -1, ""System.Object"")) {
 					targetObjTypeName = LuaLib.tolua_typename(L, -1);
-					LuaValueBoxer.luaval_to_type<System.Object>(L, -1, out targetObj);
+					targetObj = LuaValueBoxer.luaval_to_type(L, -1, ""System.Object"");
 				} else if(LuaLib.lua_istable(L, -1)) {
 					targetTable = LuaLib.toluafix_ref_table(L, -1, 0);
 					LuaLib.lua_pop(L, 1);
@@ -1882,13 +1860,14 @@
 				string tnUnderscore = t.GetNormalizedIdentityName();
 				MethodInfo m = t.GetMethod("Invoke");
 				Type rt = m.ReturnType;
-				string rtn = rt.GetNormalizedCodeName();
+				string rtcn = rt.GetNormalizedCodeName();
+				string rttn = rt.GetNormalizedTypeName();
 				string rtnUnderscore = rt.GetNormalizedIdentityName();
 				ParameterInfo[] pList = m.GetParameters();
 
 				// method start, without args
 				buffer += "\n";
-				buffer += indent + string.Format("public {0} delegate_{1}(", rtn, tnUnderscore);
+				buffer += indent + string.Format("public {0} delegate_{1}(", rtcn, tnUnderscore);
 				for(int i = 0; i < pList.Length; i++) {
 					Type pt = pList[i].ParameterType;
 					string ptn = pt.GetNormalizedCodeName();
@@ -1903,9 +1882,9 @@
 
 				// value to be returned
 				indent += "\t";
-				if(rtn != "void") {
+				if(rtcn != "void") {
 					buffer += indent + "// value to be returned\n";
-					buffer += indent + string.Format("{0} ret = default({0});\n\n", rtn);
+					buffer += indent + string.Format("{0} ret = default({0});\n\n", rtcn);
 				}
 
 				// call function, push function first
@@ -1945,7 +1924,7 @@
 				buffer += "\n";
 				buffer += indent + "// execute function\n";
 				buffer += indent + "s.ExecuteFunction(argc";
-				if(rtn == "void") {
+				if(rtcn == "void") {
 					buffer += ");\n";
 				} else {
 					// lamba start
@@ -1953,40 +1932,12 @@
 					indent += "\t";
 
 					// check return type
-					if(rt.IsArray) {
-						Type et = rt.GetElementType();
-						string etn = et.GetNormalizedCodeName();
-						if(et.IsArray) {
-							// TODO more than one dimension array? not supported yet
-						} else {
-							buffer += string.Format(indent + "LuaValueBoxer.luaval_to_array<{0}>(state, -1, -1, out ret);\n", etn);
-						}
-					} else if(rt.IsList()) {
-						if(rtn == "System.Array") {
-							buffer += indent + "LuaValueBoxer.luaval_to_list(L, -1, out ret);\n";
-						} else if(rt.IsGenericType) {
-							Type et = rt.GetGenericArguments()[0];
-							string etn = et.GetNormalizedCodeName();
-							buffer += indent + string.Format("LuaValueBoxer.luaval_to_list<{0}>(L, -1, out ret);\n", etn);
-						} else {
-							buffer += indent + "LuaValueBoxer.luaval_to_list<object>(state, -1, out ret);\n";
-						}
-					} else if(rt.IsDictionary()) {
-						if(rt.IsGenericType) {
-							Type kt = rt.GetGenericArguments()[0];
-							Type vt = rt.GetGenericArguments()[1];
-							string ktn = kt.GetNormalizedCodeName();
-							string vtn = vt.GetNormalizedCodeName();
-							buffer += indent + string.Format("LuaValueBoxer.luaval_to_dictionary<{0}, {1}>(state, -1, out ret);\n", ktn, vtn);
-						} else {
-							buffer += indent + "LuaValueBoxer.luaval_to_dictionary<object, object>(state, -1, out ret);\n";
-						}
-					} else if(rt.IsCustomDelegateType()) {
+					if(rt.IsCustomDelegateType()) {
 						// create lua delegate wrapper for it
 						buffer += indent + "LuaDelegateWrapper w = new LuaDelegateWrapper(state, -1);\n";
-						buffer += indent + string.Format("ret = new {0}(w.delegate_{1});\n", rtn, rtnUnderscore);
+						buffer += indent + string.Format("ret = new {0}(w.delegate_{1});\n", rtcn, rtnUnderscore);
 					} else {
-						buffer += string.Format(indent + "LuaValueBoxer.luaval_to_type<{0}>(state, -1, out ret);\n", rtn);
+						buffer += indent + string.Format("ret = ({0})LuaValueBoxer.luaval_to_type(L, -1, \"{1}\");\n", rtcn, rttn);
 					}
 
 					// lamba end
@@ -1999,7 +1950,7 @@
 				buffer += indent + "}\n";
 
 				// return
-				if(rtn != "void") {
+				if(rtcn != "void") {
 					buffer += indent + "return ret;\n";
 				}
 
