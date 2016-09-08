@@ -7,7 +7,22 @@ using LuaLu;
 [NoLuaBinding]
 public static class ExtensionType {
 	public static bool IsDictionary(this Type t) {
-		return typeof(IDictionary).IsAssignableFrom(t);
+		// check self
+		if(t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IDictionary<,>)) {
+			return true;
+		} else if(t == typeof(IDictionary)) {
+			return true;
+		}
+
+		// check interface
+		foreach(Type it in t.GetInterfaces()) {
+			if(it.IsGenericType && it.GetGenericTypeDefinition() == typeof(IDictionary<,>)) {
+				return true;
+			} else if(it == typeof(IDictionary)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static bool IsEnumerable(this Type t) {
@@ -38,7 +53,22 @@ public static class ExtensionType {
 	}
 
 	public static bool IsList(this Type t) {
-		return typeof(IList).IsAssignableFrom(t);
+		// check self
+		if(t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IList<>)) {
+			return true;
+		} else if(t == typeof(IList)) {
+			return true;
+		}
+
+		// check interface
+		foreach(Type it in t.GetInterfaces()) {
+			if(it.IsGenericType && it.GetGenericTypeDefinition() == typeof(IList<>)) {
+				return true;
+			} else if(it == typeof(IList)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static bool HasGenericBaseType(this Type t) {

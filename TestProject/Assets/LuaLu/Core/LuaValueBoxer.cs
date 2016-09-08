@@ -223,11 +223,11 @@
 					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
 					#endif
 					ok = false;
+				}
 
-					// to integer then cast to desired type
-					if(ok) {
-						return Convert.ChangeType(LuaLib.tolua_tointeger(L, lo, 0), t);
-					}
+				// to integer then cast to desired type
+				if(ok) {
+					return Convert.ChangeType(LuaLib.tolua_tointeger(L, lo, 0), t);
 				}
 			} else if(tn == "System.Boolean") {
 				// top should be a boolean
