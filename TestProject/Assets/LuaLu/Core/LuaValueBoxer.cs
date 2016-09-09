@@ -207,16 +207,76 @@
 
 			// convert
 			bool ok = true;
-			if(tn == "System.Byte" ||
-			   tn == "System.SByte" ||
-			   tn == "System.Int16" ||
-			   tn == "System.UInt16" ||
-			   tn == "System.Int32" ||
+			if(tn == "System.Byte") {
+				// top should be a number
+				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// explicit cast, can't use Convert.ChangeType because it may have overflow exception
+				if(ok) {
+					return (byte)LuaLib.tolua_tointeger(L, lo, 0);
+				}
+			} else if(tn == "System.SByte") {
+				// top should be a number
+				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// explicit cast, can't use Convert.ChangeType because it may have overflow exception
+				if(ok) {
+					return (sbyte)LuaLib.tolua_tointeger(L, lo, 0);
+				}
+			} else if(tn == "System.Char") {
+				// top should be a number
+				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// explicit cast, can't use Convert.ChangeType because it may have overflow exception
+				if(ok) {
+					return (char)LuaLib.tolua_tointeger(L, lo, 0);
+				}
+			} else if(tn == "System.Int16") {
+				// top should be a number
+				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// explicit cast, can't use Convert.ChangeType because it may have overflow exception
+				if(ok) {
+					return (short)LuaLib.tolua_tointeger(L, lo, 0);
+				}
+			} else if(tn == "System.UInt16") {
+				// top should be a number
+				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
+					#if DEBUG
+					luaval_to_native_err(L, "#ferror:", ref tolua_err, funcName);
+					#endif
+					ok = false;
+				}
+
+				// explicit cast, can't use Convert.ChangeType because it may have overflow exception
+				if(ok) {
+					return (ushort)LuaLib.tolua_tointeger(L, lo, 0);
+				}
+			} else if(tn == "System.Int32" ||
 			   tn == "System.UInt32" ||
 			   tn == "System.Decimal" ||
 			   tn == "System.Int64" ||
-			   tn == "System.UInt64" ||
-			   tn == "System.Char") {
+			   tn == "System.UInt64") {
 				// top should be a number
 				if(!LuaLib.tolua_isnumber(L, lo, ref tolua_err)) {
 					#if DEBUG
