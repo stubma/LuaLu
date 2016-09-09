@@ -301,7 +301,6 @@
 			}
 
 			// register method ends
-			buffer += "\t\t\tLuaLib.tolua_endmodule(L);\n";
 			for(int i = 0; i < nsList.Length; i++) {
 				buffer += "\t\t\tLuaLib.tolua_endmodule(L);\n";
 			}
