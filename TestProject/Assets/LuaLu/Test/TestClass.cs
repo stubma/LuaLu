@@ -18,6 +18,18 @@
 
 		public delegate bool DelegateIZ(int num);
 
+		public int FieldI;
+
+		public string PropertyS {
+			get;
+			set;
+		}
+
+		public TestClass() {
+			FieldI = 0x12345678;
+			PropertyS = "hello";
+		}
+
 		public bool TestPrimitiveTypes(byte arg0, sbyte arg1, char arg2, bool arg3, short arg4, ushort arg5,
 		                               int arg6, uint arg7, decimal arg8, long arg9, ulong arg10, float arg11, double arg12) {
 			return arg0 == 100 &&

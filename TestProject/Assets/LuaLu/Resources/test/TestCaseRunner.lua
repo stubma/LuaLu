@@ -75,3 +75,23 @@ end
 function TestCaseRunner:testcase9(t)
 	return TestClass.TestStaticMethodIZ(0x12345678)
 end
+
+function TestCaseRunner:testcase10(t)
+	if t.FieldI == 0x12345678 then
+		t.FieldI = 100
+		if t.FieldI == 100 then
+			return true
+		end
+	end
+	return false
+end
+
+function TestCaseRunner:testcase11(t)
+	if t.PropertyS == "hello" then
+		t.PropertyS = "world"
+		if t.PropertyS == "world" then
+			return true
+		end
+	end
+	return false
+end
