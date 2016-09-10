@@ -2,8 +2,22 @@
 	using UnityEngine;
 	using System.Collections;
 	using System.Collections.Generic;
+	using System;
 
 	public class TestClass {
+		/*
+		 * for test:
+		 * I: int
+		 * Z: bool
+		 * J: long
+		 * B: byte
+		 * C: char
+		 * S: string
+		 * O: object
+		 */
+
+		public delegate bool DelegateIZ(int num);
+
 		public bool TestPrimitiveTypes(byte arg0, sbyte arg1, char arg2, bool arg3, short arg4, ushort arg5,
 		                               int arg6, uint arg7, decimal arg8, long arg9, ulong arg10, float arg11, double arg12) {
 			return arg0 == 100 &&
@@ -29,7 +43,7 @@
 			arg4 == 0x5678;
 		}
 
-		public bool TestListInt(List<int> arg0) {
+		public bool TestListI(List<int> arg0) {
 			return arg0.Count == 3 &&
 			arg0[0] == 100 &&
 			arg0[1] == 200 &&
@@ -45,11 +59,33 @@
 			arg1[1] == 0x5678;
 		}
 
-		public bool TestDictionaryIntInt(Dictionary<int, int> arg0) {
+		public bool TestDictionaryII(Dictionary<int, int> arg0) {
 			return arg0.Count == 3 &&
 			arg0[100] == 101 &&
 			arg0[200] == 202 &&
 			arg0[300] == 303;
+		}
+
+		public bool TestDictionarySS(Dictionary<string, string> arg0) {
+			return arg0.Count == 2 &&
+			arg0["hello"] == "world" &&
+			arg0["test"] == "case";
+		}
+
+		public bool TestDelegateIZ(DelegateIZ del) {
+			return del(0x12345678);
+		}
+
+		public void TestActionS(Action<string> a) {
+			a("hello");
+		}
+
+		public int TestFuncSI(Func<string, int> f) {
+			return f("hello");
+		}
+
+		public static bool TestStaticMethodIZ(int num) {
+			return num == 0x12345678;
 		}
 	}
 }
