@@ -3,6 +3,7 @@
 	using System.Collections;
 	using System.Collections.Generic;
 	using System;
+	using System.Reflection;
 
 	public class TestClass {
 		/*
@@ -98,6 +99,10 @@
 
 		public static bool TestStaticMethodIZ(int num) {
 			return num == 0x12345678;
+		}
+
+		public bool TestGenericTZ<T>(T t) {
+			return true;
 		}
 	}
 }
