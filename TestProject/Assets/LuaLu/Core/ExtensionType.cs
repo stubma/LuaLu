@@ -81,6 +81,24 @@ public static class ExtensionType {
 		}
 	}
 
+	public static string[] GetNormalizedCodeNames(Type[] tList) {
+		Array a = Array.CreateInstance(typeof(string), tList.Length);
+		int i = 0;
+		Array.ForEach<Type>(tList, t => {
+			a.SetValue(t.GetNormalizedCodeName(), i++);
+		});
+		return (string[])a;
+	}
+
+	public static string[] GetNormalizedTypeNames(Type[] tList) {
+		Array a = Array.CreateInstance(typeof(string), tList.Length);
+		int i = 0;
+		Array.ForEach<Type>(tList, t => {
+			a.SetValue(t.GetNormalizedTypeName(), i++);
+		});
+		return (string[])a;
+	}
+
 	public static string GetNormalizedCodeName(this Type t) {
 		if(t.IsArray) {
 			Type et = t.GetElementType();
