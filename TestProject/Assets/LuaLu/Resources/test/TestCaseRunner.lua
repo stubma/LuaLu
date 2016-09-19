@@ -95,3 +95,7 @@ function TestCaseRunner:testcase11(t)
 	end
 	return false
 end
+
+function TestCaseRunner:testcase12(t)
+	return t:TestGenericTZT("System.Int32", 100)
+end

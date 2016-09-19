@@ -102,6 +102,7 @@
 		}
 
 		public bool TestGenericTZ<T>(T t) {
+			Debug.Log("TestGenericTZ " + t);
 			return true;
 		}
 	}

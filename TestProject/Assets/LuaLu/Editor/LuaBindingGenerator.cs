@@ -235,6 +235,7 @@
 			buffer += "\tusing System.IO;\n";
 			buffer += "\tusing System.Collections;\n";
 			buffer += "\tusing System.Collections.Generic;\n";
+			buffer += "\tusing System.Reflection;\n";
 			buffer += "\tusing UnityEngine;\n";
 			buffer += "\tusing LuaInterface;\n";
 			buffer += "\tusing LuaLu;\n\n";
@@ -613,6 +614,7 @@
 			buffer += "\tusing System.IO;\n";
 			buffer += "\tusing System.Collections;\n";
 			buffer += "\tusing System.Collections.Generic;\n";
+			buffer += "\tusing System.Reflection;\n";
 			buffer += "\tusing UnityEngine;\n";
 			buffer += "\tusing LuaInterface;\n";
 			buffer += "\tusing LuaLu;\n\n";
@@ -729,6 +731,11 @@
 					string op = mn.Substring(3);
 					mn = SUPPORTED_OPERATORS[op];
 				}
+				buffer += string.Format("\t\t\tLuaLib.tolua_function(L, \"{0}\", new LuaFunction({0}));\n", mn);
+			}
+
+			// register public instance/static generic methods
+			foreach(string mn in publicGenericMethodMap.Keys) {
 				buffer += string.Format("\t\t\tLuaLib.tolua_function(L, \"{0}\", new LuaFunction({0}));\n", mn);
 			}
 
@@ -1269,6 +1276,21 @@
 		}
 
 		private static string GeneratePublicGenericMethod(Type t, List<MethodInfo> mList) {
+			// other info
+			string buffer = "";
+
+			// generate invocation wrappers
+			for(int i = 0; i < mList.Count; i++) {
+				buffer += GenerateGenericMethodInvocation(t, mList[i], i);
+			}
+
+			// generate method resolution
+			buffer += GenerateGenericMethodResolution(t, mList);
+
+			return buffer;
+		}
+
+		private static string GenerateGenericMethodResolution(Type t, List<MethodInfo> mList) {
 			// method name
 			string mn = mList[0].Name;
 			int gargc = mList[0].GetGenericArguments().Length;
@@ -1278,16 +1300,28 @@
 
 			// other info
 			string buffer = "";
-			string tfnUnderscore = t.GetNormalizedIdentityName();
-			string clazz = "lua_" + tfnUnderscore + "_binder";
+			string tin = t.GetNormalizedIdentityName();
+			string clazz = "lua_" + tin + "_binder";
 			string fn = clazz + "." + mn;
 			string indent = "\t\t";
 
-			// generate invocation wrappers
-			for(int i = 0; i < mList.Count; i++) {
-				buffer += GenerateGenericMethodInvocation(t, mList[i], i);
-			}
+			// method start
+			buffer += indent + "[MonoPInvokeCallback(typeof(LuaFunction))]\n";
+			buffer += indent + string.Format("public static int {0}(IntPtr L) {{\n", mn);
 
+			// get argument count
+			indent += "\t";
+			buffer += indent + "// get argument count\n";
+			buffer += indent + "int argc = LuaLib.lua_gettop(L);\n\n";
+
+			// fallback if argc doesn't match
+			buffer += indent + "// if to here, means argument count is not correct\n";
+			buffer += indent + string.Format("LuaLib.luaL_error(L, \"{0} has wrong number of arguments: \" + argc);\n", fn);
+			buffer += indent + "return 0;\n";
+			indent = indent.Substring(1);
+			buffer += indent + "}\n\n";
+
+			// return
 			return buffer;
 		}
 
@@ -1301,15 +1335,19 @@
 
 			// other info
 			string indent = "\t\t";
-			string tn = t.Name;
-			string tfn = t.GetNormalizedCodeName();
-			string tfnUnderscore = t.GetNormalizedIdentityName();
-			string clazz = "lua_" + tfnUnderscore + "_binder";
+			string tcn = t.GetNormalizedCodeName();
+			string tin = t.GetNormalizedIdentityName();
+			string ttn = t.GetNormalizedTypeName();
+			string clazz = "lua_" + tin + "_binder";
 			string fn = clazz + "." + mn;
 			string buffer = "";
 			ParameterInfo[] pList = m.GetParameters();
+			Type[] gArgTypes = m.GetGenericArguments();
+			string[] gArgCodeNames = ExtensionType.GetNormalizedCodeNames(gArgTypes);
 			int paramCount = pList.Length;
 			bool isStatic = m.IsStatic;
+			Type rt = m.ReturnType;
+			string rtcn = rt.GetNormalizedCodeName();
 
 			// invocation start
 			buffer += indent + string.Format("private static int call_{0}_{1}(IntPtr L) {{\n", mIndex, mn);
@@ -1323,13 +1361,13 @@
 			if(!isStatic) {
 				buffer += indent + "// caller type check\n";
 				buffer += indent.Substring(1) + "#if DEBUG\n";
-				buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tfn);
+				buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tcn);
 				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
 				buffer += indent + "\treturn 0;\n";
 				buffer += indent + "}\n";
 				buffer += indent.Substring(1) + "#endif\n";
 				buffer += indent + "int refId = LuaLib.tolua_tousertype(L, 1);\n";
-				buffer += string.Format(indent + "{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tfn);
+				buffer += string.Format(indent + "{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tcn);
 				if(!t.IsValueType) {
 					buffer += indent.Substring(1) + "#if DEBUG\n";
 					buffer += indent + "if(obj == null) {\n";
@@ -1342,56 +1380,62 @@
 
 			// get generatic type strings
 			buffer += indent + "// get generic type names\n";
-			for(int i = 0; i < gargc; i++) {
-				buffer += indent + string.Format("string t{0} = null;\n", i);
-			}
+			buffer += indent + "List<string> gArgTypeNames = new List<string>();\n";
 			for(int i = 0; i < gargc; i++) {
 				buffer += indent + string.Format("if(LuaLib.lua_isstring(L, {0})) {{\n", (isStatic ? 0 : 1) + i + 1);
-				buffer += indent + string.Format("\tt{0} = LuaLib.lua_tostring(L, {1});\n", i, (isStatic ? 0 : 1) + i + 1);
+				buffer += indent + string.Format("\tgArgTypeNames.Add(LuaLib.lua_tostring(L, {1}));\n", i, (isStatic ? 0 : 1) + i + 1);
 				buffer += indent + "} else {\n";
 				buffer += indent + string.Format("\tLuaLib.tolua_error(L, string.Format(\"generic type name is not string type in function '{0}'\", refId), ref err);\n", fn);
 				buffer += indent + "\treturn 0;\n";
 				buffer += indent + "}\n";
 			}
 
-			// argument handling
-//			if(paramCount > 0) {
-//				// argument declaration
-//				buffer += "\n";
-//				indent += "\t";
-//				buffer += indent + "// arguments declaration\n";
-//				for(int i = 0; i < pList.Length; i++) {
-//					Type pt = pList[i].ParameterType;
-//					if(pt.IsGenericParameter) {
-//						
-//					} else {
-//						string ptn = pt.GetNormalizedCodeName();
-//						buffer += string.Format(indent + "{0} arg{1} = default({0});\n", ptn, i);
-//					}
-//				}
-//
-//				// argument conversion
-//				buffer += "\n";
-//				buffer += indent + "// convert lua value to desired arguments\n";
-//				buffer += indent + "bool ok = true;\n";
-//				for(int i = 0; i < pList.Length; i++) {
-//					buffer += GenerateUnboxParameters(pList[i], i, tn + "." + mn, indent, isStatic);
-//				}
-//
-//				// check conversion
-//				buffer += "\n";
-//				buffer += indent + "// if conversion is not ok, print error and return\n";
-//				buffer += indent + "if(!ok) {\n";
-//				buffer += indent.Substring(1) + "#if DEBUG\n";
-//				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"invalid arguments in function '{0}'\", ref err);\n", fn);
-//				buffer += indent.Substring(1) + "#endif\n";
-//				buffer += indent + "\treturn 0;\n";
-//				buffer += indent + "}\n\n";
-//				indent = indent.Substring(1);
-//			}
+			// build a type list for parameters
+			buffer += "\n";
+			buffer += indent + "// build a type list for parameters\n";
+			buffer += indent + "List<Type> ptList = new List<Type>();\n";
+			buffer += indent + "List<string> pttnList = new List<string>();\n";
+			if(paramCount > 0) {
+				for(int i = 0; i < pList.Length; i++) {
+					// create type from name, replace generic argument with real name
+					Type pt = pList[i].ParameterType;
+					string pttn = pt.GetNormalizedTypeName();
+					buffer += indent + string.Format("string pttn{0} = \"{1}\".Replace(\"{2}\", gArgTypeNames[0]);\n", i, pttn, gArgCodeNames[0]);
+					buffer += indent + string.Format("pttnList.Add(pttn{0});\n", i);
+					buffer += indent + string.Format("ptList.Add(ExtensionType.GetType(pttn{0}));\n", i);
+				}
+			}
+
+			// load arguments
+			buffer += "\n";
+			buffer += indent + "// argument conversion\n";
+			buffer += indent + "List<object> poList = new List<object>();\n";
+			if(paramCount > 0) {
+				for(int i = 0; i < pList.Length; i++) {
+					buffer += indent + string.Format("object arg{0} = LuaValueBoxer.luaval_to_type(L, {1}, pttnList[{0}]);\n", i, (isStatic ? 0 : 1) + gargc + i + 1);
+					buffer += indent + string.Format("poList.Add(arg{0});\n", i);
+				}
+			}
+
+			// get method, make generic
+			buffer += "\n";
+			buffer += indent + "// get method and make it generic\n";
+			buffer += indent + string.Format("Type t = ExtensionType.GetType(\"{0}\");\n", ttn);
+			buffer += indent + string.Format("MethodInfo m = t.GetMethod(\"{0}\");\n", m.Name);
+			buffer += indent + string.Format("MethodInfo gm = m.MakeGenericMethod(ptList.ToArray());\n");
+
+			// invoke and return
+			buffer += "\n";
+			buffer += indent + "// invoke generic method and return\n";
+			buffer += indent + string.Format("object ret = gm.Invoke({0}, poList.ToArray());\n", isStatic ? "null" : "obj");
+			buffer += indent + "LuaValueBoxer.type_to_luaval(L, ret);\n";
 
 			// invocation end
-			buffer += indent + "return 0;\n";
+			if(rtcn == "void") {
+				buffer += indent + "return 0;\n";
+			} else {
+				buffer += indent + "return 1;\n";
+			}
 			indent = indent.Substring(1);
 			buffer += indent + "}\n\n";
 
@@ -1400,6 +1444,154 @@
 		}
 
 		private static string GeneratePublicMethod(Type t, List<MethodBase> mList) {
+			// variables
+			string buffer = "";
+
+			// generate invocation wrappers
+			for(int i = 0; i < mList.Count; i++) {
+				buffer += GenerateMethodInvocation(t, mList[i], i);
+			}
+
+			// generate method resolution
+			buffer += GenerateMethodResolution(t, mList);
+
+			// return
+			return buffer;
+		}
+
+		private static string GenerateMethodInvocation(Type t, MethodBase m, int mIndex) {
+			// if operator, should conversion name
+			string mn = m.Name;
+			bool isOperator = false;
+			if(mn.StartsWith("op_")) {
+				string op = mn.Substring(3);
+				mn = SUPPORTED_OPERATORS[op];
+				isOperator = true;
+			}
+
+			// other info
+			string indent = "\t\t";
+			string tn = t.Name;
+			string tcn = t.GetNormalizedCodeName();
+			string tin = t.GetNormalizedIdentityName();
+			string clazz = "lua_" + tin + "_binder";
+			string fn = clazz + "." + mn;
+			string buffer = "";
+			ParameterInfo[] pList = m.GetParameters();
+			int paramCount = pList.Length;
+			bool isStatic = m.IsConstructor ? true : m.IsStatic;
+
+			// invocation start
+			buffer += indent + string.Format("private static int call_{0}_{1}(IntPtr L) {{\n", mIndex, m.IsConstructor ? "Constructor" : mn);
+
+			// argument handling
+			if(paramCount > 0) {
+				// argument declaration
+				indent += "\t";
+				buffer += indent + "// arguments declaration\n";
+				for(int i = 0; i < pList.Length; i++) {
+					Type pt = pList[i].ParameterType;
+					string ptn = pt.GetNormalizedCodeName();
+					buffer += string.Format(indent + "{0} arg{1} = default({0});\n", ptn, i);
+				}
+
+				// argument conversion
+				buffer += "\n";
+				buffer += indent + "// convert lua value to desired arguments\n";
+				buffer += indent + "bool ok = true;\n";
+				for(int i = 0; i < pList.Length; i++) {
+					buffer += GenerateUnboxParameters(pList[i], i, tn + "." + mn, indent, isStatic);
+				}
+
+				// check conversion
+				buffer += "\n";
+				buffer += indent + "// if conversion is not ok, print error and return\n";
+				buffer += indent + "if(!ok) {\n";
+				buffer += indent.Substring(1) + "#if DEBUG\n";
+				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"invalid arguments in function '{0}'\", ref err);\n", fn);
+				buffer += indent.Substring(1) + "#endif\n";
+				buffer += indent + "\treturn 0;\n";
+				buffer += indent + "}\n\n";
+				indent = indent.Substring(1);
+			}
+
+			// get info of method to be called
+			Type rt = m.IsConstructor ? t : ((MethodInfo)m).ReturnType;
+			string rtn = rt.GetNormalizedCodeName();
+
+			// perform object type checking based on method type, static or not
+			if(!isStatic) {
+				indent += "\t";
+				buffer += indent + "// caller type check\n";
+				buffer += indent.Substring(1) + "#if DEBUG\n";
+				buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tcn);
+				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
+				buffer += indent + "\treturn 0;\n";
+				buffer += indent + "}\n";
+				buffer += indent.Substring(1) + "#endif\n";
+				buffer += indent + "int refId = LuaLib.tolua_tousertype(L, 1);\n";
+				buffer += string.Format(indent + "{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tcn);
+				if(!t.IsValueType) {
+					buffer += indent.Substring(1) + "#if DEBUG\n";
+					buffer += indent + "if(obj == null) {\n";
+					buffer += string.Format(indent + "\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", fn);
+					buffer += indent + "\treturn 0;\n";
+					buffer += indent + "}\n";
+					buffer += indent.Substring(1) + "#endif\n\n";
+				}
+				indent = indent.Substring(1);
+			}
+
+			// call function
+			indent += "\t";
+			buffer += indent + "// call\n";
+			buffer += indent;
+			if(rtn != "void") {
+				buffer += string.Format("{0} ret = ", rtn);
+			}
+			if(isOperator) {
+				// for operator
+				bool unary = OPERATOR_UNARY[mn];
+				string opStr = OPERATOR_STRINGS[mn];
+				if(unary) {
+					buffer += opStr + "arg0;\n";
+				} else {
+					buffer += "arg0 " + opStr + " arg1;\n";
+				}
+			} else {
+				if(m.IsConstructor) {
+					buffer += string.Format("new {0}(", tcn);
+				} else if(isStatic) {
+					buffer += string.Format("{0}.{1}(", tcn, mn);
+				} else {
+					buffer += string.Format("obj.{0}(", mn);
+				}
+				for(int i = 0; i < pList.Length; i++) {
+					if(pList[i].IsOut) {
+						buffer += "out ";
+					} else if(pList[i].ParameterType.IsByRef) {
+						buffer += "ref ";
+					}
+					buffer += string.Format("arg{0}", i);
+					if(i < pList.Length - 1) {
+						buffer += ", ";
+					}
+				}
+				buffer += ");\n";
+			}
+
+			// push returned value
+			buffer += GenerateBoxReturnValue(rt, indent);
+
+			// invocation end
+			indent = indent.Substring(1);
+			buffer += indent + "}\n\n";
+
+			// return
+			return buffer;
+		}
+
+		private static string GenerateMethodResolution(Type t, List<MethodBase> mList) {
 			// decide method name, if operator, need a conversion
 			bool isCtor = mList[0].IsConstructor;
 			string mn = mList[0].Name;
@@ -1410,15 +1602,10 @@
 
 			// other info
 			string buffer = "";
-			string tfnUnderscore = t.GetNormalizedIdentityName();
-			string clazz = "lua_" + tfnUnderscore + "_binder";
+			string tin = t.GetNormalizedIdentityName();
+			string clazz = "lua_" + tin + "_binder";
 			string fn = clazz + "." + mn;
 			string indent = "\t\t";
-
-			// generate invocation wrappers
-			for(int i = 0; i < mList.Count; i++) {
-				buffer += GenerateMethodInvocation(t, mList[i], i);
-			}
 
 			// method start
 			buffer += indent + "[MonoPInvokeCallback(typeof(LuaFunction))]\n";
@@ -1542,138 +1729,6 @@
 			buffer += indent + "// if to here, means argument count is not correct\n";
 			buffer += indent + string.Format("LuaLib.luaL_error(L, \"{0} has wrong number of arguments: \" + argc);\n", fn);
 			buffer += indent + "return 0;\n";
-			indent = indent.Substring(1);
-			buffer += indent + "}\n\n";
-
-			// return
-			return buffer;
-		}
-
-		private static string GenerateMethodInvocation(Type t, MethodBase m, int mIndex) {
-			// if operator, should conversion name
-			string mn = m.Name;
-			bool isOperator = false;
-			if(mn.StartsWith("op_")) {
-				string op = mn.Substring(3);
-				mn = SUPPORTED_OPERATORS[op];
-				isOperator = true;
-			}
-
-			// other info
-			string indent = "\t\t";
-			string tn = t.Name;
-			string tfn = t.GetNormalizedCodeName();
-			string tfnUnderscore = t.GetNormalizedIdentityName();
-			string clazz = "lua_" + tfnUnderscore + "_binder";
-			string fn = clazz + "." + mn;
-			string buffer = "";
-			ParameterInfo[] pList = m.GetParameters();
-			int paramCount = pList.Length;
-			bool isStatic = m.IsConstructor ? true : m.IsStatic;
-
-			// invocation start
-			buffer += indent + string.Format("private static int call_{0}_{1}(IntPtr L) {{\n", mIndex, m.IsConstructor ? "Constructor" : mn);
-
-			// argument handling
-			if(paramCount > 0) {
-				// argument declaration
-				indent += "\t";
-				buffer += indent + "// arguments declaration\n";
-				for(int i = 0; i < pList.Length; i++) {
-					Type pt = pList[i].ParameterType;
-					string ptn = pt.GetNormalizedCodeName();
-					buffer += string.Format(indent + "{0} arg{1} = default({0});\n", ptn, i);
-				}
-
-				// argument conversion
-				buffer += "\n";
-				buffer += indent + "// convert lua value to desired arguments\n";
-				buffer += indent + "bool ok = true;\n";
-				for(int i = 0; i < pList.Length; i++) {
-					buffer += GenerateUnboxParameters(pList[i], i, tn + "." + mn, indent, isStatic);
-				}
-
-				// check conversion
-				buffer += "\n";
-				buffer += indent + "// if conversion is not ok, print error and return\n";
-				buffer += indent + "if(!ok) {\n";
-				buffer += indent.Substring(1) + "#if DEBUG\n";
-				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"invalid arguments in function '{0}'\", ref err);\n", fn);
-				buffer += indent.Substring(1) + "#endif\n";
-				buffer += indent + "\treturn 0;\n";
-				buffer += indent + "}\n\n";
-				indent = indent.Substring(1);
-			}
-
-			// get info of method to be called
-			Type rt = m.IsConstructor ? t : ((MethodInfo)m).ReturnType;
-			string rtn = rt.GetNormalizedCodeName();
-
-			// perform object type checking based on method type, static or not
-			if(!isStatic) {
-				indent += "\t";
-				buffer += indent + "// caller type check\n";
-				buffer += indent.Substring(1) + "#if DEBUG\n";
-				buffer += string.Format(indent + "if(!LuaLib.tolua_isusertype(L, 1, \"{0}\", ref err)) {{\n", tfn);
-				buffer += string.Format(indent + "\tLuaLib.tolua_error(L, \"#ferror in function '{0}'\", ref err);\n", fn);
-				buffer += indent + "\treturn 0;\n";
-				buffer += indent + "}\n";
-				buffer += indent.Substring(1) + "#endif\n";
-				buffer += indent + "int refId = LuaLib.tolua_tousertype(L, 1);\n";
-				buffer += string.Format(indent + "{0} obj = ({0})LuaStack.FromState(L).FindObject(refId);\n", tfn);
-				if(!t.IsValueType) {
-					buffer += indent.Substring(1) + "#if DEBUG\n";
-					buffer += indent + "if(obj == null) {\n";
-					buffer += string.Format(indent + "\tLuaLib.tolua_error(L, string.Format(\"invalid obj({{0}}) in function '{0}'\", refId), ref err);\n", fn);
-					buffer += indent + "\treturn 0;\n";
-					buffer += indent + "}\n";
-					buffer += indent.Substring(1) + "#endif\n\n";
-				}
-				indent = indent.Substring(1);
-			}
-
-			// call function
-			indent += "\t";
-			buffer += indent + "// call\n";
-			buffer += indent;
-			if(rtn != "void") {
-				buffer += string.Format("{0} ret = ", rtn);
-			}
-			if(isOperator) {
-				// for operator
-				bool unary = OPERATOR_UNARY[mn];
-				string opStr = OPERATOR_STRINGS[mn];
-				if(unary) {
-					buffer += opStr + "arg0;\n";
-				} else {
-					buffer += "arg0 " + opStr + " arg1;\n";
-				}
-			} else {
-				if(m.IsConstructor) {
-					buffer += string.Format("new {0}(", tfn);
-				} else if(isStatic) {
-					buffer += string.Format("{0}.{1}(", tfn, mn);
-				} else {
-					buffer += string.Format("obj.{0}(", mn);
-				}
-				for(int i = 0; i < pList.Length; i++) {
-					if(pList[i].IsOut) {
-						buffer += "out ";
-					} else if(pList[i].ParameterType.IsByRef) {
-						buffer += "ref ";
-					}
-					buffer += string.Format("arg{0}", i);
-					if(i < pList.Length - 1) {
-						buffer += ", ";
-					}
-				}
-				buffer += ");\n";
-			}
-
-			// push returned value
-			buffer += GenerateBoxReturnValue(rt, indent);
-
-			// invocation end
 			indent = indent.Substring(1);
 			buffer += indent + "}\n\n";
 
