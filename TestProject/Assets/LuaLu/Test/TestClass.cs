@@ -101,8 +101,11 @@
 			return num == 0x12345678;
 		}
 
-		public bool TestGenericTZ<T>(T t) {
-			Debug.Log("TestGenericTZ " + t);
+		public bool TestGeneric<T>(T t) {
+			return true;
+		}
+
+		public bool TestGeneric<T>(int i, T t) {
 			return true;
 		}
 	}

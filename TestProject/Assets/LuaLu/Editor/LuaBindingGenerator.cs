@@ -615,6 +615,7 @@
 			buffer += "\tusing System.Collections;\n";
 			buffer += "\tusing System.Collections.Generic;\n";
 			buffer += "\tusing System.Reflection;\n";
+			buffer += "\tusing System.Text.RegularExpressions;\n";
 			buffer += "\tusing UnityEngine;\n";
 			buffer += "\tusing LuaInterface;\n";
 			buffer += "\tusing LuaLu;\n\n";
@@ -1281,7 +1282,7 @@
 
 			// generate invocation wrappers
 			for(int i = 0; i < mList.Count; i++) {
-				buffer += GenerateGenericMethodInvocation(t, mList[i], i);
+				buffer += GenerateGenericMethodInvocation(t, mList[i], i, mList.Count > 1);
 			}
 
 			// generate method resolution
@@ -1314,6 +1315,32 @@
 			buffer += indent + "// get argument count\n";
 			buffer += indent + "int argc = LuaLib.lua_gettop(L);\n\n";
 
+			// if no overload method, just call
+			// if has, need do overload resolution
+			if(mList.Count > 1) {
+				// prepare, clear resolution list
+				buffer += indent + "// clear resolution list\n";
+				buffer += indent + "ORList.Clear();\n\n";
+			} else {
+				// method info
+				bool isStatic = mList[0].IsStatic;
+				ParameterInfo[] pList = mList[0].GetParameters();
+				bool lastIsParams = pList.Length > 0 ? pList[pList.Length - 1].IsParams() : false;
+				int minArg = pList.Length + mList[0].GetGenericArguments().Length + (isStatic ? 0 : 1) - (lastIsParams ? 1 : 0);
+
+				// check argument count
+				buffer += indent + "// if argument count matched, call\n";
+				buffer += string.Format("\t\t\tif(argc {0} {1}) {{\n", lastIsParams ? ">=" : "==", minArg);
+
+				// call
+				indent += "\t";
+				buffer += indent + string.Format("return call_0_{0}(L);\n", mn);
+
+				// check argument count - end
+				indent = indent.Substring(1);
+				buffer += indent + "}\n\n";
+			}
+
 			// fallback if argc doesn't match
 			buffer += indent + "// if to here, means argument count is not correct\n";
 			buffer += indent + string.Format("LuaLib.luaL_error(L, \"{0} has wrong number of arguments: \" + argc);\n", fn);
@@ -1325,7 +1352,7 @@
 			return buffer;
 		}
 
-		private static string GenerateGenericMethodInvocation(Type t, MethodInfo m, int mIndex) {
+		private static string GenerateGenericMethodInvocation(Type t, MethodInfo m, int mIndex, bool overloaded) {
 			// if operator, should conversion name
 			string mn = m.Name;
 			int gargc = m.GetGenericArguments().Length;
@@ -1395,16 +1422,18 @@
 			buffer += indent + "// build a type list for parameters\n";
 			buffer += indent + "List<Type> ptList = new List<Type>();\n";
 			buffer += indent + "List<string> pttnList = new List<string>();\n";
-			if(paramCount > 0) {
-				for(int i = 0; i < pList.Length; i++) {
-					// create type from name, replace generic argument with real name
-					Type pt = pList[i].ParameterType;
-					string pttn = pt.GetNormalizedTypeName();
-					buffer += indent + string.Format("string pttn{0} = \"{1}\".Replace(\"{2}\", gArgTypeNames[0]);\n", i, pttn, gArgCodeNames[0]);
-					buffer += indent + string.Format("pttnList.Add(pttn{0});\n", i);
-					buffer += indent + string.Format("ptList.Add(ExtensionType.GetType(pttn{0}));\n", i);
-				}
+			buffer += indent + string.Format("List<string> sigs = SIG[\"{0}\"][{1}];\n", mn, mIndex);
+			buffer += indent + "string _tmpStr = \"\";\n";
+			buffer += indent + string.Format("for(int i = {0}; i < sigs.Count; i++) {{\n", isStatic ? 0 : 1);
+			indent += "\t";
+			buffer += indent + "_tmpStr = sigs[i];\n";
+			for(int i = 0; i < gArgCodeNames.Length; i++) {
+				buffer += indent + string.Format("_tmpStr = Regex.Replace(_tmpStr, @\"\\b{0}\\b\", gArgTypeNames[{1}]);\n", gArgCodeNames[i], i);
 			}
+			buffer += indent + "pttnList.Add(_tmpStr);\n";
+			buffer += indent + "ptList.Add(ExtensionType.GetType(_tmpStr));\n";
+			indent = indent.Substring(1);
+			buffer += indent + "}\n";
 
 			// load arguments
 			buffer += "\n";
@@ -1421,7 +1450,20 @@
 			buffer += "\n";
 			buffer += indent + "// get method and make it generic\n";
 			buffer += indent + string.Format("Type t = ExtensionType.GetType(\"{0}\");\n", ttn);
-			buffer += indent + string.Format("MethodInfo m = t.GetMethod(\"{0}\");\n", m.Name);
+			if(overloaded) {
+				buffer += indent + "MethodInfo m = null;\n";
+				buffer += indent + "MethodInfo[] mList = t.GetMethods();\n";
+				buffer += indent + "foreach(MethodInfo mi in mList) {\n";
+				indent += "\t";
+				buffer += indent + string.Format("if(mi.IsGenericMethod && mi.Name == \"{0}\") {{\n", m.Name);
+				indent += "\t";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+				indent = indent.Substring(1);
+				buffer += indent + "}\n";
+			} else {
+				buffer += indent + string.Format("MethodInfo m = t.GetMethod(\"{0}\");\n", m.Name);
+			}
 			buffer += indent + string.Format("MethodInfo gm = m.MakeGenericMethod(ptList.ToArray());\n");
 
 			// invoke and return

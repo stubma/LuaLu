@@ -97,5 +97,5 @@ function TestCaseRunner:testcase11(t)
 end
 
 function TestCaseRunner:testcase12(t)
-	return t:TestGenericTZT("System.Int32", 100)
+	return t:TestGenericT("System.String", "哈哈哈")
 end
