@@ -16,10 +16,6 @@
 			if(ext.ToLower() == ".lua") {
 				if(LuaLuPrefs.GetLuaEditor() == LuaEditor.SYSTEM_DEFAULT) {
 					return false;
-				} else if(LuaLuPrefs.GetLuaEditor() == LuaEditor.ZERO_BRANE_STUDIO) {
-					string zbsFolder = LuaLuPrefs.GetZeroBraneStudioFolder();
-					System.Diagnostics.Process.Start(zbsFolder + "/zbstudio.sh", Directory.GetParent(Application.dataPath) + "/" + path);
-					return true;
 				} else if(LuaLuPrefs.GetLuaEditor() == LuaEditor.CUSTOM) {
 					string exec = LuaLuPrefs.GetCustomEditorExecutable();
 					string args = LuaLuPrefs.GetCustomEditorArguments();
