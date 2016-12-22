@@ -3,9 +3,9 @@ If you are an English speaker, please view <a href="#what-is-this">English Versi
 这是什么
 ===
 
-这是一个Unity3D的Lua插件, 还在开发中, 基本功能已经成型了. 这同时也是我的学习项目, 本人unity新手, 所以做个实际的东西学的快些. 目前unity的lua插件已经有了slua, ulua, unilua, nlua等等, 我看了看觉得我写的会更好用些, 不吹不黑, 各位随意. lua绑定的代码主要还是参考cocos2dx-classical的实现, 针对C#做了很多修改, 另外看了一点cstolua的代码, 大致如此. 工程的名字LuaLu, 我觉得这个名字起得不错, 避免了和其它插件名字雷同, Lu本身和我的英文名也有关联, LuaLu读起来还是"撸啊撸", 技术宅男的形象跃然纸上.
+这是一个Unity3D的Lua插件, 是我用来学习Unity的小项目, 当然也还是有一定的实用性的. 目前unity的lua插件已经有了slua, ulua, unilua, nlua等等, 我看了看觉得我写的会更好用些, 不吹不黑, 各位随意. lua绑定的代码主要还是参考cocos2dx-classical的实现, 针对C#做了很多修改, 另外看了一点cstolua的代码, 大致如此. 工程的名字LuaLu, 我觉得这个名字起得不错, 避免了和其它插件名字雷同, Lu本身和我的英文名也有关联, LuaLu读起来还是"撸啊撸", 技术宅男的形象跃然纸上.
 
-目前仍然在活跃开发中, 基于unity 5.4.0f3 Personal, OSX, iOS已测试通过.
+模板方法的绑定还没做完, 没啥动力了, 懒得继续, 就这样吧. 基于unity 5.4.0f3 Personal, OSX, iOS已测试通过.
 
 如何安装
 ===
@@ -204,9 +204,9 @@ NOTE:
 What is this
 ===
 
-This is a Unity3D Lua plugin, it is still in active development but basically you can run it now. It is my learning project also and I want it be the best of unity lua plugins. Welcome to use it.
+This is a Unity3D Lua plugin, it is a JUST learning project but it can be used.
 
-I am working on Unity 5.4.0f3 Personal, and tested ok in OSX, iOS
+Template method binding is not done yet but I lost motivation, this is it. Tested on Unity 5.4.0f3 Personal with OSX and iOS
 
 How to install
 ===
